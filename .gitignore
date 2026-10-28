@@ -1,0 +1,9 @@
+# Godot
+.godot/
+*.import.tmp
+export_credentials.cfg
+
+# Pomocné soubory testů
+tests/out/
+node_modules/
+*.log
