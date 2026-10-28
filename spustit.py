@@ -2,7 +2,8 @@
 """Spustí hru lokálně: malý webový server nad složkou docs/ a otevře prohlížeč.
 
 Dvojklik na spustit.bat (Windows), spustit.command (macOS) nebo spustit.sh (Linux),
-případně:  python3 spustit.py
+případně:  python3 spustit.py          (Godot 4.7.2)
+           python3 spustit.py docs-4.6 (záložní verze, Godot 4.6.3)
 Ukončení: zavřít okno terminálu nebo stisknout Ctrl+C.
 """
 import http.server
@@ -12,7 +13,9 @@ import sys
 import threading
 import webbrowser
 
-ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "docs")
+# Volitelný argument: složka s hrou (výchozí "docs" = Godot 4.7.2, "docs-4.6" = záložní build z Godotu 4.6.3)
+FOLDER = sys.argv[1] if len(sys.argv) > 1 else "docs"
+ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), FOLDER)
 PORT_START = 8765
 
 
@@ -37,7 +40,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
 def main():
     if not os.path.exists(os.path.join(ROOT, "index.html")):
-        print("Chybí docs/index.html – hra ještě nebyla sestavena (viz README.md).")
+        print("Chybí %s/index.html – hra ještě nebyla sestavena (viz README.md)." % FOLDER)
         sys.exit(1)
     os.chdir(ROOT)
     socketserver.TCPServer.allow_reuse_address = True

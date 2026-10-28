@@ -10,7 +10,7 @@ const args = Object.fromEntries(process.argv.slice(2).map(a => {
   const [k, v] = a.replace(/^--/, '').split('=');
   return [k, v === undefined ? true : v];
 }));
-const ROOT = path.resolve(__dirname, '..', 'docs');
+const ROOT = process.env.DOCS_DIR ? path.resolve(process.env.DOCS_DIR) : path.resolve(__dirname, '..', 'docs');
 const OUT = path.resolve(args.out || path.join(__dirname, 'out'));
 const WAVES = parseInt(args.waves || '3', 10);
 const QUALITY = args.low ? '&q=low' : '';

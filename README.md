@@ -22,6 +22,8 @@ Hra je už sestavená ve složce `docs/`. Prohlížeč ji ale nespustí dvojklik
 | **Linux** | `./spustit.sh` |
 
 Otevře se prohlížeč s hrou (adresa `http://localhost:8765/index.html`). Ukončíš ji zavřením okna terminálu.
+
+**Záložní verze pro starší Godot.** Kdyby hra v tvém prohlížeči nešla nebo sekala, zkus build z předchozího Godotu **4.6.3** (stejná hra, stejný kód): dvojklik na `spustit_godot-4.6.bat` (Windows) / `spustit_godot-4.6.command` (macOS) / `./spustit_godot-4.6.sh` (Linux), případně `python3 spustit.py docs-4.6`. Ověřeno: pod 4.6.3 projekt projde importem i exportem, celá simulace dává stejné výsledky a v prohlížeči bot dohrál všech 12 vln bez chyb v konzoli.
 Funguje v aktuálním Chrome / Edge / Firefox. První načtení stahuje ~40 MB (engine), pak už je to rychlé.
 
 ## Ovládání
@@ -87,7 +89,8 @@ scripts/theme/      rozhraní motivu + motiv „Ostrov v oblacích“ (svět, mo
 scripts/ui/         rozhraní (česky), ikony kreslené v kódu
 scripts/tools/      testovací nástroje (headless simulátor, API pro testy v prohlížeči)
 shaders/            terén, voda, vodopád, listí s větrem, mraky, portál, efekty
-docs/               hotová webová verze (sem míří export)
+docs/               hotová webová verze (Godot 4.7.2, sem míří export)
+docs-4.6/           záložní webová verze z Godotu 4.6.3
 tests/              skripty pro automatické testy (Node + Playwright)
 ```
 
