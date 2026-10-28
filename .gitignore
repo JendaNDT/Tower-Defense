@@ -7,3 +7,4 @@ export_credentials.cfg
 tests/out/
 node_modules/
 *.log
+__pycache__/

@@ -12,6 +12,9 @@ var overlays: Overlays = null
 var hud: Hud = null
 var handles: Dictionary = {}
 var bridge: TestBridge = null
+var audio: AudioManager = null
+
+const SETTINGS_PATH: String = "user://nastaveni.cfg"
 
 var build_type: String = ""
 var selected: Tower = null
@@ -85,6 +88,13 @@ func _build_everything() -> void:
 	world.add_child(overlays)
 	overlays.setup(map, theme)
 
+	# zvuk a hudba (syntetizované v kódu); v headless testech se nevytváří
+	if not args.has("simtest") and not args.has("nosound") and DisplayServer.get_name() != "headless":
+		audio = AudioManager.new()
+		add_child(audio)
+		audio.setup(game, rig)
+		game.audio = audio
+
 	hud.bind(game)
 	hud.request_build.connect(_on_request_build)
 	hud.request_cancel.connect(_cancel_all)
@@ -99,6 +109,10 @@ func _build_everything() -> void:
 	hud.request_cam.connect(_on_cam)
 	hud.request_quality.connect(_on_quality)
 	hud.request_begin.connect(_on_begin)
+	hud.request_sound.connect(func(n): _play_ui(n))
+	hud.request_audio.connect(_on_audio_toggle)
+	if audio != null:
+		_load_audio_settings()
 	game.tower_built.connect(func(_t): overlays.rebuild_grid())
 	game.tower_removed.connect(_on_tower_removed)
 	game.wave_changed.connect(func(_a, _b): pass)
@@ -137,6 +151,52 @@ func _count_free() -> int:
 func _on_begin() -> void:
 	game.paused = false
 	hud.set_paused(false)
+	if audio != null:
+		audio.start()
+
+
+func _play_ui(sound: String) -> void:
+	if audio != null:
+		audio.play(sound)
+
+
+func _load_audio_settings() -> void:
+	var cf: ConfigFile = ConfigFile.new()
+	var sfx: bool = true
+	var mus: bool = true
+	if cf.load(SETTINGS_PATH) == OK:
+		sfx = bool(cf.get_value("zvuk", "efekty", true))
+		mus = bool(cf.get_value("zvuk", "hudba", true))
+	audio.set_sfx(sfx)
+	audio.set_music(mus)
+	hud.set_audio_state(sfx, mus)
+
+
+func _save_audio_settings() -> void:
+	var cf: ConfigFile = ConfigFile.new()
+	cf.set_value("zvuk", "efekty", audio.sfx_on)
+	cf.set_value("zvuk", "hudba", audio.music_on)
+	cf.save(SETTINGS_PATH)
+
+
+func _on_audio_toggle(kind: String, on: bool) -> void:
+	if audio == null:
+		return
+	if kind == "sfx":
+		audio.set_sfx(on)
+	else:
+		audio.set_music(on)
+	_save_audio_settings()
+
+
+func _toggle_all_audio() -> void:
+	if audio == null:
+		return
+	var turn_on: bool = not (audio.sfx_on or audio.music_on)
+	audio.set_sfx(turn_on)
+	audio.set_music(turn_on)
+	hud.set_audio_state(turn_on, turn_on)
+	_save_audio_settings()
 
 
 func _set_paused(on: bool) -> void:
@@ -293,6 +353,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				hud.cycle_speed()
 			KEY_H:
 				hud.show_intro(true)
+			KEY_M:
+				_toggle_all_audio()
 			KEY_HOME:
 				rig.reset_view()
 

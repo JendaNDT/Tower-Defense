@@ -98,6 +98,7 @@ func _update_pending(dt: float) -> void:
 				e.apply_slow(float(pd["slow"]), float(pd["slow_time"]))
 				if float(pd["freeze"]) > 0.0:
 					e.apply_freeze(float(pd["freeze"]))
+					game.sfx("freeze_hit", e.aim_pos())
 				e.take_damage(float(pd["damage"]), "magic", self)
 				game.fx.hit_spark(e.aim_pos(), Color(0.7, 0.95, 1.0))
 			_pending.remove_at(i)
@@ -135,11 +136,13 @@ func _fire(targets: Array, st: Dictionary) -> void:
 				var dmg: float = float(st["damage"]) * (2.0 if crit else 1.0)
 				game.spawn_projectile("arrow", self, tgt, {"damage": dmg, "pierce": float(st["pierce"]), "crit": crit, "delay": 0.09 * float(i)})
 			game.fx.puff(from, Color(1, 1, 1), 0.1, 0.3, 0.2, 0.0, 0.0, 0.5)
+			game.sfx("archer_shot", from)
 		"cannon":
 			game.spawn_projectile("ball", self, targets[0], {
 				"damage": float(st["damage"]), "splash": float(st["splash"]),
 				"burn": float(st["burn"]), "burn_time": float(st["burn_time"]), "stun": float(st["stun"]),
 			})
+			game.sfx("cannon_shot", from)
 			game.fx.burst_puffs(from, Color(0.9, 0.9, 0.85), 4, 0.8, 0.6, 0.7, 0.0)
 			game.fx.burst_puffs(from, Color(1.0, 0.7, 0.25), 3, 0.5, 0.45, 0.25, 2.0)
 		"mage":
@@ -147,6 +150,7 @@ func _fire(targets: Array, st: Dictionary) -> void:
 				"damage": float(st["damage"]), "chain": int(st["chain"]),
 				"chain_falloff": float(st["chain_falloff"]), "chain_range": float(st["chain_range"]),
 			})
+			game.sfx("mage_cast", from)
 			game.fx.burst_puffs(from, Color(0.75, 0.55, 1.0), 4, 0.5, 0.3, 0.3, 2.5)
 		_:
 			_pulse_count += 1
@@ -155,6 +159,7 @@ func _fire(targets: Array, st: Dictionary) -> void:
 			if fe > 0 and _pulse_count % fe == 0:
 				freeze = float(st["freeze_time"])
 			var origin: Vector3 = position
+			game.sfx("frost_pulse", origin + Vector3(0.0, 1.0, 0.0))
 			var rng: float = float(st["range"])
 			var col: Color = Color(0.55, 0.88, 1.0) if freeze <= 0.0 else Color(0.85, 0.97, 1.0)
 			game.fx.ring(Vector3(origin.x, origin.y + 0.35, origin.z), col, rng, rng / PULSE_SPEED + 0.1, 0.12, 0.18, 1.0)

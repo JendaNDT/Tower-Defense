@@ -89,6 +89,7 @@ func _on_step(p: Vector3) -> void:
 	if game != null and game.fx != null:
 		var gy: float = game.map.height_at(p.x, p.z)
 		game.fx.burst_puffs(Vector3(p.x, gy + 0.15, p.z), Color(0.75, 0.68, 0.58), 3, 0.7, 0.55, 0.45)
+		game.sfx("stomp", p, 0.0 if type == "boss" else -4.0)
 		if type == "boss":
 			game.camera_shake(0.05)
 

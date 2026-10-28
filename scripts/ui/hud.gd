@@ -16,6 +16,8 @@ signal request_restart()
 signal request_cam(action: String)
 signal request_quality(high: bool)
 signal request_begin()
+signal request_sound(sound: String)
+signal request_audio(kind: String, on: bool)
 
 const C_BG: Color = Color(0.07, 0.10, 0.17, 0.88)
 const C_BG_L: Color = Color(0.13, 0.18, 0.28, 0.92)
@@ -55,6 +57,8 @@ var _speed_lbl: Label
 var _pause_btn: Button
 var _pause_icon: IconCtrl
 var _auto_btn: Button
+var _sfx_btn: Button
+var _music_btn: Button
 var _quality_btn: Button
 var _build_type: String = ""
 var _selected: Tower = null
@@ -102,6 +106,7 @@ func _panel(bg: Color = C_BG, radius: int = 14, pad: Vector4 = Vector4(12, 8, 12
 
 func _style_button(b: Button, accent: Color = Color(0.35, 0.6, 1.0), radius: int = 10) -> void:
 	b.focus_mode = Control.FOCUS_NONE
+	b.pressed.connect(func(): request_sound.emit("ui_click"))
 	b.add_theme_stylebox_override("normal", sbox(C_BG_L, radius, C_BORDER, 1, Vector4(10, 6, 10, 6)))
 	b.add_theme_stylebox_override("hover", sbox(C_BG_L.lightened(0.12), radius, accent, 2, Vector4(10, 6, 10, 6)))
 	b.add_theme_stylebox_override("pressed", sbox(accent.darkened(0.25), radius, accent, 2, Vector4(10, 6, 10, 6)))
@@ -244,6 +249,21 @@ func _build_top_right() -> void:
 	_auto_btn.toggle_mode = true
 	_auto_btn.toggled.connect(func(on): _auto_on = on; request_auto.emit(on))
 	h.add_child(_auto_btn)
+
+	_sfx_btn = _icon_button("speaker", "Zvukové efekty (M = vše)")
+	_sfx_btn.toggle_mode = true
+	_sfx_btn.set_pressed_no_signal(true)
+	_sfx_btn.toggled.connect(func(on):
+		_sync_audio_icons()
+		request_audio.emit("sfx", on))
+	h.add_child(_sfx_btn)
+	_music_btn = _icon_button("note", "Hudba (M = vše)")
+	_music_btn.toggle_mode = true
+	_music_btn.set_pressed_no_signal(true)
+	_music_btn.toggled.connect(func(on):
+		_sync_audio_icons()
+		request_audio.emit("music", on))
+	h.add_child(_music_btn)
 
 	var sep: VSeparator = VSeparator.new()
 	h.add_child(sep)
@@ -480,6 +500,7 @@ func _build_intro() -> void:
 	body += "• Vlnu spustíš tlačítkem vpravo dole nebo mezerníkem. Přežij všech 12 vln!\n"
 	body += "• Kanón nezasáhne vzdušné cíle, brnění snižuje poškození šípů – proti němu pomůže mág.\n\n"
 	body += "Kamera: pravé tlačítko myši = otáčení, kolečko = zoom, W/A/S/D = posun, Q/E = otáčení, F = rychlost, P = pauza."
+	body += "\nZvuk: tlačítka nahoře (reproduktor, nota) nebo klávesa M vypnou efekty a hudbu."
 	var m: Dictionary = _modal("Ostrov v oblacích", body, "Začít hru")
 	_intro = m["root"]
 	_intro_btn = m["button"]
@@ -546,6 +567,17 @@ func set_paused(on: bool) -> void:
 
 func set_speed_label(mult: float) -> void:
 	_speed_lbl.text = "%d×" % int(mult)
+
+
+func _sync_audio_icons() -> void:
+	(_sfx_btn.get_meta("icon") as IconCtrl).set_kind("speaker" if _sfx_btn.button_pressed else "speaker_off", C_TEXT)
+	(_music_btn.get_meta("icon") as IconCtrl).set_kind("note" if _music_btn.button_pressed else "note_off", C_TEXT)
+
+
+func set_audio_state(sfx_on: bool, music_on: bool) -> void:
+	_sfx_btn.set_pressed_no_signal(sfx_on)
+	_music_btn.set_pressed_no_signal(music_on)
+	_sync_audio_icons()
 
 
 func set_auto(on: bool) -> void:
@@ -778,6 +810,10 @@ func ui_rect(nm: String) -> Rect2:
 			c = _speed_btn
 		"pause_btn":
 			c = _pause_btn
+		"sfx_btn":
+			c = _sfx_btn
+		"music_btn":
+			c = _music_btn
 		_:
 			if nm.begins_with("card_") and _cards.has(nm.substr(5)):
 				c = _cards[nm.substr(5)]["btn"]

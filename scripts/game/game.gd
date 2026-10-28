@@ -28,6 +28,7 @@ var fx: Fx = null
 var world: Node3D = null
 var camera_rig = null
 var ambient = null
+var audio = null                    # AudioManager (v headless testech není)
 
 var gold: int = 0
 var lives: int = 0
@@ -154,6 +155,7 @@ func start_next_wave() -> bool:
 	waves_started += 1
 	wave_changed.emit(waves_started, Cfg.TOTAL_WAVES)
 	toast.emit("Vlna %d začíná!" % waves_started, "info")
+	sfx("wave_horn")
 	return true
 
 
@@ -191,6 +193,7 @@ func _spawn_enemy(entry: Dictionary) -> void:
 	# záblesk portálu
 	var sp: Vector3 = map.spawn_pos
 	fx.burst_puffs(sp + Vector3(0.0, 1.0, 0.0), Color(0.7, 0.45, 1.0), 4, 0.8, 0.5, 0.5, 2.0)
+	sfx("spawn", sp)
 
 
 func on_enemy_killed(e: Enemy, source) -> void:
@@ -205,6 +208,8 @@ func on_enemy_killed(e: Enemy, source) -> void:
 	var big: bool = e.type == "boss" or e.type == "golem"
 	fx.death_burst(e.position + Vector3(0, e.visual.aim_height * 0.6, 0), e.def["color"], big)
 	fx.text(e.position + Vector3(0.0, e.visual.height + 1.0, 0.0), "+%d" % e.reward, Color(1.0, 0.85, 0.2), 1.45 if big else 1.15, 1.1)
+	sfx("death_" + e.type, e.position)
+	sfx("coin", e.position, -2.0)
 	if e.type == "boss":
 		camera_shake(0.35)
 	enemy_killed.emit(e)
@@ -222,12 +227,14 @@ func on_enemy_reached(e: Enemy) -> void:
 	toast.emit("Nepřítel dorazil k Srdci ostrova! −%d životů" % e.lives_cost, "warn")
 	fx.burst_puffs(e.position + Vector3(0, 0.8, 0), Color(1.0, 0.4, 0.5), 8, 1.2, 0.7, 0.6, 2.0)
 	camera_shake(0.3)
+	sfx("base_hit", e.position)
 	if ambient != null:
 		ambient.flash_heart(1.0)
 	_wave_alive[e.wave_index] = int(_wave_alive[e.wave_index]) - 1
 	if lives <= 0 and state == State.PLAYING:
 		state = State.LOST
 		state_changed.emit(state)
+		sfx("defeat")
 		return
 	_check_wave_done(e.wave_index)
 
@@ -249,8 +256,10 @@ func _check_wave_done(wi: int) -> void:
 			state = State.WON
 			state_changed.emit(state)
 			toast.emit("Vítězství! Ostrov je zachráněn!", "good")
+			sfx("victory")
 	else:
 		toast.emit("Vlna %d zvládnuta!%s" % [wi + 1, (" +%d zlata" % bonus) if bonus > 0 else ""], "good")
+		sfx("wave_clear")
 
 
 # ------------------------------------------------------------------ věže
@@ -266,10 +275,12 @@ func build_tower(type: String, c: Vector2i) -> Tower:
 		return null
 	if not map.can_build(c):
 		toast.emit("Sem se stavět nedá.", "warn")
+		sfx("ui_error")
 		return null
 	var cost: int = Cfg.tower_cost(type)
 	if gold < cost:
 		toast.emit("Nedostatek zlata (potřeba %d)." % cost, "warn")
+		sfx("ui_error")
 		return null
 	gold -= cost
 	gold_changed.emit(gold)
@@ -283,6 +294,7 @@ func build_tower(type: String, c: Vector2i) -> Tower:
 	map.set_cell_state(c, GameMap.Cell.TOWER)
 	fx.ring(Vector3(pos.x, pos.y + 0.3, pos.z), Color(1.0, 0.95, 0.7), 2.2, 0.45, 0.16, 0.2, 0.6)
 	fx.burst_puffs(pos + Vector3(0.0, 0.6, 0.0), Color(0.85, 0.8, 0.7), 8, 1.2, 0.7, 0.6)
+	sfx("build", pos)
 	tower_built.emit(t)
 	return t
 
@@ -293,10 +305,12 @@ func upgrade_tower(t: Tower) -> bool:
 	var cost: int = t.upgrade_cost()
 	if gold < cost:
 		toast.emit("Nedostatek zlata (potřeba %d)." % cost, "warn")
+		sfx("ui_error")
 		return false
 	gold -= cost
 	gold_changed.emit(gold)
 	t.upgrade()
+	sfx("upgrade", t.position)
 	tower_upgraded.emit(t)
 	return true
 
@@ -310,6 +324,7 @@ func sell_tower(t: Tower) -> void:
 	map.set_cell_state(t.cell, GameMap.Cell.FREE)
 	fx.burst_puffs(t.position + Vector3(0, 0.8, 0), Color(0.8, 0.75, 0.65), 8, 1.2, 0.7, 0.6)
 	fx.text(t.position + Vector3(0.0, 2.2, 0.0), "+%d" % value, Color(1.0, 0.85, 0.2), 1.3, 1.0)
+	sfx("sell", t.position)
 	towers.erase(t)
 	tower_removed.emit(t)
 	t.queue_free()
@@ -348,6 +363,15 @@ func spawn_projectile(kind: String, from_tower: Tower, tgt, params: Dictionary) 
 	world.add_child(pr)
 	pr.setup(self, kind, from_tower, tgt, params)
 	projectiles.append(pr)
+
+
+func sfx(sound: String, pos = null, vol_db: float = 0.0) -> void:
+	if audio != null:
+		audio.play(sound, pos, vol_db)
+
+
+func is_wave_active() -> bool:
+	return not _spawn_queue.is_empty() or not enemies.is_empty()
 
 
 func camera_shake(amount: float) -> void:

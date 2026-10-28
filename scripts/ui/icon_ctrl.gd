@@ -110,6 +110,23 @@ func _draw() -> void:
 		"flag":
 			draw_line(c + Vector2(-s * 0.26, s * 0.42), c + Vector2(-s * 0.26, -s * 0.42), col2.lightened(0.5), maxf(s * 0.07, 1.5), true)
 			draw_colored_polygon(PackedVector2Array([c + Vector2(-s * 0.24, -s * 0.4), c + Vector2(s * 0.38, -s * 0.2), c + Vector2(-s * 0.24, 0.0)]), col)
+		"speaker", "speaker_off":
+			var sp: Color = col
+			draw_rect(Rect2(c + Vector2(-s * 0.36, -s * 0.12), Vector2(s * 0.16, s * 0.24)), sp)
+			draw_colored_polygon(PackedVector2Array([c + Vector2(-s * 0.2, -s * 0.12), c + Vector2(s * 0.04, -s * 0.34), c + Vector2(s * 0.04, s * 0.34), c + Vector2(-s * 0.2, s * 0.12)]), sp)
+			if kind == "speaker":
+				draw_arc(c + Vector2(s * 0.04, 0.0), s * 0.2, -PI * 0.3, PI * 0.3, 10, sp, maxf(s * 0.06, 1.5), true)
+				draw_arc(c + Vector2(s * 0.04, 0.0), s * 0.34, -PI * 0.32, PI * 0.32, 12, sp, maxf(s * 0.06, 1.5), true)
+			else:
+				draw_line(c + Vector2(s * 0.14, -s * 0.14), c + Vector2(s * 0.42, s * 0.14), Color(1.0, 0.4, 0.38), maxf(s * 0.08, 2.0), true)
+				draw_line(c + Vector2(s * 0.14, s * 0.14), c + Vector2(s * 0.42, -s * 0.14), Color(1.0, 0.4, 0.38), maxf(s * 0.08, 2.0), true)
+		"note", "note_off":
+			var nc: Color = col
+			draw_circle(c + Vector2(-s * 0.14, s * 0.26), s * 0.17, nc)
+			draw_line(c + Vector2(s * 0.02, s * 0.24), c + Vector2(s * 0.02, -s * 0.36), nc, maxf(s * 0.07, 1.5), true)
+			draw_colored_polygon(PackedVector2Array([c + Vector2(s * 0.02, -s * 0.36), c + Vector2(s * 0.3, -s * 0.18), c + Vector2(s * 0.02, -s * 0.12)]), nc)
+			if kind == "note_off":
+				draw_line(c + Vector2(-s * 0.36, s * 0.36), c + Vector2(s * 0.36, -s * 0.36), Color(1.0, 0.4, 0.38), maxf(s * 0.08, 2.0), true)
 		"dot":
 			draw_circle(c, s * 0.4, col)
 			draw_arc(c, s * 0.4, 0.0, TAU, 20, col.darkened(0.4), maxf(s * 0.06, 1.0), true)

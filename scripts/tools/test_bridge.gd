@@ -220,6 +220,30 @@ func cmd(req: Dictionary) -> Dictionary:
 				return {"ok": false}
 			return {"ok": true, "type": tw4.type, "level": tw4.level, "stats": tw4.stats(), "damage_dealt": tw4.damage_dealt,
 				"kills": tw4.kills, "shots": tw4.shots_fired}
+		"audio":
+			var am = main.audio
+			if am == null:
+				return {"ok": false, "error": "zvuk není aktivní"}
+			return {"ok": true, "sounds": am.sounds_ready, "calm_ready": am.calm_ready, "battle_ready": am.battle_ready,
+				"sfx_on": am.sfx_on, "music_on": am.music_on, "started": am.started, "counts": am.play_counts,
+				"fade": am._fade, "calm_playing": am._calm.playing, "battle_playing": am._battle.playing,
+				"wind_playing": am._wind.playing, "calm_db": am._calm.volume_db, "battle_db": am._battle.volume_db}
+		"audio_play":
+			if main.audio == null:
+				return {"ok": false}
+			var lis: AudioListener3D = main.audio._listener
+			var side: float = float(req.get("side", 0.0))
+			var pos3: Vector3 = lis.global_position + lis.global_basis.x * side * float(req.get("dist", 20.0)) - lis.global_basis.z * float(req.get("front", 0.0))
+			main.audio.play(str(req.get("sound", "cannon_shot")), pos3)
+			return {"ok": true, "pos": [pos3.x, pos3.y, pos3.z]}
+		"audio_set":
+			if main.audio == null:
+				return {"ok": false}
+			main.audio.ambient_on = bool(req.get("ambient", true))
+			main._on_audio_toggle("sfx", bool(req.get("sfx", true)))
+			main._on_audio_toggle("music", bool(req.get("music", true)))
+			main.hud.set_audio_state(main.audio.sfx_on, main.audio.music_on)
+			return {"ok": true}
 		"hud":
 			return {"ok": true, "toast": main.hud._toast_lbl.text, "gold_lbl": main.hud._gold_lbl.text,
 				"lives_lbl": main.hud._lives_lbl.text, "wave_lbl": main.hud._wave_lbl.text}

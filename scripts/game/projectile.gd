@@ -144,6 +144,7 @@ func _on_impact() -> void:
 		"arrow":
 			if _target_ok():
 				game.proj_hits += 1
+				game.sfx("arrow_hit", hit_pos)
 				target.take_damage(damage, "phys", tower, pierce, crit)
 				game.fx.hit_spark(hit_pos, Color(1.0, 0.92, 0.65))
 			else:
@@ -152,6 +153,7 @@ func _on_impact() -> void:
 		"ball":
 			var gy: float = game.map.height_at(hit_pos.x, hit_pos.z)
 			game.fx.explosion(Vector3(hit_pos.x, gy + 0.2, hit_pos.z), splash)
+			game.sfx("explosion", hit_pos)
 			game.camera_shake(0.12)
 			var any_hit: bool = false
 			for e in game.enemies:
@@ -173,6 +175,7 @@ func _on_impact() -> void:
 		_:
 			if _target_ok():
 				game.proj_hits += 1
+				game.sfx("magic_hit", hit_pos)
 				target.take_damage(damage, "magic", tower)
 				game.fx.hit_spark(hit_pos, Color(0.8, 0.6, 1.0))
 				_do_chain(target, hit_pos)
@@ -203,6 +206,7 @@ func _do_chain(first, from_pos: Vector3) -> void:
 		dmg *= chain_falloff
 		var np: Vector3 = best.aim_pos()
 		game.fx.beam([last_pos, np], Color(0.75, 0.6, 1.0), 0.2, 0.07)
+		game.sfx("zap", np)
 		game.fx.hit_spark(np, Color(0.8, 0.65, 1.0))
 		best.take_damage(dmg, "magic", tower)
 		hit.append(best)
