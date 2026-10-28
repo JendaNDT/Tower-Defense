@@ -5,6 +5,12 @@ Veškerá grafika (terén, stromy, voda, věže, nepřátelé, efekty, rozhraní
 
 ![Celý ostrov](screenshots/ostrov.png)
 
+| | |
+|---|---|
+| ![Věže úroveň 1](screenshots/veze_L1.png) **Věže, úroveň 1** | ![Věže úroveň 4](screenshots/veze_L4.png) **Stejné věže po vylepšení na úroveň 4** |
+| ![Boj](screenshots/boj.png) **Boj: mrazový pulz, výbuchy, čísla poškození** | ![Nepřátelé](screenshots/nepratele.png) **Skřet, vlk, obrněnec a kamenný obr** |
+| ![Panel věže](screenshots/panel_veze.png) **Panel věže s náhledem vylepšení** | ![Vodopád](screenshots/vodopad.png) **Řeka padá z ostrova jako vodopád do oblaků** |
+
 ## Jak hru spustit
 
 Hra je už sestavená ve složce `docs/`. Prohlížeč ji ale nespustí dvojklikem na `index.html` (zakazuje to načítání souborů z disku), potřebuje malý místní webový server. Ten spustí jedním kliknutím:
@@ -104,12 +110,22 @@ Všechno níže běželo na této verzi (Godot 4.7.2.stable, Chromium s programo
 | Test | Spuštění | Výsledek |
 |---|---|---|
 | Headless simulace (pravidla, vylepšení, fyzika, 4 strategie bota na celých 12 vlnách) | `godot --headless --path . -- --simtest --skipintro` | průběh bez chyb, viz níže |
-| Odehrání v prohlížeči skutečnou myší a klávesnicí (stavba, vylepšení kliknutím, 3 vlny) | `node tests/e2e_play.js --low --waves=3` | viz níže |
+| Odehrání v prohlížeči skutečnou myší a klávesnicí: úvodní okno, stavba 2 lučištníků a kanónu, vylepšení kliknutím na tlačítko, 3 vlny | `node tests/e2e_play.js --low --waves=3` | všechny 3 vlny dokončeny (22 + 15 = 37 zabitých, ve vlně 3 proklouzli 4 dráčci), 0 chyb v konzoli |
+| Kontrolovaný pokus „jedna věž, stejní nepřátelé, mezi koly vylepšení kliknutím“ pro všechny 4 typy | `node tests/ab_upgrade.js --type=archer` (cannon, mage, frost) | síla roste s každou úrovní, tabulka níže |
 | Ovládání a obrazovky (kamera, nepovolená stavba, prodej, cílení, pauza, rychlost, prohra + restart, výhra) | `node tests/ui_flow.js` | 17 / 17 kontrol, 0 chyb v konzoli |
 | Celá hra botem uvnitř exportované webové verze | `node tests/browser_bot.js` | 12 vln dohráno, 0 chyb v konzoli |
 | Snímky světa / věží / nepřátel / boje | `tests/tour.js`, `gallery.js`, `combat.js` | kontrola vzhledu |
 
-**Změřená síla vylepšení** (jedna věž, stejný těžký scénář: 10 skřetů, 4 obrněnci, 6 vlků, 4 dráčci se zvýšeným zdravím):
+**Změřená síla vylepšení – v prohlížeči, vylepšení skutečným klikem** (jedna věž, pokaždé stejná skupina: 10 skřetů, 3 obrněnci, 6 vlků, 3 dráčci se zvýšeným zdravím; způsobené poškození / zabití / uniklých z 22):
+
+| Věž | Úroveň 1 | Úroveň 2 | Úroveň 3 | Úroveň 4 |
+|---|---|---|---|---|
+| Lučištník | 387 / 0 / 22 | 690 / 0 / 22 | 2078 / 2 / 20 | 4465 / 13 / 9 |
+| Kanón | 616 / 0 / 22 | 1191 / 1 / 21 | 2468 / 3 / 19 | 4833 / 15 / 7 |
+| Mág | 700 / 0 / 22 | 1185 / 1 / 21 | 3319 / 6 / 16 | 5780 / 21 / 1 |
+| Mráz | 505 / 0 / 22 | 1216 / 0 / 22 | 2808 / 0 / 22 | 5880 / 22 / 0 |
+
+**Totéž v headless simulaci** (jiný, ještě těžší scénář, 24 nepřátel):
 
 | Věž | Úroveň 1 | Úroveň 2 | Úroveň 3 | Úroveň 4 |
 |---|---|---|---|---|

@@ -19,6 +19,8 @@ var hover_cell: Vector2i = Vector2i(-1, -1)
 var high_quality: bool = true
 var args: Dictionary = {}
 var ready_to_play: bool = false
+var _pick_key: String = ""
+var _pick_cache = null
 
 
 func _parse_args() -> void:
@@ -316,6 +318,15 @@ func _process(_delta: float) -> void:
 	_update_hover()
 
 
+## Výběr bodu na terénu pod myší; když se nezměnila myš ani kamera, použije se předchozí výsledek.
+func _pick_cached(mp: Vector2):
+	var key: String = "%.1f_%.1f_%.2f_%.2f_%.2f_%.2f" % [mp.x, mp.y, rig.yaw_deg, rig.zoom_size, rig.position.x, rig.position.z]
+	if key != _pick_key:
+		_pick_key = key
+		_pick_cache = rig.pick_ground(mp, map)
+	return _pick_cache
+
+
 func _update_hover() -> void:
 	if hud.is_modal_open():
 		overlays.hide_ghost()
@@ -323,7 +334,7 @@ func _update_hover() -> void:
 	var vp: Viewport = get_viewport()
 	var mp: Vector2 = vp.get_mouse_position()
 	var over_gui: bool = vp.gui_get_hovered_control() != null
-	var p = null if over_gui else rig.pick_ground(mp, map)
+	var p = null if over_gui else _pick_cached(mp)
 	hover_cell = Vector2i(-1, -1)
 	if p != null:
 		hover_cell = Cfg.world_to_cell(p.x, p.z)
