@@ -110,7 +110,7 @@ Všechno níže běželo na této verzi (Godot 4.7.2.stable, Chromium s programo
 | Test | Spuštění | Výsledek |
 |---|---|---|
 | Headless simulace (pravidla, vylepšení, fyzika, 4 strategie bota na celých 12 vlnách) | `godot --headless --path . -- --simtest --skipintro` | průběh bez chyb, viz níže |
-| Odehrání v prohlížeči skutečnou myší a klávesnicí: úvodní okno, stavba 2 lučištníků a kanónu, vylepšení kliknutím na tlačítko, 3 vlny | `node tests/e2e_play.js --low --waves=3` | všechny 3 vlny dokončeny (22 + 15 = 37 zabitých, ve vlně 3 proklouzli 4 dráčci), 0 chyb v konzoli |
+| Odehrání v prohlížeči skutečnou myší a klávesnicí: úvodní okno, stavba 2 lučištníků a kanónu, vylepšení kliknutím na tlačítko, 3 vlny | `node tests/e2e_play.js --low --waves=3` | všechny 3 vlny dokončeny (celkem 37 zabitých, ve vlně 3 proklouzli 4 dráčci – kanón po vzduchu nestřílí), 0 chyb v konzoli |
 | Kontrolovaný pokus „jedna věž, stejní nepřátelé, mezi koly vylepšení kliknutím“ pro všechny 4 typy | `node tests/ab_upgrade.js --type=archer` (cannon, mage, frost) | síla roste s každou úrovní, tabulka níže |
 | Ovládání a obrazovky (kamera, nepovolená stavba, prodej, cílení, pauza, rychlost, prohra + restart, výhra) | `node tests/ui_flow.js` | 17 / 17 kontrol, 0 chyb v konzoli |
 | Celá hra botem uvnitř exportované webové verze | `node tests/browser_bot.js` | 12 vln dohráno, 0 chyb v konzoli |
