@@ -108,10 +108,10 @@ func _compute_pos(sv: float) -> Vector3:
 		var f: float = clampf(sv / maxf(path_len, 0.01), 0.0, 1.0)
 		var p2: Vector2 = fly_from.lerp(fly_to, f)
 		var y: float = fly_alt
-		# poslední metry klesnout k Srdci ostrova
+		# posledních 6 m plynule klesnout k Srdci ostrova
 		var left: float = path_len - sv
-		if left < 3.5:
-			y = lerpf(fly_alt, game.map.base_pos.y + 1.8, 1.0 - clampf(left / 3.5, 0.0, 1.0))
+		if left < 6.0:
+			y = lerpf(fly_alt, game.map.base_pos.y + 1.8, smoothstep(0.0, 1.0, 1.0 - clampf(left / 6.0, 0.0, 1.0)))
 		return Vector3(p2.x, y, p2.y)
 	var base: Vector3 = game.path.pos_at(sv)
 	var d: Vector2 = game.path.dir_at(sv)

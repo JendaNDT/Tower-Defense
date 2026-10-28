@@ -125,7 +125,7 @@ const ENEMIES: Dictionary = {
 		"flying": false, "radius": 0.62, "color": Color(0.58, 0.60, 0.68)},
 	"drake": {"name": "Dráček (létající)", "hp": 50.0, "speed": 2.8, "armor": 0.0, "reward": 11, "lives": 1,
 		"flying": true, "radius": 0.5, "color": Color(0.85, 0.35, 0.30)},
-	"boss": {"name": "Kamenný obr (boss)", "hp": 1100.0, "speed": 1.1, "armor": 8.0, "reward": 120, "lives": 5,
+	"boss": {"name": "Kamenný obr (boss)", "hp": 1500.0, "speed": 1.1, "armor": 9.0, "reward": 120, "lives": 5,
 		"flying": false, "radius": 1.05, "color": Color(0.50, 0.46, 0.42)},
 }
 
@@ -134,16 +134,16 @@ const ENEMIES: Dictionary = {
 const WAVES: Array = [
 	{"hp": 1.00, "bonus": 25, "groups": [["goblin", 8, 1.4, 0.0]]},
 	{"hp": 1.00, "bonus": 30, "groups": [["goblin", 10, 1.1, 0.0], ["wolf", 4, 1.0, 6.0]]},
-	{"hp": 1.05, "bonus": 35, "groups": [["goblin", 8, 1.0, 0.0], ["wolf", 8, 0.8, 5.0], ["drake", 3, 1.5, 12.0]]},
-	{"hp": 1.10, "bonus": 40, "groups": [["golem", 3, 3.0, 0.0], ["goblin", 12, 0.9, 3.0]]},
-	{"hp": 1.10, "bonus": 60, "groups": [["boss", 1, 1.0, 6.0], ["goblin", 8, 1.0, 0.0], ["wolf", 6, 0.8, 10.0]]},
-	{"hp": 1.20, "bonus": 50, "groups": [["drake", 10, 1.0, 0.0], ["golem", 4, 2.5, 4.0], ["wolf", 6, 0.8, 10.0]]},
-	{"hp": 1.30, "bonus": 55, "groups": [["goblin", 18, 0.7, 0.0], ["golem", 5, 2.0, 5.0], ["drake", 6, 1.2, 8.0]]},
-	{"hp": 1.40, "bonus": 60, "groups": [["wolf", 16, 0.55, 0.0], ["golem", 6, 2.2, 3.0], ["drake", 8, 1.0, 7.0]]},
-	{"hp": 1.50, "bonus": 70, "groups": [["golem", 10, 1.6, 0.0], ["drake", 12, 0.8, 5.0], ["goblin", 16, 0.6, 8.0]]},
-	{"hp": 1.70, "bonus": 90, "groups": [["boss", 2, 10.0, 4.0], ["golem", 6, 2.0, 0.0], ["drake", 10, 0.9, 6.0], ["wolf", 10, 0.6, 12.0]]},
-	{"hp": 1.90, "bonus": 100, "groups": [["goblin", 24, 0.5, 0.0], ["wolf", 16, 0.5, 4.0], ["golem", 10, 1.4, 6.0], ["drake", 14, 0.7, 8.0]]},
-	{"hp": 2.20, "bonus": 0, "groups": [["boss", 3, 8.0, 2.0], ["golem", 14, 1.2, 3.0], ["drake", 20, 0.6, 6.0], ["wolf", 20, 0.4, 10.0], ["goblin", 20, 0.4, 14.0]]},
+	{"hp": 1.10, "bonus": 35, "groups": [["goblin", 8, 1.0, 0.0], ["wolf", 8, 0.8, 5.0], ["drake", 3, 1.5, 12.0]]},
+	{"hp": 1.25, "bonus": 40, "groups": [["golem", 3, 3.0, 0.0], ["goblin", 12, 0.9, 3.0]]},
+	{"hp": 1.25, "bonus": 60, "groups": [["boss", 1, 1.0, 6.0], ["goblin", 8, 1.0, 0.0], ["wolf", 6, 0.8, 10.0]]},
+	{"hp": 1.50, "bonus": 50, "groups": [["drake", 10, 1.0, 0.0], ["golem", 4, 2.5, 4.0], ["wolf", 6, 0.8, 10.0]]},
+	{"hp": 1.75, "bonus": 55, "groups": [["goblin", 18, 0.7, 0.0], ["golem", 5, 2.0, 5.0], ["drake", 6, 1.2, 8.0]]},
+	{"hp": 2.10, "bonus": 60, "groups": [["wolf", 16, 0.55, 0.0], ["golem", 6, 2.2, 3.0], ["drake", 8, 1.0, 7.0]]},
+	{"hp": 2.60, "bonus": 70, "groups": [["golem", 10, 1.6, 0.0], ["drake", 12, 0.8, 5.0], ["goblin", 16, 0.6, 8.0]]},
+	{"hp": 3.40, "bonus": 90, "groups": [["boss", 2, 10.0, 4.0], ["golem", 6, 2.0, 0.0], ["drake", 10, 0.9, 6.0], ["wolf", 10, 0.6, 12.0]]},
+	{"hp": 4.30, "bonus": 100, "groups": [["goblin", 24, 0.5, 0.0], ["wolf", 16, 0.5, 4.0], ["golem", 10, 1.4, 6.0], ["drake", 14, 0.7, 8.0]]},
+	{"hp": 5.40, "bonus": 0, "groups": [["boss", 3, 8.0, 2.0], ["golem", 14, 1.2, 3.0], ["drake", 20, 0.6, 6.0], ["wolf", 20, 0.4, 10.0], ["goblin", 20, 0.4, 14.0]]},
 ]
 
 

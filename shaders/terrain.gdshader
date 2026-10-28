@@ -82,6 +82,8 @@ void fragment() {
 	col = mix(belly, col, COLOR.a);
 
 	ALBEDO = col;
+	// spodek a útes jsou ve stínu ostrova: odražené světlo z oblaků (jemná vlastní svítivost, nahoru ne)
+	EMISSION = belly * (1.0 - COLOR.a) * 0.5 * mix(lin(vec3(1.0, 0.95, 0.9)), lin(vec3(0.8, 0.9, 1.0)), depth_f);
 	ROUGHNESS = mix(0.95, 0.55, b.a * COLOR.a * (1.0 - rock_mask));
 	SPECULAR = 0.25;
 }

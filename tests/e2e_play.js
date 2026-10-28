@@ -14,6 +14,7 @@ const ROOT = path.resolve(__dirname, '..', 'docs');
 const OUT = path.resolve(args.out || path.join(__dirname, 'out'));
 const WAVES = parseInt(args.waves || '3', 10);
 const QUALITY = args.low ? '&q=low' : '';
+const VW = parseInt(args.w || '1280', 10), VH = parseInt(args.h || '720', 10);
 fs.mkdirSync(OUT, { recursive: true });
 
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.wasm': 'application/wasm', '.pck': 'application/octet-stream', '.png': 'image/png', '.svg': 'image/svg+xml', '.json': 'application/json' };
@@ -41,12 +42,12 @@ function log(...a) { const s = a.join(' '); console.log(s); report.steps.push(s)
   const browser = await chromium.launch({
     args: ['--use-angle=swiftshader', '--use-gl=angle', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--enable-webgl', '--no-sandbox', '--enable-features=Vulkan'],
   });
-  const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+  const page = await browser.newPage({ viewport: { width: VW, height: VH } });
   page.on('console', m => { const t = m.text(); report.console.push(t); if (m.type() === 'error' || /SCRIPT ERROR|ERROR|WARNING: .*shader/i.test(t)) { report.errors.push(t); console.log('[konzole]', t); } });
   page.on('pageerror', e => { report.errors.push(String(e)); console.log('[pageerror]', String(e)); });
 
-  const st = async () => JSON.parse(await page.evaluate(() => window.TD_state()));
-  const cmd = async o => JSON.parse(await page.evaluate(x => window.TD_cmd(JSON.stringify(x)), o));
+  const st = async () => JSON.parse(await page.evaluate(() => { window.TD_state(); return window.TD_out; }));
+  const cmd = async o => JSON.parse(await page.evaluate(x => { window.TD_cmd(JSON.stringify(x)); return window.TD_out; }, o));
   const box = async () => page.evaluate(() => { const r = document.getElementById('canvas').getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; });
   const toPx = async p => { const b = await box(); return [b.x + p[0] * b.w, b.y + p[1] * b.h]; };
   const clickNorm = async p => { const [x, y] = await toPx(p); await page.mouse.move(x, y, { steps: 4 }); await page.mouse.click(x, y); };

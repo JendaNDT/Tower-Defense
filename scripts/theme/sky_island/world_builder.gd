@@ -67,10 +67,14 @@ static func build(parent: Node3D, map: GameMap, high_quality: bool = true) -> Di
 	out["sun"] = sun
 	out["environment"] = we.environment
 
+	# --- řeka (nejdřív: potřebujeme znát, kde padá z ostrova)
+	var rv: Dictionary = WorldMeshes.build_river(t)
+	var lip: Vector3 = rv["lip"]
+
 	# --- ostrov
 	var island: MeshInstance3D = MeshInstance3D.new()
 	island.name = "Island"
-	island.mesh = WorldMeshes.build_island(t)
+	island.mesh = WorldMeshes.build_island(t, atan2(lip.z, lip.x))
 	var tm: ShaderMaterial = ShaderMaterial.new()
 	tm.shader = SH_TERRAIN
 	tm.set_shader_parameter("field_tex", ImageTexture.create_from_image(t.make_field_image()))
@@ -82,7 +86,6 @@ static func build(parent: Node3D, map: GameMap, high_quality: bool = true) -> Di
 	parent.add_child(island)
 
 	# --- řeka a vodopád
-	var rv: Dictionary = WorldMeshes.build_river(t)
 	var water: MeshInstance3D = MeshInstance3D.new()
 	water.name = "River"
 	water.mesh = rv["mesh"]

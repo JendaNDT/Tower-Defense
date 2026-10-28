@@ -4,6 +4,7 @@ extends Node3D
 ## Uzly se recyklují (pool), aby ve hře nevznikalo zbytečné smetí.
 
 var map: GameMap = null
+var rig = null                    # CameraRig – plovoucí texty drží stálou velikost na obrazovce při zoomu
 
 var _puff_free: Array = []
 var _puffs: Array = []
@@ -125,6 +126,8 @@ func text(pos: Vector3, s: String, color: Color, size: float = 1.0, life: float 
 	node.modulate = color
 	node.pixel_size = 0.024 * size
 	node.position = pos
+	var zf0: float = 1.0 if rig == null else rig.zoom_size / 44.0
+	node.scale = Vector3.ONE * zf0
 	e["age"] = 0.0
 	e["life"] = life
 	e["color"] = color
@@ -261,6 +264,7 @@ func tick(dt: float) -> void:
 			(r["mat"] as ShaderMaterial).set_shader_parameter("alpha", 1.0 - t2 * t2)
 		i -= 1
 	# texty
+	var zf: float = 1.0 if rig == null else rig.zoom_size / 44.0
 	i = _texts.size() - 1
 	while i >= 0:
 		var tx: Dictionary = _texts[i]
@@ -272,7 +276,8 @@ func tick(dt: float) -> void:
 			_text_free.append(tx)
 			_texts.remove_at(i)
 		else:
-			ln.position.y += dt * 1.1
+			ln.position.y += dt * 1.1 * zf
+			ln.scale = Vector3.ONE * zf
 			var col: Color = tx["color"]
 			ln.modulate = Color(col.r, col.g, col.b, col.a * (1.0 - smoothstep(0.55, 1.0, t3)))
 		i -= 1

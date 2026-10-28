@@ -46,6 +46,7 @@ var projectiles: Array = []
 
 var kills: int = 0
 var leaked: int = 0
+var leak_types: Dictionary = {}     # kdo proklouzl: typ -> počet
 var proj_hits: int = 0              # statistika projektilů: zásahy cíle
 var proj_fizzles: int = 0           # cíl zemřel dřív, než projektil dorazil (nevznikla škoda)
 var total_damage: float = 0.0
@@ -113,6 +114,7 @@ func reset() -> void:
 	time = 0.0
 	kills = 0
 	leaked = 0
+	leak_types = {}
 	proj_hits = 0
 	proj_fizzles = 0
 	total_damage = 0.0
@@ -214,6 +216,7 @@ func on_enemy_reached(e: Enemy) -> void:
 	enemies.erase(e)
 	dying.append(e)
 	leaked += 1
+	leak_types[e.type] = int(leak_types.get(e.type, 0)) + 1
 	lives = maxi(lives - e.lives_cost, 0)
 	lives_changed.emit(lives)
 	toast.emit("Nepřítel dorazil k Srdci ostrova! −%d životů" % e.lives_cost, "warn")

@@ -36,7 +36,8 @@ static func _calc_normals(verts: PackedVector3Array, idx: PackedInt32Array) -> P
 
 
 # ------------------------------------------------------------------ ostrov
-static func build_island(t: Terrain) -> ArrayMesh:
+static func build_island(t: Terrain, fall_theta: float = 999.0) -> ArrayMesh:
+	## fall_theta = úhel, kde řeka opouští ostrov – tam se spodek stáhne dovnitř, aby vodopád padal volně před skálou.
 	var rings: int = NR + 1 + NB
 	var verts: PackedVector3Array = PackedVector3Array()
 	var cols: PackedColorArray = PackedColorArray()
@@ -59,6 +60,10 @@ static func build_island(t: Terrain) -> ArrayMesh:
 		var st: float = sin(th)
 		var rim_r: float = t.outline_r(th)
 		var rim_y: float = 0.0
+		var fall_g: float = 0.0
+		if fall_theta < 100.0:
+			var dth: float = absf(angle_difference(th, fall_theta))
+			fall_g = exp(-pow(dth / 0.17, 2.0))
 		for k in range(NR + 1):
 			var u: float = float(k) / float(NR)
 			var r: float = rim_r * u
@@ -73,12 +78,13 @@ static func build_island(t: Terrain) -> ArrayMesh:
 			var tt: float = float(j) / float(NB)
 			var rf: float = 1.0 - pow(tt, 1.25) * 0.985
 			var wob: float = n_rock.get_noise_2d(ct * 1.7 + tt * 3.1, st * 1.7 - tt * 2.3)
-			rf *= 1.0 + 0.16 * wob * sin(PI * minf(tt * 1.15, 1.0))
+			rf *= 1.0 + 0.11 * wob * sin(PI * minf(tt * 1.15, 1.0)) * (1.0 - fall_g)
 			rf += 0.012 * sin(tt * 30.0 + float(i) * 0.37) * (1.0 - tt)
+			rf *= 1.0 - fall_g * 0.2 * minf(tt * 5.0, 1.0)
 			rf = maxf(rf, 0.0)
 			var dy: float = BELLY_DEPTH * pow(tt, 0.85)
 			var spike: float = maxf(n_spike.get_noise_2d(ct * 2.6 + 7.0, st * 2.6 - 3.0), 0.0)
-			dy += spike * spike * 9.0 * pow(tt, 1.4)
+			dy += spike * spike * 9.0 * pow(tt, 1.4) * (1.0 - fall_g)
 			var x2: float = ct * rim_r * rf
 			var z2: float = st * rim_r * rf
 			var y2: float = rim_y - dy
@@ -218,7 +224,7 @@ static func build_waterfall(lip: Vector3, flow: Vector2, half_w: float, fall_len
 	for s in range(segs + 1):
 		var dsc: float = fall_len * float(s) / float(segs)
 		var out: float = 1.4 * sqrt(dsc / 4.9)               # vodorovný dolet padající vody
-		var base: Vector2 = Vector2(lip.x, lip.z) + flow * (0.25 + out)
+		var base: Vector2 = Vector2(lip.x, lip.z) + flow * (0.35 + out)
 		var widen: float = 1.0 + dsc * 0.012
 		var l: Vector2 = base - across * half_w * widen
 		var r: Vector2 = base + across * half_w * widen

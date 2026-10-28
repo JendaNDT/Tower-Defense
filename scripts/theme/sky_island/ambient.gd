@@ -32,6 +32,7 @@ func setup(map: GameMap, high_quality: bool) -> void:
 func _build_cloud_layers() -> void:
 	var tex: ImageTexture = Gfx.noise_tex("cloud", 5, 0.012, 256, 4)
 	var shader: Shader = load("res://shaders/cloud_layer.gdshader")
+	var sea_shader: Shader = load("res://shaders/cloud_sea.gdshader")
 	var specs: Array = [
 		{"y": -36.0, "opaque": 1.0, "cover": 0.40, "soft": 0.30, "tile": 0.011, "scroll": Vector2(0.008, 0.004), "alpha": 1.0},
 		{"y": -20.0, "opaque": 0.0, "cover": 0.50, "soft": 0.22, "tile": 0.016, "scroll": Vector2(0.015, 0.007), "alpha": 0.9},
@@ -44,14 +45,16 @@ func _build_cloud_layers() -> void:
 		mi.mesh = pm
 		mi.position = Vector3(0.0, float(s["y"]), 0.0)
 		var m: ShaderMaterial = ShaderMaterial.new()
-		m.shader = shader
+		var is_sea: bool = float(s["opaque"]) > 0.5
+		m.shader = sea_shader if is_sea else shader
 		m.set_shader_parameter("noise_tex", tex)
 		m.set_shader_parameter("coverage", float(s["cover"]))
 		m.set_shader_parameter("softness", float(s["soft"]))
 		m.set_shader_parameter("tile", float(s["tile"]))
 		m.set_shader_parameter("scroll", s["scroll"])
-		m.set_shader_parameter("opaque_base", float(s["opaque"]))
-		m.set_shader_parameter("max_alpha", float(s["alpha"]))
+		if not is_sea:
+			m.set_shader_parameter("opaque_base", float(s["opaque"]))
+			m.set_shader_parameter("max_alpha", float(s["alpha"]))
 		mi.material_override = m
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		add_child(mi)

@@ -7,7 +7,7 @@ extends Node3D
 const PITCH_DEG: float = 35.264
 const DIST: float = 150.0
 const DEFAULT_YAW: float = 45.0
-const DEFAULT_SIZE: float = 50.0
+const DEFAULT_SIZE: float = 44.0
 const MIN_SIZE: float = 16.0
 const MAX_SIZE: float = 72.0
 const PAN_LIMIT: float = 24.0

@@ -1,7 +1,7 @@
 class_name TestBridge
 extends RefCounted
 ## Testovací rozhraní pro prohlížeč (aktivní jen s ?test=1 nebo na webu):
-## window.TD_state() -> JSON se stavem hry,  window.TD_cmd(JSON) -> provede příkaz a vrátí JSON.
+## window.TD_state() / window.TD_cmd(JSON) provedou dotaz/příkaz; výsledek (JSON) je pak v window.TD_out.
 ## Slouží automatickým testům (Playwright); hráč ho nepotřebuje.
 
 var main = null
@@ -22,15 +22,17 @@ func setup(m) -> void:
 	_win.TD_ready = true
 
 
-func _js_state(_args) -> String:
-	return JSON.stringify(state())
+## Callbacky z JavaScriptu nevrací hodnotu, proto se výsledek ukládá do window.TD_out.
+func _js_state(_args) -> void:
+	_win.TD_out = JSON.stringify(state())
 
 
-func _js_cmd(args) -> String:
+func _js_cmd(args) -> void:
 	var parsed = JSON.parse_string(str(args[0]))
 	if typeof(parsed) != TYPE_DICTIONARY:
-		return JSON.stringify({"ok": false, "error": "bad json"})
-	return JSON.stringify(cmd(parsed))
+		_win.TD_out = JSON.stringify({"ok": false, "error": "bad json"})
+		return
+	_win.TD_out = JSON.stringify(cmd(parsed))
 
 
 func state() -> Dictionary:
@@ -44,6 +46,9 @@ func state() -> Dictionary:
 	s["camera"] = {"yaw": main.rig.yaw_deg, "zoom": main.rig.zoom_size}
 	s["modal"] = main.hud.is_modal_open()
 	s["fly_alt"] = g.fly_altitude
+	s["draw_calls"] = RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME)
+	s["objects"] = RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_OBJECTS_IN_FRAME)
+	s["primitives"] = RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_PRIMITIVES_IN_FRAME)
 	s["proj_hits"] = g.proj_hits
 	s["proj_fizzles"] = g.proj_fizzles
 	return s
@@ -92,6 +97,26 @@ func cmd(req: Dictionary) -> Dictionary:
 		"pause":
 			main._set_paused(bool(req.get("v", true)))
 			return {"ok": true}
+		"simbot":
+			# celá hra odehraná botem přímo v exportované verzi (stejný kód jako headless test)
+			var rep: Dictionary = SimTest._bot_game(g, str(req.get("pol", "vysoka")))
+			g.reset()
+			return {"ok": true, "report": rep}
+		"lives":
+			g.lives = int(req.get("v", 1))
+			g.lives_changed.emit(g.lives)
+			return {"ok": true}
+		"win":
+			# vynutí dokončení poslední vlny (pro kontrolu obrazovky výhry)
+			g.waves_started = Cfg.TOTAL_WAVES
+			g._wave_done[Cfg.TOTAL_WAVES - 1] = false
+			g._wave_spawn_left[Cfg.TOTAL_WAVES - 1] = 0
+			g._wave_alive[Cfg.TOTAL_WAVES - 1] = 0
+			g._check_wave_done(Cfg.TOTAL_WAVES - 1)
+			return {"ok": true, "state": g.state}
+		"freeze":
+			g.paused = bool(req.get("v", true))
+			return {"ok": true}
 		"gold":
 			g.gold += int(req.get("v", 0))
 			g.gold_changed.emit(g.gold)
@@ -122,7 +147,7 @@ func cmd(req: Dictionary) -> Dictionary:
 			var tw3 = _tower_by_id(int(req["id"]))
 			if tw3 == null:
 				return {"ok": false}
-			return {"ok": true, "p": _screen(tw3.position + Vector3(0, 1.0, 0))}
+			return {"ok": true, "p": _screen(tw3.position + Vector3(0, 0.15, 0))}
 		"cells":
 			# volná pole u cesty seřazená podle polohy podél trasy (pro volbu míst ve stavebních testech)
 			var out: Array = []
@@ -162,6 +187,30 @@ func cmd(req: Dictionary) -> Dictionary:
 				g._spawn_queue.append({"at": g.time + float(req.get("delay", 0.0)) + float(i) * iv, "type": typ, "wave": Game.TEST_WAVE, "hp": float(req.get("hp", 1.0))})
 			g._spawn_queue.sort_custom(func(a, b): return float(a["at"]) < float(b["at"]))
 			return {"ok": true, "queued": n}
+		"lineup":
+			# pro snímky: postaví nepřátele za sebe na trase (od vzdálenosti s0, rozestup ds)
+			var types: Array = req.get("types", ["goblin", "wolf", "golem", "drake", "boss"])
+			var s0: float = float(req.get("s0", 8.0))
+			var ds: float = float(req.get("ds", 3.2))
+			var out2: Array = []
+			for i in range(types.size()):
+				g._spawn_enemy({"at": 0.0, "type": str(types[i]), "wave": Game.TEST_WAVE, "hp": 1.0})
+				var en = g.enemies[g.enemies.size() - 1]
+				en.s = s0 + float(i) * ds
+				en.update(0.0)
+				out2.append([en.position.x, en.position.y, en.position.z])
+			return {"ok": true, "pos": out2}
+		"step":
+			# posune simulaci o t sekund (kroky po 1/30 s), nezávisle na FPS vykreslování
+			var left: float = float(req.get("t", 1.0))
+			var was_paused: bool = g.paused
+			g.paused = false
+			while left > 0.0:
+				var h: float = minf(left, 1.0 / 30.0)
+				g.tick(h)
+				left -= h
+			g.paused = was_paused
+			return {"ok": true}
 		"max_dt":
 			g.max_frame_dt = float(req.get("v", 0.1))
 			return {"ok": true}

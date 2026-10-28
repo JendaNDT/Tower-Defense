@@ -30,6 +30,11 @@ func _parse_args() -> void:
 				var kv: PackedStringArray = part.split("=")
 				if kv.size() >= 1 and kv[0] != "":
 					args[kv[0]] = kv[1] if kv.size() > 1 else "1"
+	if OS.has_feature("web") and not args.has("q"):
+		# mobily a slabší stroje: automaticky nižší kvalita (jde přepnout tlačítkem Kvalita)
+		var weak = JavaScriptBridge.eval("(/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent) || (navigator.hardwareConcurrency || 4) <= 2) ? 1 : 0")
+		if int(weak) == 1:
+			args["q"] = "low"
 	for a in OS.get_cmdline_user_args():
 		var s: String = str(a)
 		if s.begins_with("--"):
@@ -72,6 +77,7 @@ func _build_everything() -> void:
 	rig = CameraRig.new()
 	add_child(rig)
 	game.camera_rig = rig
+	fx.rig = rig
 
 	overlays = Overlays.new()
 	world.add_child(overlays)
