@@ -386,7 +386,7 @@ func _on_cam(action: String) -> void:
 
 ## Text přehledu výkonu (F3); obnovuje se čtyřikrát za vteřinu, aby nezatěžoval.
 func _update_stats(delta: float) -> void:
-	_stats_ft = lerpf(_stats_ft, delta, 0.1)
+	_stats_ft = delta if _stats_ft <= 0.0 else lerpf(_stats_ft, delta, 0.1)
 	_stats_t -= delta
 	if _stats_t > 0.0:
 		return

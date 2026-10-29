@@ -188,8 +188,9 @@ function check(name, ok, detail) { checks.push({ name, ok: !!ok, detail }); cons
   await cmd({ op: 'step', t: 0.1 });
   await cam(Lb.pos[0], 9);
   let ringsMax = 0;
-  for (let i = 0; i < 6; i++) { await cmd({ op: 'step', t: 0.2 }); const x = await cmd({ op: 'gfx_info' }); ringsMax = Math.max(ringsMax, x.rings); }
-  check('most: kroky na mostě vytvářejí kruhy na hladině', ringsMax > 0, ringsMax);
+  for (let i = 0; i < 4; i++) { await cmd({ op: 'step', t: 0.2 }); const x = await cmd({ op: 'gfx_info' }); ringsMax = Math.max(ringsMax, x.rings); }
+  await cmd({ op: 'step', t: 0.1 });                      // druhé kruhy (po 0,6 s) jsou na snímku 0,4 s staré
+  check('most: kroky na mostě vytvářejí kruhy na hladině (po obou stranách)', ringsMax >= 2, ringsMax);
   await shot('10_most');
 
   // ------------------------------------------------------------ 11) přehled výkonu F3
@@ -207,6 +208,7 @@ function check(name, ok, detail) { checks.push({ name, ok: !!ok, detail }); cons
   check('F3: druhý stisk přehled skryje', !gi.stats_visible);
 
   // ------------------------------------------------------------ 12) nízká kvalita vypíná drahé efekty
+  await cmd({ op: 'step', t: 13 });                       // doznění spálenin z předchozích zkoušek
   const q = await cmd({ op: 'quality', v: false });
   check('kvalita: přepnutí na nízkou se projeví i v efektech', q.quality === false, q);
   await cmd({ op: 'fx_test', kind: 'scorch', x: sp[0], y: sp[1], z: sp[2], r: 2 });
