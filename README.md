@@ -3,7 +3,7 @@
 Hra pro webový prohlížeč, postavená na **Godotu 4.7.2** (aktuální stabilní verze, vykreslování *Compatibility* = WebGL 2).
 Veškerá grafika (terén, stromy, voda, věže, nepřátelé, efekty, rozhraní, ikony) i **zvuk a hudba** jsou vytvořené **přímo v kódu** – ve hře nejsou žádné obrázky, modely ani zvukové soubory.
 
-**Hraj online: https://jenda.cool/tower-defense/** (nasazeno 29. 10. 2026 jako verze `1.0.0-web.1`; nasazení a postup jsou popsané v repozitáři webu `JendaNDT/JendaWeb`, soubor `TOWER_DEFENSE_RELEASE.md`).
+**Hraj online: https://jenda.cool/tower-defense/** (nasazeno 29. 10. 2026; aktuální je verze `1.1.0-web.1` s velkými mapami a oběma prostředími, předtím `1.0.0-web.1`; nasazení a postup jsou popsané v repozitáři webu `JendaNDT/JendaWeb`, soubor `TOWER_DEFENSE_RELEASE.md`).
 
 Hra má **dvě prostředí** (v menu volba *Prostředí*): **Ostrov v oblacích** (původní) a **Vesmírná stanice** (sci-fi). Prostředí mění svět, věže, nepřátele, efekty, texty i zvuk a hudbu; **pravidla, čísla a vyvážení jsou ve všech stejné**.
 
