@@ -31,7 +31,7 @@ Hra je už sestavená ve složce `docs/`. Prohlížeč ji ale nespustí dvojklik
 
 Otevře se prohlížeč s hrou (adresa `http://localhost:8765/index.html`). Ukončíš ji zavřením okna terminálu.
 
-**Záložní verze pro starší Godot.** Kdyby hra v tvém prohlížeči nešla nebo sekala, zkus build z předchozího Godotu **4.6.3** (stejná hra, stejný kód): dvojklik na `spustit_godot-4.6.bat` (Windows) / `spustit_godot-4.6.command` (macOS) / `./spustit_godot-4.6.sh` (Linux), případně `python3 spustit.py docs-4.6`. Ověřeno: pod 4.6.3 projekt projde importem i exportem a na tomto buildu prošly i kontrola mechanik (21 kontrol), test menu a nových funkcí v prohlížeči (44) a zvukový test (35), vše bez chyb v konzoli.
+**Záložní verze pro starší Godot.** Kdyby hra v tvém prohlížeči nešla nebo sekala, zkus build z předchozího Godotu **4.6.3** (stejná hra, stejný kód): dvojklik na `spustit_godot-4.6.bat` (Windows) / `spustit_godot-4.6.command` (macOS) / `./spustit_godot-4.6.sh` (Linux), případně `python3 spustit.py docs-4.6`. Ověřeno: pod 4.6.3 projekt projde importem i exportem a na tomto buildu prošly i kontrola mechanik (21 kontrol), test menu a nových funkcí v prohlížeči (44) a zvukový test (35), vše bez chyb v konzoli. Po grafických úpravách jsem na 4.6.3 znovu pustil kontrolu mechanik (21 / 21) a test grafiky a animací v prohlížeči (41 / 41, 0 chyb v konzoli); ostatní testy z této řady jsem po těch úpravách pustil jen na 4.7.2.
 Funguje v aktuálním Chrome / Edge / Firefox. První načtení stahuje ~40 MB (engine), pak už je to rychlé.
 
 ## Ovládání
