@@ -1,30 +1,33 @@
 extends SceneTree
 ## Vygeneruje všechny zvuky do WAV souborů a vypíše jejich parametry (délka, špička, RMS, NaN, smyčka).
-## Spuštění: godot --headless --path . -s scripts/tools/audio_dump.gd -- cesta/k/výstupu
+## Spuštění: godot --headless --path . -s scripts/tools/audio_dump.gd -- cesta/k/výstupu [sky_island|scifi]
 
 
 func _init() -> void:
 	var out_dir: String = "/tmp/td_audio"
+	var th: String = "sky_island"
 	var ua: PackedStringArray = OS.get_cmdline_user_args()
 	if ua.size() > 0:
 		out_dir = ua[0]
+	if ua.size() > 1:
+		th = ua[1]
 	DirAccess.make_dir_recursive_absolute(out_dir)
 	var report: Dictionary = {}
 	var t0: int = Time.get_ticks_msec()
 	for n in Synth.SFX_NAMES:
-		var w: AudioStreamWAV = Synth.make_sfx(str(n))
+		var w: AudioStreamWAV = Synth.make_sfx(str(n), th)
 		report[str(n)] = _info(w)
 		w.save_to_wav("%s/%s.wav" % [out_dir, str(n)])
 	var t1: int = Time.get_ticks_msec()
 	for k in ["wind", "water"]:
-		var wa: AudioStreamWAV = Synth.make_ambient(k)
+		var wa: AudioStreamWAV = Synth.make_ambient(k, th)
 		report["amb_" + k] = _info(wa)
 		wa.save_to_wav("%s/amb_%s.wav" % [out_dir, k])
 	var t2: int = Time.get_ticks_msec()
 	var mt: Dictionary = {}
 	for k2 in ["calm", "battle"]:
 		var s0: int = Time.get_ticks_msec()
-		var wm: AudioStreamWAV = Synth.render_music_sync(k2)
+		var wm: AudioStreamWAV = Synth.render_music_sync(k2, th)
 		mt[k2] = Time.get_ticks_msec() - s0
 		report["music_" + k2] = _info(wm)
 		wm.save_to_wav("%s/music_%s.wav" % [out_dir, k2])

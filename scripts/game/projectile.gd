@@ -126,9 +126,9 @@ func update(dt: float) -> void:
 		_trail = 0.0
 		match kind:
 			"ball":
-				game.fx.puff(position, Color(0.40, 0.38, 0.36), 0.3, 0.9, 0.7, 0.3, 0.0, 0.5)
+				game.fx.puff(position, Themes.pal("ball_trail"), 0.3, 0.9, 0.7, 0.3, 0.0, 0.5)
 			"orb":
-				game.fx.puff(position, Color(0.72, 0.5, 1.0), 0.16, 0.03, 0.32, 0.0, 2.2, 0.6)
+				game.fx.puff(position, Themes.pal("orb_trail"), 0.16, 0.03, 0.32, 0.0, 2.2, 0.6)
 
 
 func _finish() -> void:
@@ -144,10 +144,10 @@ func _on_impact() -> void:
 				game.proj_hits += 1
 				game.sfx("arrow_hit", hit_pos)
 				target.take_damage(damage, "phys", tower, pierce, crit)
-				game.fx.hit_spark(hit_pos, Color(1.0, 0.92, 0.65))
+				game.fx.hit_spark(hit_pos, Themes.pal("arrow_hit"))
 			else:
 				game.proj_fizzles += 1
-				game.fx.puff(Vector3(hit_pos.x, game.map.height_at(hit_pos.x, hit_pos.z) + 0.1, hit_pos.z), Color(0.7, 0.62, 0.5), 0.2, 0.6, 0.4, 0.2, 0.0, 0.5)
+				game.fx.puff(Vector3(hit_pos.x, game.map.height_at(hit_pos.x, hit_pos.z) + 0.1, hit_pos.z), Themes.pal("arrow_miss"), 0.2, 0.6, 0.4, 0.2, 0.0, 0.5)
 		"ball":
 			var gy: float = game.map.height_at(hit_pos.x, hit_pos.z)
 			game.fx.explosion(Vector3(hit_pos.x, gy + 0.2, hit_pos.z), splash)
@@ -176,11 +176,11 @@ func _on_impact() -> void:
 				game.proj_hits += 1
 				game.sfx("magic_hit", hit_pos)
 				target.take_damage(damage, "magic", tower)
-				game.fx.hit_spark(hit_pos, Color(0.8, 0.6, 1.0))
+				game.fx.hit_spark(hit_pos, Themes.pal("magic_hit"))
 				_do_chain(target, hit_pos)
 			else:
 				game.proj_fizzles += 1
-				game.fx.hit_spark(hit_pos, Color(0.8, 0.6, 1.0))
+				game.fx.hit_spark(hit_pos, Themes.pal("magic_hit"))
 	_finish()
 
 
@@ -204,9 +204,9 @@ func _do_chain(first, from_pos: Vector3) -> void:
 			break
 		dmg *= chain_falloff
 		var np: Vector3 = best.aim_pos()
-		game.fx.beam([last_pos, np], Color(0.75, 0.6, 1.0), 0.2, 0.07)
+		game.fx.beam([last_pos, np], Themes.pal("chain_beam"), 0.2, 0.07)
 		game.sfx("zap", np)
-		game.fx.hit_spark(np, Color(0.8, 0.65, 1.0))
+		game.fx.hit_spark(np, Themes.pal("chain_hit"))
 		best.take_damage(dmg, "magic", tower)
 		hit.append(best)
 		last_pos = np

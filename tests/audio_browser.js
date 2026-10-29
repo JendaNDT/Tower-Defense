@@ -5,6 +5,7 @@
 // přidají efekty; tlačítka reproduktor/nota ztlumí příslušnou sběrnici (RMS padne k nule); klidná -> bojová hudba;
 // v konzoli nejsou chyby.
 const { chromium } = require('playwright');
+const TD_THEME_Q = process.env.TD_THEME ? '&theme=' + process.env.TD_THEME : '';   // TD_THEME=scifi => spustí test v daném prostředí
 const http = require('http'); const fs = require('fs'); const path = require('path');
 const args = Object.fromEntries(process.argv.slice(2).map(a => { const [k, v] = a.replace(/^--/, '').split('='); return [k, v === undefined ? true : v]; }));
 const ROOT = process.env.DOCS_DIR ? path.resolve(process.env.DOCS_DIR) : path.resolve(__dirname, '..', 'docs');
@@ -99,7 +100,7 @@ const HOOK = () => {
   const waitFor = async (fn, ms, label) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { const v = await fn(); if (v) return v; await sleep(500); } throw new Error('Časový limit: ' + label); };
 
   const t0 = Date.now();
-  await page.goto('http://localhost:8125/index.html?test=1' + (args.low ? '&q=low' : ''));
+  await page.goto('http://localhost:8125/index.html?test=1' + (args.low ? '&q=low' : '') + TD_THEME_Q);
   await waitFor(() => page.evaluate(() => window.TD_ready === true), 300000, 'načtení hry');
   console.log('Hra načtena za', ((Date.now() - t0) / 1000).toFixed(1), 's');
 

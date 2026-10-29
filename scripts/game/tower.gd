@@ -65,8 +65,8 @@ func upgrade() -> void:
 	_build_visual("upgrade")
 	# efekt vylepšení
 	var p: Vector3 = position
-	game.fx.ring(Vector3(p.x, p.y + 0.3, p.z), Color(1.0, 0.85, 0.4), 2.6, 0.55, 0.16, 0.25, 1.0)
-	game.fx.burst_puffs(p + Vector3(0.0, 1.0, 0.0), Color(1.0, 0.9, 0.5), 10, 1.4, 0.5, 0.7, 2.0)
+	game.fx.ring(Vector3(p.x, p.y + 0.3, p.z), Themes.pal("upgrade_ring"), 2.6, 0.55, 0.16, 0.25, 1.0)
+	game.fx.burst_puffs(p + Vector3(0.0, 1.0, 0.0), Themes.pal("upgrade_puff"), 10, 1.4, 0.5, 0.7, 2.0)
 	game.fx.text(p + Vector3(0.0, 3.4, 0.0), "Úroveň %d" % level, Color(1.0, 0.9, 0.4), 1.5, 1.2)
 
 
@@ -116,7 +116,7 @@ func _update_pending(dt: float) -> void:
 					e.apply_freeze(float(pd["freeze"]))
 					game.sfx("freeze_hit", e.aim_pos())
 				e.take_damage(float(pd["damage"]), "magic", self)
-				game.fx.hit_spark(e.aim_pos(), Color(0.7, 0.95, 1.0))
+				game.fx.hit_spark(e.aim_pos(), Themes.pal("frost_hit"))
 			_pending.remove_at(i)
 		i -= 1
 
@@ -146,11 +146,11 @@ func _fire(targets: Array, st: Dictionary) -> void:
 	var fdir: Vector3 = (targets[0].aim_pos() - from).normalized()
 	match type:
 		"archer":
-			game.fx.muzzle_flash(from, fdir, Color(1.0, 0.9, 0.6), 0.22, 2)
+			game.fx.muzzle_flash(from, fdir, Themes.pal("muzzle_archer"), 0.22, 2)
 		"cannon":
-			game.fx.muzzle_flash(from, fdir, Color(1.0, 0.6, 0.2), 0.9, 5)
+			game.fx.muzzle_flash(from, fdir, Themes.pal("muzzle_cannon"), 0.9, 5)
 		"mage":
-			game.fx.muzzle_flash(from, fdir, Color(0.75, 0.5, 1.0), 0.45, 3)
+			game.fx.muzzle_flash(from, fdir, Themes.pal("muzzle_mage"), 0.45, 3)
 	match type:
 		"archer":
 			var n: int = int(st["shots"])
@@ -159,7 +159,7 @@ func _fire(targets: Array, st: Dictionary) -> void:
 				var crit: bool = _rng.randf() < float(st["crit"])
 				var dmg: float = float(st["damage"]) * (2.0 if crit else 1.0)
 				game.spawn_projectile("arrow", self, tgt, {"damage": dmg, "pierce": float(st["pierce"]), "crit": crit, "delay": 0.09 * float(i)})
-			game.fx.puff(from, Color(1, 1, 1), 0.1, 0.3, 0.2, 0.0, 0.0, 0.5)
+			game.fx.puff(from, Themes.pal("archer_puff"), 0.1, 0.3, 0.2, 0.0, 0.0, 0.5)
 			game.sfx("archer_shot", from)
 		"cannon":
 			game.spawn_projectile("ball", self, targets[0], {
@@ -167,15 +167,15 @@ func _fire(targets: Array, st: Dictionary) -> void:
 				"burn": float(st["burn"]), "burn_time": float(st["burn_time"]), "stun": float(st["stun"]),
 			})
 			game.sfx("cannon_shot", from)
-			game.fx.burst_puffs(from, Color(0.9, 0.9, 0.85), 4, 0.8, 0.6, 0.7, 0.0)
-			game.fx.burst_puffs(from, Color(1.0, 0.7, 0.25), 3, 0.5, 0.45, 0.25, 2.0)
+			game.fx.burst_puffs(from, Themes.pal("cannon_smoke"), 4, 0.8, 0.6, 0.7, 0.0)
+			game.fx.burst_puffs(from, Themes.pal("cannon_fire"), 3, 0.5, 0.45, 0.25, 2.0)
 		"mage":
 			game.spawn_projectile("orb", self, targets[0], {
 				"damage": float(st["damage"]), "chain": int(st["chain"]),
 				"chain_falloff": float(st["chain_falloff"]), "chain_range": float(st["chain_range"]),
 			})
 			game.sfx("mage_cast", from)
-			game.fx.burst_puffs(from, Color(0.75, 0.55, 1.0), 4, 0.5, 0.3, 0.3, 2.5)
+			game.fx.burst_puffs(from, Themes.pal("mage_puff"), 4, 0.5, 0.3, 0.3, 2.5)
 		_:
 			_pulse_count += 1
 			var freeze: float = 0.0
@@ -185,9 +185,9 @@ func _fire(targets: Array, st: Dictionary) -> void:
 			var origin: Vector3 = position
 			game.sfx("frost_pulse", origin + Vector3(0.0, 1.0, 0.0))
 			var rng: float = float(st["range"])
-			var col: Color = Color(0.55, 0.88, 1.0) if freeze <= 0.0 else Color(0.85, 0.97, 1.0)
+			var col: Color = Themes.pal("frost_ring") if freeze <= 0.0 else Themes.pal("frost_ring_freeze")
 			game.fx.ring(Vector3(origin.x, origin.y + 0.35, origin.z), col, rng, rng / PULSE_SPEED + 0.1, 0.12, 0.18, 1.0)
-			game.fx.burst_puffs(origin + Vector3(0.0, 1.0, 0.0), Color(0.8, 0.95, 1.0), 6, 1.0, 0.45, 0.6, 1.5)
+			game.fx.burst_puffs(origin + Vector3(0.0, 1.0, 0.0), Themes.pal("frost_puff"), 6, 1.0, 0.45, 0.6, 1.5)
 			for e in game.enemies:
 				if not is_valid_target(e):
 					continue

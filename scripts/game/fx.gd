@@ -273,7 +273,7 @@ func dust_ring(pos: Vector3, color: Color, count: int, radius: float, size: floa
 
 ## Záblesk a jiskry u ústí (dir = směr výstřelu).
 func muzzle_flash(pos: Vector3, dir: Vector3, color: Color, size: float, sparks: int = 3) -> void:
-	puff(pos, Color(1.0, 0.95, 0.8), size * 0.4, size, 0.09, 0.0, 3.0, 0.95)
+	puff(pos, Themes.pal("muzzle_core"), size * 0.4, size, 0.09, 0.0, 3.0, 0.95)
 	puff(pos + dir * size * 0.35, color, size * 0.3, size * 1.2, 0.12, 0.0, 2.2, 0.8)
 	var n: int = sparks if Gfx.quality_high else 0
 	for i in range(n):
@@ -289,16 +289,16 @@ func ground_y(x: float, z: float) -> float:
 
 func explosion(pos: Vector3, radius: float) -> void:
 	var gy: float = ground_y(pos.x, pos.z)
-	burst_puffs(pos + Vector3(0, 0.3, 0), Color(1.0, 0.65, 0.2), 8, radius * 0.9, radius * 0.9, 0.5, 1.4)
-	burst_puffs(pos + Vector3(0, 0.4, 0), Color(0.35, 0.33, 0.32), 7, radius * 0.9, radius * 1.2, 0.9, 0.0)
-	ring(Vector3(pos.x, gy + 0.2, pos.z), Color(1.0, 0.7, 0.3), radius, 0.4, 0.2, 0.25, 0.8)
-	debris(pos, Color(0.45, 0.36, 0.26), 8, 4.0, 0.14, 1.0)
+	burst_puffs(pos + Vector3(0, 0.3, 0), Themes.pal("explosion_fire"), 8, radius * 0.9, radius * 0.9, 0.5, 1.4)
+	burst_puffs(pos + Vector3(0, 0.4, 0), Themes.pal("explosion_smoke"), 7, radius * 0.9, radius * 1.2, 0.9, 0.0)
+	ring(Vector3(pos.x, gy + 0.2, pos.z), Themes.pal("explosion_ring"), radius, 0.4, 0.2, 0.25, 0.8)
+	debris(pos, Themes.pal("explosion_debris"), 8, 4.0, 0.14, 1.0)
 
 
 func death_burst(pos: Vector3, color: Color, big: bool = false) -> void:
 	var n: int = 14 if big else 6
 	debris(pos + Vector3(0, 0.4, 0), color, n, 4.0 if big else 3.0, 0.2 if big else 0.12, 1.1)
-	burst_puffs(pos + Vector3(0, 0.4, 0), Color(0.95, 0.95, 0.9), 5 if not big else 10, 1.0 if not big else 2.0, 0.6 if not big else 1.2, 0.5, 0.2)
+	burst_puffs(pos + Vector3(0, 0.4, 0), Themes.pal("death_puff"), 5 if not big else 10, 1.0 if not big else 2.0, 0.6 if not big else 1.2, 0.5, 0.2)
 
 
 func hit_spark(pos: Vector3, color: Color) -> void:

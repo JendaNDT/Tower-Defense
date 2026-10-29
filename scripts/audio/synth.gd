@@ -143,7 +143,11 @@ const SFX_NAMES: Array = [
 ]
 
 
-static func make_sfx(sfx_name: String) -> AudioStreamWAV:
+static func make_sfx(sfx_name: String, theme: String = "sky_island") -> AudioStreamWAV:
+	if theme == "scifi":
+		var sw: AudioStreamWAV = SynthSciFi.sfx(sfx_name)
+		if sw != null:
+			return sw
 	var R: int = RATE
 	rng().seed = hash(sfx_name)
 	var b: PackedFloat32Array
@@ -399,7 +403,9 @@ static func _make_loop(raw: PackedFloat32Array, length: int, xfade: int) -> Pack
 const AMBIENT_REPEATS: int = 3
 
 
-static func make_ambient(kind: String) -> AudioStreamWAV:
+static func make_ambient(kind: String, theme: String = "sky_island") -> AudioStreamWAV:
+	if theme == "scifi":
+		return SynthSciFi.ambient(kind)
 	var R: int = MRATE
 	rng().seed = hash(kind)
 	var len_s: float = 8.0
@@ -465,7 +471,9 @@ static func _scale_midi(deg: int) -> float:
 
 ## Událost: [nástroj, začátek (v dobách), délka (v dobách), midi, hlasitost].
 ## Vrací {bpm, beats, events}.
-static func music_track(kind: String) -> Dictionary:
+static func music_track(kind: String, theme: String = "sky_island") -> Dictionary:
+	if theme == "scifi":
+		return SynthSciFi.music_track(kind)
 	var battle: bool = kind == "battle"
 	var bpm: float = 124.0 if battle else 88.0
 	var bars: int = 16
@@ -570,6 +578,8 @@ static func _chord_degrees(root_midi: int) -> Array:
 ## Vykreslí část noty (vzorky k0..k1) do bufferu (zápis se zalamuje přes konec = bezešvá smyčka).
 ## Vrací počet vzorků noty celkem (včetně dozvuku), ať volající ví, kdy skončit.
 static func note_length(instr: String, dur: float, rate: int) -> int:
+	if instr.begins_with("s_"):
+		return SynthSciFi.note_length(instr, dur, rate)
 	var tail: float = 0.0
 	match instr:
 		"pad":
@@ -598,6 +608,9 @@ static func note_length(instr: String, dur: float, rate: int) -> int:
 
 static func render_note(b: PackedFloat32Array, rate: int, instr: String, t0: float, dur: float, freq: float,
 		vel: float, k0: int, k1: int) -> void:
+	if instr.begins_with("s_"):
+		SynthSciFi.render_note(b, rate, instr, t0, dur, freq, vel, k0, k1)
+		return
 	var size: int = b.size()
 	var i0: int = int(t0 * float(rate))
 	var w: float = TAU * freq
@@ -644,8 +657,8 @@ static func render_note(b: PackedFloat32Array, rate: int, instr: String, t0: flo
 
 
 ## Celou skladbu vykreslí synchronně (pro nástroje/testy; hra ji skládá po částech na pozadí).
-static func render_music_sync(kind: String) -> AudioStreamWAV:
-	var tr: Dictionary = music_track(kind)
+static func render_music_sync(kind: String, theme: String = "sky_island") -> AudioStreamWAV:
+	var tr: Dictionary = music_track(kind, theme)
 	var bpm: float = float(tr["bpm"])
 	var spb: float = 60.0 / bpm
 	var total: int = int(float(tr["beats"]) * spb * float(MRATE))

@@ -1,6 +1,6 @@
 class_name GameSettings
 extends RefCounted
-## Volby hráče (režim, obtížnost, ostrov) a rekordy. Statické proměnné přežijí i znovunačtení scény
+## Volby hráče (režim, obtížnost, ostrov, prostředí) a rekordy. Statické proměnné přežijí i znovunačtení scény
 ## (výběr jiného ostrova = nová scéna); na disk (v prohlížeči do IndexedDB) se ukládá do user://nastaveni.cfg.
 
 static var path: String = "user://nastaveni.cfg"          # (pro testy jde přepsat)
@@ -8,6 +8,7 @@ static var path: String = "user://nastaveni.cfg"          # (pro testy jde přep
 static var difficulty: String = "normal"       # easy | normal | hard
 static var mode: String = "campaign"           # campaign | endless
 static var island: int = 0                     # index v Islands.LIST (Islands.RANDOM_ID = náhodný ostrov)
+static var theme: String = "sky_island"        # prostředí hry (viz Themes.LIST)
 static var random_seed: int = 0                # seed právě zvoleného náhodného ostrova
 static var autostart: bool = false             # po znovunačtení scény rovnou začít hrát (bez úvodní obrazovky)
 static var loaded: bool = false
@@ -30,6 +31,8 @@ static func load_all() -> void:
 	var m: String = str(cf.get_value("hra", "rezim", "campaign"))
 	mode = m if (m == "campaign" or m == "endless") else "campaign"
 	island = clampi(int(cf.get_value("hra", "ostrov", 0)), 0, Islands.RANDOM_ID)
+	var th: String = str(cf.get_value("hra", "prostredi", Themes.DEFAULT_ID))
+	theme = th if Themes.is_valid(th) else Themes.DEFAULT_ID
 	records = {}
 	if cf.has_section("rekordy"):
 		for k in cf.get_section_keys("rekordy"):
@@ -43,6 +46,7 @@ static func save_all() -> void:
 	cf.set_value("hra", "obtiznost", difficulty)
 	cf.set_value("hra", "rezim", mode)
 	cf.set_value("hra", "ostrov", island)
+	cf.set_value("hra", "prostredi", theme)
 	for k in records.keys():
 		cf.set_value("rekordy", k, records[k])
 	cf.save(path)
@@ -58,6 +62,8 @@ static func apply_args(args: Dictionary) -> void:
 		island = clampi(int(args["island"]), 0, Islands.RANDOM_ID)
 	if args.has("seed"):
 		random_seed = int(args["seed"])
+	if args.has("theme") and Themes.is_valid(str(args["theme"])):
+		theme = str(args["theme"])
 
 
 static func is_endless() -> bool:

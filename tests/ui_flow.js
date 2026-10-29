@@ -1,5 +1,6 @@
 // Kontrola ovládání a obrazovek: kamera (klávesy/myš), nepovolená stavba, prodej, cíl, pauza, rychlost, prohra+restart, výhra.
 const { chromium } = require('playwright');
+const TD_THEME_Q = process.env.TD_THEME ? '&theme=' + process.env.TD_THEME : '';   // TD_THEME=scifi => spustí test v daném prostředí
 const http = require('http'); const fs = require('fs'); const path = require('path');
 const args = Object.fromEntries(process.argv.slice(2).map(a => { const [k, v] = a.replace(/^--/, '').split('='); return [k, v === undefined ? true : v]; }));
 const ROOT = process.env.DOCS_DIR ? path.resolve(process.env.DOCS_DIR) : path.resolve(__dirname, '..', 'docs');
@@ -22,7 +23,7 @@ function check(name, ok, info) { results.push({ name, ok: !!ok, info }); console
   const toPx = async p => { const b = await box(); return [b.x + p[0] * b.w, b.y + p[1] * b.h]; };
   const clickNorm = async p => { const [x, y] = await toPx(p); await page.mouse.move(x, y, { steps: 3 }); await page.mouse.click(x, y); };
   const shot = async n => { await page.screenshot({ path: path.join(OUT, n + '.png'), timeout: 240000 }); console.log('snímek', n); };
-  await page.goto('http://localhost:8129/index.html?test=1&skipintro=1&q=low');
+  await page.goto('http://localhost:8129/index.html?test=1&skipintro=1&q=low' + TD_THEME_Q);
   await page.waitForFunction(() => window.TD_ready === true, null, { timeout: 240000 });
   await sleep(1500);
   let s = await st();

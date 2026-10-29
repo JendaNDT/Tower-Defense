@@ -48,7 +48,9 @@ static func _radius(key: String) -> float:
 	return 0.8
 
 
-static func build(map: GameMap, density: float = 1.0) -> Node3D:
+static func build(map: GameMap, density: float = 1.0, props: PropSet = null) -> Node3D:
+	if props == null:
+		props = SkyProps.new()
 	var root: Node3D = Node3D.new()
 	root.name = "Decor"
 	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
@@ -193,7 +195,7 @@ static func build(map: GameMap, density: float = 1.0) -> Node3D:
 		var mesh_key: String = str(key3)
 		if mesh_key.begins_with("pebble:"):
 			mesh_key = mesh_key.substr(7)
-		var mesh: ArrayMesh = Props.get_mesh(mesh_key)
+		var mesh: ArrayMesh = props.get_mesh(mesh_key)
 		var mm: MultiMesh = MultiMesh.new()
 		mm.transform_format = MultiMesh.TRANSFORM_3D
 		mm.mesh = mesh
@@ -203,14 +205,8 @@ static func build(map: GameMap, density: float = 1.0) -> Node3D:
 		var mmi: MultiMeshInstance3D = MultiMeshInstance3D.new()
 		mmi.name = "MM_" + str(key3).replace(":", "_")
 		mmi.multimesh = mm
-		var is_solid: bool = SOLID_KEYS.has(mesh_key)
-		if is_solid:
-			mmi.material_override = Gfx.model_mat(0.95, 0.0)
-		elif mesh_key.begins_with("grass") or mesh_key.begins_with("flower") or mesh_key == "reed":
-			var wind: float = 0.30 if mesh_key == "reed" else 0.20
-			mmi.material_override = Gfx.foliage_mat(0.55 if mesh_key != "reed" else 1.3, wind, 0.04)
+		mmi.material_override = props.material_for(mesh_key)
+		if props.no_shadow(mesh_key):
 			mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		else:
-			mmi.material_override = Gfx.foliage_mat(Props.height_of(mesh_key), 0.10, 0.035)
 		root.add_child(mmi)
 	return root

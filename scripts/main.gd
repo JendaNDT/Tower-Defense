@@ -63,6 +63,7 @@ func _ready() -> void:
 	GameSettings.apply_args(args)
 	UiProfile.detect(args)
 	UiProfile.apply(get_window())
+	Themes.use(GameSettings.theme)        # prostředí musí být zvolené dřív, než rozhraní postaví karty věží a texty
 	hud = Hud.new()
 	add_child(hud)
 	# nechat vykreslit načítací obrazovku, pak teprve stavět (generování terénu chvíli trvá)
@@ -87,7 +88,7 @@ func _build_everything() -> void:
 		map_seed = int(args["seed"])
 	map = GameMap.new(map_seed, island_def)
 	map.build()
-	theme = ThemeSkyIsland.new()
+	theme = Themes.cur()
 	handles = theme.build_world(world, map, high_quality)
 	fx = Fx.new()
 	world.add_child(fx)
@@ -258,15 +259,17 @@ func _restart() -> void:
 
 
 ## Nová hra z menu: stejný ostrov = jen restart pravidel, jiný ostrov = nové načtení scény (svět se staví znovu).
-func _on_new_game(mode_in: String, diff_in: String, island_in: int) -> void:
+func _on_new_game(mode_in: String, diff_in: String, island_in: int, theme_in: String) -> void:
 	var old_island: int = GameSettings.island
+	var old_theme: String = GameSettings.theme
 	var fresh: bool = game.waves_started == 0 and game.time < 0.5
 	GameSettings.mode = mode_in
 	GameSettings.difficulty = diff_in
 	GameSettings.island = island_in
+	GameSettings.theme = theme_in
 	GameSettings.save_all()
-	# stejný ostrov (nebo ještě nezačatý náhodný) = jen nová pravidla na stejné mapě
-	if island_in == old_island and (island_in != Islands.RANDOM_ID or fresh):
+	# stejný ostrov a prostředí (nebo ještě nezačatý náhodný ostrov) = jen nová pravidla na stejné mapě
+	if theme_in == old_theme and island_in == old_island and (island_in != Islands.RANDOM_ID or fresh):
 		_restart()
 		hud.show_intro(false)
 		_on_begin()
@@ -288,12 +291,12 @@ func _on_request_ability(id: String) -> void:
 			_cancel_aim()
 			return
 		if not game.ability_ready("meteor"):
-			game.toast.emit("Meteor se ještě nabíjí (%d s)." % int(ceil(float(game.ability_cd["meteor"]))), "warn")
+			game.toast.emit(Themes.t("ability_charging") % int(ceil(float(game.ability_cd["meteor"]))), "warn")
 			return
 		_cancel_all()
 		aim_ability = "meteor"
 		hud.set_aim(true)
-		game.toast.emit("Klepni na mapu, kam má meteor dopadnout, a potvrď." if UiProfile.touch_mode else "Klikni na mapu, kam má meteor dopadnout (Esc zruší).", "info")
+		game.toast.emit(Themes.t("aim_touch") if UiProfile.touch_mode else Themes.t("aim_mouse"), "info")
 		return
 	var ok: bool = false
 	if id == "blizzard":
@@ -301,7 +304,7 @@ func _on_request_ability(id: String) -> void:
 	elif id == "gold":
 		ok = game.cast_gold()
 	if not ok:
-		game.toast.emit("%s se ještě nabíjí (%d s)." % [Cfg.ABILITIES[id]["name"], int(ceil(float(game.ability_cd[id])))], "warn")
+		game.toast.emit("%s se ještě nabíjí (%d s)." % [Themes.ability_name(id), int(ceil(float(game.ability_cd[id])))], "warn")
 
 
 func _cancel_aim() -> void:
@@ -505,7 +508,7 @@ func _on_tap(pos: Vector2) -> void:
 	if aim_ability == "meteor":
 		touch_point = Vector3(p.x, 0.0, p.z)
 		touch_pending = true
-		hud.show_confirm("Seslat meteor", true)
+		hud.show_confirm(Themes.t("aim_confirm"), true)
 		return
 	var c: Vector2i = Cfg.world_to_cell(p.x, p.z)
 	if build_type != "":
@@ -521,7 +524,7 @@ func _on_tap(pos: Vector2) -> void:
 		if not map.can_build(c):
 			game.toast.emit("Sem se stavět nedá.", "warn")
 		elif game.gold < cost:
-			game.toast.emit("Nemáš dost zlata.", "warn")
+			game.toast.emit("Nemáš dost %s." % Themes.t("gold_gen"), "warn")
 		return
 	_select_tower(game.tower_at(c) if Cfg.cell_valid(c) else null)
 
@@ -586,7 +589,7 @@ func _update_touch_preview() -> void:
 	if aim_ability == "meteor":
 		overlays.hide_ghost()
 		if touch_pending:
-			overlays.show_range(Vector3(touch_point.x, map.height_at(touch_point.x, touch_point.z), touch_point.z), float(Cfg.ABILITIES["meteor"]["radius"]), Color(1.0, 0.45, 0.25))
+			overlays.show_range(Vector3(touch_point.x, map.height_at(touch_point.x, touch_point.z), touch_point.z), float(Cfg.ABILITIES["meteor"]["radius"]), Themes.pal("meteor_aim"))
 		else:
 			overlays.hide_range()
 		return
@@ -635,7 +638,7 @@ func _update_hover() -> void:
 	if aim_ability == "meteor":
 		overlays.hide_ghost()
 		if p != null and not over_gui:
-			overlays.show_range(Vector3(p.x, map.height_at(p.x, p.z), p.z), float(Cfg.ABILITIES["meteor"]["radius"]), Color(1.0, 0.45, 0.25))
+			overlays.show_range(Vector3(p.x, map.height_at(p.x, p.z), p.z), float(Cfg.ABILITIES["meteor"]["radius"]), Themes.pal("meteor_aim"))
 		else:
 			overlays.hide_range()
 		return

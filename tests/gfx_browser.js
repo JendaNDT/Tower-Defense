@@ -3,6 +3,7 @@
 // Animace se zastavují v přesném okamžiku (freeze / step / seek), takže test nezávisí na rychlosti počítače.
 //   node tests/gfx_browser.js [--out=tests/out]      (DOCS_DIR=složka s exportem, jinak docs/)
 const { chromium } = require('playwright');
+const TD_THEME_Q = process.env.TD_THEME ? '&theme=' + process.env.TD_THEME : '';   // TD_THEME=scifi => spustí test v daném prostředí
 const http = require('http'); const fs = require('fs'); const path = require('path');
 const args = Object.fromEntries(process.argv.slice(2).map(a => { const [k, v] = a.replace(/^--/, '').split('='); return [k, v === undefined ? true : v]; }));
 const ROOT = process.env.DOCS_DIR ? path.resolve(process.env.DOCS_DIR) : path.resolve(__dirname, '..', 'docs');
@@ -27,7 +28,7 @@ function check(name, ok, detail) { checks.push({ name, ok: !!ok, detail }); cons
   const enemies = async () => (await cmd({ op: 'enemies' }));
   const by = (list, type) => list.find(e => e.type === type);
 
-  await page.goto('http://localhost:8129/index.html?test=1&q=high&nosound=1&skipintro=1');
+  await page.goto('http://localhost:8129/index.html?test=1&q=high&nosound=1&skipintro=1' + TD_THEME_Q);
   await page.waitForFunction(() => window.TD_ready === true, null, { timeout: 300000 });
   await sleep(1500);
   await cmd({ op: 'freeze', v: true });

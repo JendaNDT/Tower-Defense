@@ -2,6 +2,7 @@
 //   node tests/e2e_play.js [--low] [--waves=3] [--out=tests/out]
 // Předpoklad: hra sestavená v docs/ (tools/build_web.sh). Výstup: screenshoty + výpis do konzole + out/e2e_report.json.
 const { chromium } = require('playwright');
+const TD_THEME_Q = process.env.TD_THEME ? '&theme=' + process.env.TD_THEME : '';   // TD_THEME=scifi => spustí test v daném prostředí
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -60,7 +61,7 @@ function log(...a) { const s = a.join(' '); console.log(s); report.steps.push(s)
   }
 
   const t0 = Date.now();
-  await page.goto(`http://localhost:8123/index.html?test=1${QUALITY}`);
+  await page.goto(`http://localhost:8123/index.html?test=1${QUALITY}` + TD_THEME_Q);
   await waitFor(() => page.evaluate(() => window.TD_ready === true), 300000, 'načtení hry', 1000);
   log('Hra načtena za', ((Date.now() - t0) / 1000).toFixed(1), 's');
   await sleep(1500);

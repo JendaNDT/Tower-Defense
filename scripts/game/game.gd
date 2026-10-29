@@ -207,7 +207,7 @@ func _announce_new_types(idx: int) -> void:
 		seen_types[typ] = true
 		var d: Dictionary = Cfg.ENEMIES[typ]
 		if d.has("tip") and waves_started > 1:
-			toast.emit("Nový nepřítel – %s: %s" % [d["name"], d["tip"]], "warn")
+			toast.emit("Nový nepřítel – %s: %s" % [Themes.enemy_name(typ), Themes.enemy_tip(typ)], "warn")
 
 
 func wave_preview(idx: int) -> Array:
@@ -243,7 +243,7 @@ func _spawn_enemy(entry: Dictionary) -> void:
 	_wave_alive[wi] = int(_wave_alive.get(wi, 0)) + 1
 	# záblesk portálu
 	var sp: Vector3 = map.spawn_pos
-	fx.burst_puffs(sp + Vector3(0.0, 1.0, 0.0), Color(0.7, 0.45, 1.0), 4, 0.8, 0.5, 0.5, 2.0)
+	fx.burst_puffs(sp + Vector3(0.0, 1.0, 0.0), Themes.pal("spawn_puff"), 4, 0.8, 0.5, 0.5, 2.0)
 	sfx("spawn", sp)
 
 
@@ -260,7 +260,7 @@ func on_enemy_killed(e: Enemy, source) -> void:
 	if source != null and is_instance_valid(source):
 		source.kills += 1
 	var big: bool = e.type == "boss" or e.type == "golem"
-	fx.death_burst(e.position + Vector3(0, e.visual.aim_height * 0.6, 0), e.def["color"], big)
+	fx.death_burst(e.position + Vector3(0, e.visual.aim_height * 0.6, 0), Themes.enemy_color(e.type), big)
 	fx.text(e.position + Vector3(0.0, e.visual.height + 1.0, 0.0), "+%d" % reward, Color(1.0, 0.85, 0.2) if gold_boost_t <= 0.0 else Color(1.0, 0.95, 0.4), 1.45 if big else 1.15, 1.1)
 	sfx("death_" + e.type, e.position)
 	sfx("coin", e.position, -2.0)
@@ -289,7 +289,7 @@ func _spawn_child(parent: Enemy, k: int) -> void:
 	c.setup(self, ctype, parent.wave_index, hp_abs / float(cdef["hp"]), lat, parent.s)
 	enemies.append(c)
 	_wave_alive[parent.wave_index] = int(_wave_alive.get(parent.wave_index, 0)) + 1
-	fx.burst_puffs(c.position + Vector3(0.0, 0.5, 0.0), cdef["color"], 4, 0.7, 0.4, 0.5, 0.6)
+	fx.burst_puffs(c.position + Vector3(0.0, 0.5, 0.0), Themes.enemy_color(ctype), 4, 0.7, 0.4, 0.5, 0.6)
 
 
 func on_enemy_reached(e: Enemy) -> void:
@@ -299,8 +299,8 @@ func on_enemy_reached(e: Enemy) -> void:
 	leak_types[e.type] = int(leak_types.get(e.type, 0)) + 1
 	lives = maxi(lives - e.lives_cost, 0)
 	lives_changed.emit(lives)
-	toast.emit("Nepřítel dorazil k Srdci ostrova! −%d životů" % e.lives_cost, "warn")
-	fx.burst_puffs(e.position + Vector3(0, 0.8, 0), Color(1.0, 0.4, 0.5), 8, 1.2, 0.7, 0.6, 2.0)
+	toast.emit(Themes.t("base_hit") % e.lives_cost, "warn")
+	fx.burst_puffs(e.position + Vector3(0, 0.8, 0), Themes.pal("base_hit"), 8, 1.2, 0.7, 0.6, 2.0)
 	camera_shake(0.3)
 	sfx("base_hit", e.position)
 	if ambient != null:
@@ -337,7 +337,7 @@ func _check_wave_done(wi: int) -> void:
 			sfx("victory")
 	else:
 		_record_result(false)
-		toast.emit("Vlna %d zvládnuta!%s" % [wi + 1, (" +%d zlata" % bonus) if bonus > 0 else ""], "good")
+		toast.emit("Vlna %d zvládnuta!%s" % [wi + 1, (" +%d %s" % [bonus, Themes.t("gold_gen")]) if bonus > 0 else ""], "good")
 		sfx("wave_clear")
 
 
@@ -364,7 +364,7 @@ func build_tower(type: String, c: Vector2i) -> Tower:
 		return null
 	var cost: int = Cfg.tower_cost(type)
 	if gold < cost:
-		toast.emit("Nedostatek zlata (potřeba %d)." % cost, "warn")
+		toast.emit("Nedostatek %s (potřeba %d)." % [Themes.t("gold_gen"), cost], "warn")
 		sfx("ui_error")
 		return null
 	gold -= cost
@@ -377,9 +377,9 @@ func build_tower(type: String, c: Vector2i) -> Tower:
 	towers.append(t)
 	towers_built += 1
 	map.set_cell_state(c, GameMap.Cell.TOWER)
-	fx.ring(Vector3(pos.x, pos.y + 0.3, pos.z), Color(1.0, 0.95, 0.7), 2.2, 0.45, 0.16, 0.2, 0.6)
-	fx.burst_puffs(pos + Vector3(0.0, 0.6, 0.0), Color(0.85, 0.8, 0.7), 8, 1.2, 0.7, 0.6)
-	fx.dust_ring(Vector3(pos.x, pos.y - 0.2, pos.z), Color(0.74, 0.66, 0.52), 10, 1.2, 0.55)
+	fx.ring(Vector3(pos.x, pos.y + 0.3, pos.z), Themes.pal("build_ring"), 2.2, 0.45, 0.16, 0.2, 0.6)
+	fx.burst_puffs(pos + Vector3(0.0, 0.6, 0.0), Themes.pal("build_puff"), 8, 1.2, 0.7, 0.6)
+	fx.dust_ring(Vector3(pos.x, pos.y - 0.2, pos.z), Themes.pal("build_dust"), 10, 1.2, 0.55)
 	sfx("build", pos)
 	tower_built.emit(t)
 	return t
@@ -390,7 +390,7 @@ func upgrade_tower(t: Tower) -> bool:
 		return false
 	var cost: int = t.upgrade_cost()
 	if gold < cost:
-		toast.emit("Nedostatek zlata (potřeba %d)." % cost, "warn")
+		toast.emit("Nedostatek %s (potřeba %d)." % [Themes.t("gold_gen"), cost], "warn")
 		sfx("ui_error")
 		return false
 	gold -= cost
@@ -408,8 +408,8 @@ func sell_tower(t: Tower) -> void:
 	gold += value
 	gold_changed.emit(gold)
 	map.set_cell_state(t.cell, GameMap.Cell.FREE)
-	fx.burst_puffs(t.position + Vector3(0, 0.8, 0), Color(0.8, 0.75, 0.65), 8, 1.2, 0.7, 0.6)
-	fx.text(t.position + Vector3(0.0, 2.2, 0.0), "+%d" % value, Color(1.0, 0.85, 0.2), 1.3, 1.0)
+	fx.burst_puffs(t.position + Vector3(0, 0.8, 0), Themes.pal("sell_puff"), 8, 1.2, 0.7, 0.6)
+	fx.text(t.position + Vector3(0.0, 2.2, 0.0), "+%d" % value, Themes.pal("gold_text"), 1.3, 1.0)
 	sfx("sell", t.position)
 	towers.erase(t)
 	tower_removed.emit(t)
@@ -571,14 +571,14 @@ func cast_blizzard() -> bool:
 			continue
 		en.apply_freeze(float(ab["freeze"]))
 		en.apply_slow(float(ab["slow"]), float(ab["slow_time"]) + float(ab["freeze"]))
-		fx.burst_puffs(en.position + Vector3(0.0, en.visual.aim_height, 0.0), Color(0.8, 0.95, 1.0), 5, 0.8, 0.5, 0.6, 1.2)
+		fx.burst_puffs(en.position + Vector3(0.0, en.visual.aim_height, 0.0), Themes.pal("blizzard_puff"), 5, 0.8, 0.5, 0.6, 1.2)
 	var c: Vector3 = Vector3(0.0, map.height_at(0.0, 0.0) + 0.4, 0.0)
-	fx.ring(c, Color(0.7, 0.92, 1.0), 48.0, 1.1, 0.07, 0.12, 1.0)
+	fx.ring(c, Themes.pal("blizzard_ring"), 48.0, 1.1, 0.07, 0.12, 1.0)
 	fx.ring(c, Color(1.0, 1.0, 1.0), 40.0, 0.9, 0.04, 0.0, 1.4)
 	camera_shake(0.12)
 	_use_ability("blizzard")
 	sfx("blizzard")
-	toast.emit("Mrazivý poryv! Nepřátelé zamrzli.", "good")
+	toast.emit(Themes.t("blizzard_toast"), "good")
 	return true
 
 
@@ -587,11 +587,11 @@ func cast_gold() -> bool:
 		return false
 	gold_boost_t = float(Cfg.ABILITIES["gold"]["duration"])
 	var bp: Vector3 = map.base_pos
-	fx.ring(Vector3(bp.x, bp.y + 0.3, bp.z), Color(1.0, 0.85, 0.3), 4.5, 0.9, 0.12, 0.2, 1.4)
-	fx.burst_puffs(bp + Vector3(0.0, 1.5, 0.0), Color(1.0, 0.85, 0.3), 12, 2.0, 0.6, 0.9, 2.0)
+	fx.ring(Vector3(bp.x, bp.y + 0.3, bp.z), Themes.pal("gold_ring"), 4.5, 0.9, 0.12, 0.2, 1.4)
+	fx.burst_puffs(bp + Vector3(0.0, 1.5, 0.0), Themes.pal("gold_ring"), 12, 2.0, 0.6, 0.9, 2.0)
 	_use_ability("gold")
 	sfx("gold_rush")
-	toast.emit("Zlatá horečka! Dvojnásobné zlato po dobu %d s." % int(gold_boost_t), "good")
+	toast.emit(Themes.t("gold_toast") % int(gold_boost_t), "good")
 	return true
 
 

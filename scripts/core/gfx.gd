@@ -78,11 +78,11 @@ static func mesh_node(kit: MeshKit, mat: Material, cast_shadow: bool = true) -> 
 
 ## Světelná stopa za střelou: tenký kužel s hrotem vzadu (+Z), sdílený podle druhu střely. Vrací MeshInstance3D.
 static func streak_node(kind: String) -> MeshInstance3D:
-	var key: String = "streak_" + kind
+	var key: String = "streak_%s_%s" % [Themes.cur().theme_id, kind]
 	if not _cache.has(key):
 		var len: float = 1.5
 		var r: float = 0.07
-		var col: Color = Color(1.0, 0.92, 0.65)
+		var col: Color = Themes.pal("streak_arrow")
 		var strength: float = 0.9
 		match kind:
 			"arrow":
@@ -91,12 +91,12 @@ static func streak_node(kind: String) -> MeshInstance3D:
 			"ball":
 				len = 1.3
 				r = 0.16
-				col = Color(1.0, 0.55, 0.18)
+				col = Themes.pal("streak_ball")
 				strength = 1.1
 			_:
 				len = 1.8
 				r = 0.09
-				col = Color(0.72, 0.5, 1.0)
+				col = Themes.pal("streak_orb")
 				strength = 1.2
 		var k: MeshKit = MeshKit.new(5, 0.0)
 		k.cone(r, len, 6, Color(1, 1, 1), MeshKit.xf(Vector3.ZERO, Vector3(90.0, 0.0, 0.0)), 0.0, false)

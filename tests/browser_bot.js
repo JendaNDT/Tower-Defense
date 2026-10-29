@@ -1,5 +1,6 @@
 // Odehraje všech 12 vln botem uvnitř exportované webové verze (v prohlížeči). node tests/browser_bot.js [--pol=vysoka]
 const { chromium } = require('playwright');
+const TD_THEME_Q = process.env.TD_THEME ? '&theme=' + process.env.TD_THEME : '';   // TD_THEME=scifi => spustí test v daném prostředí
 const http = require('http'); const fs = require('fs'); const path = require('path');
 const args = Object.fromEntries(process.argv.slice(2).map(a => { const [k, v] = a.replace(/^--/, '').split('='); return [k, v === undefined ? true : v]; }));
 const ROOT = process.env.DOCS_DIR ? path.resolve(process.env.DOCS_DIR) : path.resolve(__dirname, '..', 'docs');
@@ -12,7 +13,7 @@ const srv = http.createServer((req, res) => { let p = decodeURIComponent(req.url
   const page = await browser.newPage({ viewport: { width: 640, height: 360 } });
   const logs = []; page.on('console', m => { if (m.type() !== 'log' || /ERROR|WARN/.test(m.text())) logs.push(`[${m.type()}] ${m.text()}`); });
   page.on('pageerror', e => logs.push('[pageerror] ' + e));
-  await page.goto('http://localhost:8130/index.html?test=1&skipintro=1&q=low');
+  await page.goto('http://localhost:8130/index.html?test=1&skipintro=1&q=low' + TD_THEME_Q);
   await page.waitForFunction(() => window.TD_ready === true, null, { timeout: 240000 });
   const t0 = Date.now();
   await page.evaluate(o => { window.TD_cmd(JSON.stringify(o)); }, { op: 'simbot', pol: args.pol || 'vysoka' });

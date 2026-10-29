@@ -237,6 +237,19 @@ func cmd(req: Dictionary) -> Dictionary:
 				en3.reach_base()
 				nr += 1
 			return {"ok": true, "reached": nr}
+		"put_visual":
+			# pro snímky modelů: postaví samostatný model (enemy | tower) na dané místo mimo hrací pole
+			var pv_pos: Vector3 = Vector3(float(req.get("x", 80.0)), float(req.get("y", 0.0)), float(req.get("z", 80.0)))
+			if str(req.get("kind", "enemy")) == "tower":
+				var tvv: TowerVisual = main.theme.make_tower_visual(str(req["type"]), int(req.get("level", 1)))
+				tvv.position = pv_pos
+				main.world.add_child(tvv)
+			else:
+				var evv: EnemyVisual = main.theme.make_enemy_visual(str(req["type"]))
+				evv.position = pv_pos
+				main.world.add_child(evv)
+				evv.animate(0.0, 0.0)
+			return {"ok": true}
 		"tower_anim":
 			var tw5 = _tower_by_id(int(req["id"]))
 			if tw5 == null:
@@ -332,11 +345,13 @@ func cmd(req: Dictionary) -> Dictionary:
 				"wave_title": main.hud._wave_title.text, "wave_rows": rows, "end_title": main.hud._end_title.text,
 				"end_body": main.hud._end_body.text, "intro_visible": main.hud._intro.visible, "help_visible": main.hud._help.visible,
 				"end_visible": main.hud._end.visible, "aiming": main.aim_ability,
-				"menu": {"mode": main.hud._menu_mode, "diff": main.hud._menu_diff, "island": main.hud._menu_island,
+				"card_names": main.hud.card_names(), "ability_tips": main.hud.ability_tips(),
+				"menu": {"mode": main.hud._menu_mode, "diff": main.hud._menu_diff, "island": main.hud._menu_island, "theme": main.hud._menu_theme, "title": main.hud._menu_title.text, "place": main.hud._menu_place.text,
 					"island_name": main.hud._menu_island_name.text, "record": main.hud._menu_rec.text,
 					"back_visible": main.hud._menu_back_btn.visible, "start_text": main.hud._menu_start_btn.text}}
 		"settings":
-			return {"ok": true, "mode": GameSettings.mode, "difficulty": GameSettings.difficulty, "island": GameSettings.island,
+			return {"ok": true, "mode": GameSettings.mode, "difficulty": GameSettings.difficulty, "island": GameSettings.island, "theme": GameSettings.theme,
+				"theme_name": Themes.cur().theme_name,
 				"random_seed": GameSettings.random_seed, "records": GameSettings.records, "game_mode": g.mode_id, "game_diff": g.diff_id,
 				"total_waves": g.total_waves, "island_name": str(main.island_def.get("name", "")), "persist": g.persist_records,
 				"abilities_used": g.abilities_used, "ability_cd": g.ability_cd, "gold_boost": g.gold_boost_t, "best_wave": g.best_wave}

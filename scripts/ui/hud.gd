@@ -20,7 +20,7 @@ signal request_begin()
 signal request_sound(sound: String)
 signal request_audio(kind: String, on: bool)
 signal request_ability(id: String)
-signal request_new_game(mode: String, difficulty: String, island: int)
+signal request_new_game(mode: String, difficulty: String, island: int, theme: String)
 
 const C_BG: Color = Color(0.07, 0.10, 0.17, 0.88)
 const C_BG_L: Color = Color(0.13, 0.18, 0.28, 0.92)
@@ -79,6 +79,12 @@ var _menu_diff_btns: Dictionary = {}
 var _menu_mode: String = "campaign"
 var _menu_diff: String = "normal"
 var _menu_island: int = 0
+var _menu_theme: String = "sky_island"
+var _menu_theme_btns: Dictionary = {}
+var _menu_theme_desc: Label = null
+var _menu_title: Label = null
+var _menu_sub: Label = null
+var _menu_place: Label = null
 var _end_menu_btn: Button
 var _ab: Dictionary = {}             # id -> {"btn", "cd", "lbl"}
 var _ab_box: BoxContainer
@@ -377,7 +383,7 @@ func _build_top_right() -> void:
 	else:
 		h.add_child(_quality_btn)
 
-	_menu_btn = _icon_button("menu", "Nová hra / nastavení (režim, obtížnost, ostrov)")
+	_menu_btn = _icon_button("menu", Themes.t("menu_tip"))
 	_menu_btn.pressed.connect(func(): show_intro(true))
 	sec.add_child(_menu_btn)
 	_ui["menu_btn"] = _menu_btn
@@ -417,7 +423,7 @@ func _build_cards() -> void:
 		var b: Button = Button.new()
 		b.custom_minimum_size = Vector2(_k(158, 100), _k(96, 68))
 		b.toggle_mode = true
-		_style_button(b, spec["color"], 14)
+		_style_button(b, Themes.tower_color(id), 14)
 		var v: VBoxContainer = VBoxContainer.new()
 		v.set_anchors_preset(Control.PRESET_FULL_RECT)
 		v.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -427,12 +433,12 @@ func _build_cards() -> void:
 		top.alignment = BoxContainer.ALIGNMENT_CENTER
 		top.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		top.add_theme_constant_override("separation", int(_k(8, 5)))
-		top.add_child(IconCtrl.make(id, _k(34, 26), spec["color"], Color(0.2, 0.2, 0.25)))
-		var nm: Label = _label(str(spec["name"]), int(_k(18, 14)), C_TEXT, true)
+		top.add_child(IconCtrl.make(Themes.tower_icon(id), _k(34, 26), Themes.tower_color(id), Color(0.2, 0.2, 0.25)))
+		var nm: Label = _label(Themes.tower_name(id), int(_k(18, 14)), C_TEXT, true)
 		top.add_child(nm)
 		v.add_child(top)
 		if not _c:
-			var sub: Label = _label(str(spec["short"]), 12, C_DIM)
+			var sub: Label = _label(Themes.tower_short(id), 12, C_DIM)
 			sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			v.add_child(sub)
 		var cost_row: HBoxContainer = HBoxContainer.new()
@@ -449,9 +455,9 @@ func _build_cards() -> void:
 			hk.position = Vector2(8, 4)
 			b.add_child(hk)
 		b.pressed.connect(func(): request_build.emit(id))
-		b.tooltip_text = "%s – %s\n%s" % [spec["name"], spec["short"], spec["desc"]]
+		b.tooltip_text = "%s – %s\n%s" % [Themes.tower_name(id), Themes.tower_short(id), Themes.tower_desc(id)]
 		h.add_child(b)
-		_cards[id] = {"btn": b, "cost": cl}
+		_cards[id] = {"btn": b, "cost": cl, "name": nm}
 		_ui["card_" + id] = b
 	_root.add_child(h)
 	_place(h, Vector2(0.5, 1), Vector2(0, _k(12, 8)))
@@ -723,13 +729,27 @@ func _menu_refresh() -> void:
 		(_menu_mode_btns[id] as Button).set_pressed_no_signal(id == _menu_mode)
 	for id2 in _menu_diff_btns.keys():
 		(_menu_diff_btns[id2] as Button).set_pressed_no_signal(id2 == _menu_diff)
-	_menu_mode_desc.text = "Přežij všech %d vln a zachraň ostrov." % Cfg.TOTAL_WAVES if _menu_mode == "campaign" else "Vlny nikdy nekončí a stále sílí. Jak daleko to dotáhneš? Rekord se ukládá."
+	_menu_mode_desc.text = Themes.t("mode_campaign") % Cfg.TOTAL_WAVES if _menu_mode == "campaign" else "Vlny nikdy nekončí a stále sílí. Jak daleko to dotáhneš? Rekord se ukládá."
 	var d: Dictionary = Cfg.DIFFICULTIES[_menu_diff]
-	_menu_diff_desc.text = "%s  (start: %d zlata, %d životů, nepřátelé %d %% zdraví)" % [d["desc"], int(d["gold"]), int(d["lives"]), int(round(float(d["hp"]) * 100.0))]
-	_menu_island_name.text = Islands.display_name(_menu_island)
-	_menu_island_desc.text = Islands.display_desc(_menu_island)
+	_menu_diff_desc.text = "%s  (start: %d %s, %d životů, nepřátelé %d %% zdraví)" % [d["desc"], int(d["gold"]), Themes.peek(_menu_theme).text("gold_gen"), int(d["lives"]), int(round(float(d["hp"]) * 100.0))]
+	var pth: GameTheme = Themes.peek(_menu_theme)
+	for tid in _menu_theme_btns.keys():
+		(_menu_theme_btns[tid] as Button).set_pressed_no_signal(tid == _menu_theme)
+	if _menu_theme_desc != null:
+		_menu_theme_desc.text = str(Themes.info(_menu_theme)["desc"])
+	_menu_title.text = pth.text("title")
+	_menu_sub.text = pth.text("intro_sub")
+	_menu_place.text = pth.text("place")
+	_menu_island_name.text = Islands.display_name(_menu_island, pth)
+	_menu_island_desc.text = Islands.display_desc(_menu_island, pth)
 	var key: String = "%s_%s_%d" % [_menu_mode, _menu_diff, _menu_island]
 	_menu_rec.text = "Rekord: " + GameSettings.record_text(key)
+
+
+func _menu_pick_theme(id: String) -> void:
+	_menu_theme = id
+	request_sound.emit("ui_click")
+	_menu_refresh()
 
 
 func _menu_pick_mode(id: String) -> void:
@@ -761,12 +781,14 @@ func _build_intro() -> void:
 	v.add_theme_constant_override("separation", int(_k(9, 6)))
 	v.custom_minimum_size = Vector2(_k(640, 0), 0)
 	p.add_child(v)
-	var t: Label = _label("Ostrov v oblacích", int(_k(38, 30)), C_GOLD, true)
+	var t: Label = _label(Themes.t("title"), int(_k(38, 30)), C_GOLD, true)
 	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(t)
-	var sub: Label = _label("Braň Srdce ostrova před vlnami nepřátel. Vyber si hru:", int(_k(16, 14)), C_TEXT)
+	_menu_title = t
+	var sub: Label = _label(Themes.t("intro_sub"), int(_k(16, 14)), C_TEXT)
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(sub)
+	_menu_sub = sub
 
 	# počítač: vše pod sebou; telefon: levý sloupec = režim a obtížnost, pravý = ostrov a start
 	var left: VBoxContainer = v
@@ -782,6 +804,16 @@ func _build_intro() -> void:
 			(cv as VBoxContainer).add_theme_constant_override("separation", 5)
 			(cv as VBoxContainer).custom_minimum_size = Vector2(colw, 0)
 			cols.add_child(cv)
+
+	left.add_child(_label("Prostředí", 15, C_DIM))
+	var trow: Array = []
+	for td in Themes.LIST:
+		trow.append([td["id"], td["name"]])
+	left.add_child(_toggle_row(trow, _menu_theme, _menu_pick_theme, _menu_theme_btns, "menu_theme_"))
+	_menu_theme_desc = _label("", int(_k(13, 12)), C_DIM)
+	_menu_theme_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_menu_theme_desc.custom_minimum_size = Vector2(colw, 0)
+	left.add_child(_menu_theme_desc)
 
 	left.add_child(_label("Režim", 15, C_DIM))
 	left.add_child(_toggle_row([["campaign", "Příběh (12 vln)"], ["endless", "Nekonečný"]], _menu_mode, _menu_pick_mode, _menu_mode_btns, "menu_mode_"))
@@ -800,7 +832,8 @@ func _build_intro() -> void:
 	_menu_diff_desc.custom_minimum_size = Vector2(colw, 0)
 	left.add_child(_menu_diff_desc)
 
-	right.add_child(_label("Ostrov", 15, C_DIM))
+	_menu_place = _label(Themes.t("place"), 15, C_DIM)
+	right.add_child(_menu_place)
 	var irow: HBoxContainer = HBoxContainer.new()
 	irow.add_theme_constant_override("separation", 8)
 	var prev: Button = Button.new()
@@ -839,7 +872,7 @@ func _build_intro() -> void:
 	btn.add_theme_font_size_override("font_size", int(_k(22, 20)))
 	btn.pressed.connect(func():
 		_intro.visible = false
-		request_new_game.emit(_menu_mode, _menu_diff, _menu_island))
+		request_new_game.emit(_menu_mode, _menu_diff, _menu_island, _menu_theme))
 	right.add_child(btn)
 	_menu_start_btn = btn
 	_intro_btn = btn
@@ -865,21 +898,21 @@ func _build_intro() -> void:
 
 
 func _build_help() -> void:
-	var body: String = "Braň Srdce ostrova před vlnami nepřátel, kteří přicházejí z portálu po cestě přes celý ostrov.\n\n"
+	var body: String = Themes.t("help_intro") + "\n\n"
 	if _c:
 		body += "• Věž postavíš klepnutím na kartu dole a pak na zvýrazněné pole vedle cesty. Pole se označí a stavbu potvrdíš tlačítkem Postavit (křížek stavbu zruší).\n"
 		body += "• Klepnutím na postavenou věž otevřeš její panel: vylepšení, prodej a cíl. Každá úroveň mění vzhled i sílu.\n"
-		body += "• Vlnu spustíš tlačítkem vpravo dole. Kanón nezasáhne vzdušné cíle, brnění snižuje poškození šípů – proti němu pomůže mág.\n"
-		body += "• Léčitele zabij první, štítonoše prorazí silné rány, slizák se po smrti rozpadne.\n"
-		body += "• Schopnosti vlevo dole: Meteor (klepni na místo dopadu a potvrď), Mrazivý poryv a Zlatá horečka. Po použití se nabíjejí.\n\n"
+		body += "• Vlnu spustíš tlačítkem vpravo dole. " + Themes.t("help_units") + "\n"
+		body += "• " + Themes.t("help_enemies") + "\n"
+		body += "• " + Themes.t("help_abilities_touch") + "\n\n"
 		body += "Kamera: jeden prst posouvá, dva prsty přibližují a otáčejí. Zvuk, kvalita, celá obrazovka a nová hra jsou pod tlačítkem „…“ nahoře."
 	else:
 		body += "• Věže stavíš na zvýrazněná pole vedle cesty – klikni na kartu dole (klávesy 1–4) a pak na pole.\n"
 		body += "• Klikni na postavenou věž a vylepši ji. Každá úroveň mění vzhled i sílu (dosah, poškození, rychlost, speciální schopnost).\n"
 		body += "• Vlnu spustíš tlačítkem vpravo dole nebo mezerníkem.\n"
-		body += "• Kanón nezasáhne vzdušné cíle, brnění snižuje poškození šípů – proti němu pomůže mág.\n"
-		body += "• Léčitele zabij první, štítonoše prorazí silné rány, slizák se po smrti rozpadne.\n"
-		body += "• Schopnosti vlevo dole (klávesy 5, 6, 7): Meteor (klikni na mapu), Mrazivý poryv a Zlatá horečka. Po použití se nabíjejí.\n\n"
+		body += "• " + Themes.t("help_units") + "\n"
+		body += "• " + Themes.t("help_enemies") + "\n"
+		body += "• " + Themes.t("help_abilities") + "\n\n"
 		body += "Kamera: pravé tlačítko myši = otáčení, kolečko = zoom, W/A/S/D = posun, Q/E = otáčení, F = rychlost, P = pauza, M = zvuk, F3 = přehled výkonu.\n"
 		body += "Na dotykové obrazovce: jeden prst posouvá kameru, dva prsty přibližují a otáčejí; stavbu potvrdíš tlačítkem Postavit."
 	var m: Dictionary = _modal("Jak hrát", body, "Zavřít", C_GOLD)
@@ -925,14 +958,16 @@ func _build_abilities() -> void:
 	# počítač: sloupec tlačítek s názvem; telefon: řada malých tlačítek jen s ikonou
 	var v: BoxContainer = HBoxContainer.new() if _c else VBoxContainer.new()
 	v.add_theme_constant_override("separation", 8 if _c else 6)
-	var icons: Dictionary = {"meteor": "meteor", "blizzard": "snow", "gold": "goldrush"}
+	var icons: Dictionary = {}
+	for aid in Cfg.ABILITY_ORDER:
+		icons[aid] = Themes.ability_icon(aid)
 	var cols: Dictionary = {"meteor": Color(1.0, 0.55, 0.25), "blizzard": Color(0.6, 0.88, 1.0), "gold": C_GOLD}
 	for id in Cfg.ABILITY_ORDER:
 		var spec: Dictionary = Cfg.ABILITIES[id]
 		var b: Button = Button.new()
 		b.custom_minimum_size = Vector2(60, 60) if _c else Vector2(178, 50)
 		_style_button(b, cols[id], 12)
-		b.tooltip_text = "%s [%s]\n%s\nNabíjení: %d s" % [spec["name"], spec["hotkey"], spec["desc"], int(spec["cooldown"])]
+		b.tooltip_text = "%s [%s]\n%s\nNabíjení: %d s" % [Themes.ability_name(id), spec["hotkey"], Themes.ability_desc(id), int(spec["cooldown"])]
 		var cd: ColorRect = ColorRect.new()
 		cd.color = Color(0.0, 0.0, 0.0, 0.55)
 		cd.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -947,7 +982,7 @@ func _build_abilities() -> void:
 		h.offset_left = 0 if _c else 10
 		h.add_child(IconCtrl.make(icons[id], 34 if _c else 30, cols[id]))
 		if not _c:
-			var nm: Label = _label(str(spec["name"]), 15, C_TEXT, true)
+			var nm: Label = _label(Themes.ability_name(id), 15, C_TEXT, true)
 			nm.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 			h.add_child(nm)
 		b.add_child(h)
@@ -997,7 +1032,7 @@ func _build_end() -> void:
 		request_restart.emit())
 	var vb: VBoxContainer = (m["button"] as Button).get_parent()
 	_end_menu_btn = Button.new()
-	_end_menu_btn.text = "Změnit nastavení (režim, obtížnost, ostrov)"
+	_end_menu_btn.text = Themes.t("menu_change")
 	_end_menu_btn.custom_minimum_size = Vector2(0, 42)
 	_style_button(_end_menu_btn)
 	_end_menu_btn.add_theme_font_size_override("font_size", 16)
@@ -1020,10 +1055,10 @@ func _build_pause() -> void:
 
 func _build_loading() -> void:
 	var ov: ColorRect = ColorRect.new()
-	ov.color = Color(0.40, 0.62, 0.92, 1.0)
+	ov.color = Themes.cur().loading_color
 	ov.set_anchors_preset(Control.PRESET_FULL_RECT)
 	ov.mouse_filter = Control.MOUSE_FILTER_STOP
-	var l: Label = _label("Načítám ostrov v oblacích…", 34, Color(1, 1, 1), true)
+	var l: Label = _label(Themes.t("loading"), 34, Color(1, 1, 1), true)
 	l.set_anchors_preset(Control.PRESET_CENTER)
 	l.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	l.grow_vertical = Control.GROW_DIRECTION_BOTH
@@ -1093,6 +1128,7 @@ func show_intro(on: bool) -> void:
 		_menu_mode = GameSettings.mode
 		_menu_diff = GameSettings.difficulty
 		_menu_island = GameSettings.island
+		_menu_theme = GameSettings.theme
 		_menu_refresh()
 		var in_progress: bool = game != null and (game.waves_started > 0 or game.time > 0.5) and game.state == Game.State.PLAYING
 		_menu_back_btn.visible = in_progress
@@ -1198,15 +1234,15 @@ func _on_state(st: int) -> void:
 	if st == Game.State.WON:
 		_end_title.text = "Vítězství!"
 		_end_title.add_theme_color_override("font_color", C_GREEN)
-		_end_body.text = _end_stats("Ostrov je zachráněn. Zvládl jsi všech %d vln!" % game.total_waves)
+		_end_body.text = _end_stats(Themes.t("won") % game.total_waves)
 		_end.visible = true
 	elif st == Game.State.LOST:
 		_end_title.text = "Konec hry"
 		_end_title.add_theme_color_override("font_color", C_RED)
 		if game.is_endless():
-			_end_body.text = _end_stats("Srdce ostrova padlo. Nekonečný režim: došel jsi do vlny %d." % (maxi(game.waves_started, 1)))
+			_end_body.text = _end_stats("%s Nekonečný režim: došel jsi do vlny %d." % [Themes.t("base_fell"), maxi(game.waves_started, 1)])
 		else:
-			_end_body.text = _end_stats("Srdce ostrova padlo. Zkus to znovu s jinou strategií.")
+			_end_body.text = _end_stats(Themes.t("base_fell") + " Zkus to znovu s jinou strategií.")
 		_end.visible = true
 
 
@@ -1224,6 +1260,21 @@ func _abilities_total() -> int:
 	for k in game.abilities_used.keys():
 		n += int(game.abilities_used[k])
 	return n
+
+
+## Pro testy: názvy na kartách věží a popisky schopností (podle aktivního motivu).
+func card_names() -> Dictionary:
+	var out: Dictionary = {}
+	for id in _cards.keys():
+		out[id] = (_cards[id]["name"] as Label).text
+	return out
+
+
+func ability_tips() -> Dictionary:
+	var out: Dictionary = {}
+	for id in _ab.keys():
+		out[id] = (_ab[id]["btn"] as Button).tooltip_text
+	return out
 
 
 func refresh_cards() -> void:
@@ -1253,10 +1304,10 @@ func _refresh_wave_panel() -> void:
 		var spec: Dictionary = Cfg.ENEMIES[it["type"]]
 		var r: HBoxContainer = HBoxContainer.new()
 		r.add_theme_constant_override("separation", 6)
-		r.add_child(IconCtrl.make("dot", _k(16, 13), spec["color"]))
-		r.add_child(_label("%s × %d" % [spec["name"], it["count"]], int(_k(14, 12)), C_TEXT))
+		r.add_child(IconCtrl.make("dot", _k(16, 13), Themes.enemy_color(str(it["type"]))))
+		r.add_child(_label("%s × %d" % [Themes.enemy_name(str(it["type"])), it["count"]], int(_k(14, 12)), C_TEXT))
 		if spec.has("tip") and not _c:
-			r.tooltip_text = "%s: %s" % [spec["name"], spec["tip"]]
+			r.tooltip_text = "%s: %s" % [Themes.enemy_name(str(it["type"])), Themes.enemy_tip(str(it["type"]))]
 			r.mouse_filter = Control.MOUSE_FILTER_STOP
 		if bool(spec["flying"]):
 			has_air = true
@@ -1265,7 +1316,7 @@ func _refresh_wave_panel() -> void:
 		var w: HBoxContainer = HBoxContainer.new()
 		w.add_theme_constant_override("separation", 6)
 		w.add_child(IconCtrl.make("warn", _k(16, 13), Color(1.0, 0.72, 0.3)))
-		w.add_child(_label("Létající – kanón je nezasáhne", int(_k(13, 11)), Color(1.0, 0.72, 0.3)))
+		w.add_child(_label("Létající – %s je nezasáhne" % Themes.tower_name("cannon").to_lower(), int(_k(13, 11)), Color(1.0, 0.72, 0.3)))
 		_wave_rows.add_child(w)
 	_wave_btn.disabled = not game.can_start_wave()
 	_wave_btn.text = _wave_btn_text(game.can_start_wave())
@@ -1321,8 +1372,8 @@ func refresh_tower_panel() -> void:
 		return
 	var t: Tower = _selected
 	var spec: Dictionary = Cfg.TOWERS[t.type]
-	(_tp["icon"] as IconCtrl).set_kind(t.type, spec["color"])
-	(_tp["title"] as Label).text = str(spec["name"])
+	(_tp["icon"] as IconCtrl).set_kind(Themes.tower_icon(t.type), Themes.tower_color(t.type))
+	(_tp["title"] as Label).text = Themes.tower_name(t.type)
 	(_tp["level"] as Label).text = "Úroveň %d / %d" % [t.level, Cfg.MAX_LEVEL]
 	var stars: Array = _tp["stars"]
 	for i in range(stars.size()):
@@ -1341,14 +1392,14 @@ func refresh_tower_panel() -> void:
 			grid.add_child(_label("", int(_k(14, 12)), C_DIM))
 	var note: Label = _tp["note"]
 	if t.can_upgrade():
-		note.text = "Další úroveň: " + str(Cfg.tower_level(t.type, t.level + 1)["note"])
+		note.text = "Další úroveň: " + Themes.level_note(t.type, t.level + 1)
 	else:
-		note.text = "Maximální úroveň. " + str(Cfg.tower_level(t.type, t.level)["note"])
+		note.text = "Maximální úroveň. " + Themes.level_note(t.type, t.level)
 	(_tp["stat"] as Label).text = "Zabito: %d   ·   Způsobeno poškození: %d" % [t.kills, int(t.damage_dealt)]
 	var up: Button = _tp["upgrade"]
 	if t.can_upgrade():
 		var cost: int = t.upgrade_cost()
-		up.text = ("Vylepšit  (%d zlata)" % cost) if _c else ("Vylepšit na úroveň %d  (%d zlata)" % [t.level + 1, cost])
+		up.text = ("Vylepšit  (%d %s)" % [cost, Themes.t("gold_gen")]) if _c else ("Vylepšit na úroveň %d  (%d %s)" % [t.level + 1, cost, Themes.t("gold_gen")])
 		up.disabled = game.gold < cost
 	else:
 		up.text = "Maximální úroveň"

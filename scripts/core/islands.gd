@@ -77,13 +77,13 @@ static func choices() -> int:
 	return LIST.size() + 1
 
 
-static func display_name(island_id: int) -> String:
+static func display_name(island_id: int, th: GameTheme = null) -> String:
 	if island_id == RANDOM_ID:
-		return "Náhodný ostrov"
+		return (th if th != null else Themes.cur()).text("random_place")
 	return str(LIST[clampi(island_id, 0, LIST.size() - 1)]["name"])
 
 
-static func display_desc(island_id: int) -> String:
+static func display_desc(island_id: int, th: GameTheme = null) -> String:
 	if island_id == RANDOM_ID:
-		return "Náhodné rozložení cesty a krajiny. Pokaždé jiný ostrov."
+		return (th if th != null else Themes.cur()).text("random_desc")
 	return str(LIST[clampi(island_id, 0, LIST.size() - 1)]["desc"])

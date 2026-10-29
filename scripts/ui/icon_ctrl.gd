@@ -78,6 +78,46 @@ func _draw() -> void:
 					var base: Vector2 = tip + inward * s * 0.12
 					draw_line(base, base + (inward + perp * 0.9).normalized() * s * 0.1, col, maxf(s * 0.04, 1.0), true)
 					draw_line(base, base + (inward - perp * 0.9).normalized() * s * 0.1, col, maxf(s * 0.04, 1.0), true)
+		"laser":
+			# laserová věž: hlaveň a paprsek s hrotem
+			draw_rect(Rect2(c + Vector2(-s * 0.42, -s * 0.12), Vector2(s * 0.36, s * 0.24)), col.darkened(0.15))
+			draw_rect(Rect2(c + Vector2(-s * 0.08, -s * 0.07), Vector2(s * 0.26, s * 0.14)), col)
+			draw_line(c + Vector2(s * 0.18, 0), c + Vector2(s * 0.46, 0), col.lightened(0.45), maxf(s * 0.06, 1.5), true)
+			draw_circle(c + Vector2(s * 0.46, 0), s * 0.06, Color(1, 1, 1, 0.95))
+			draw_line(c + Vector2(-s * 0.3, s * 0.2), c + Vector2(-s * 0.3, s * 0.38), col, maxf(s * 0.06, 1.5), true)
+			draw_line(c + Vector2(-s * 0.4, s * 0.38), c + Vector2(-s * 0.1, s * 0.38), col, maxf(s * 0.06, 1.5), true)
+		"plasma":
+			# plazmomet: zářící koule s prstencem
+			draw_circle(c + Vector2(s * 0.04, 0), s * 0.3, col.darkened(0.2))
+			draw_circle(c + Vector2(s * 0.04, 0), s * 0.22, col)
+			draw_circle(c + Vector2(s * 0.04, 0), s * 0.1, Color(1, 1, 1, 0.85))
+			draw_arc(c + Vector2(s * 0.04, 0), s * 0.38, -PI * 0.2, PI * 1.1, 22, col.lightened(0.3), maxf(s * 0.05, 1.2), true)
+			draw_line(c + Vector2(-s * 0.46, s * 0.12), c + Vector2(-s * 0.3, s * 0.06), col, maxf(s * 0.07, 1.5), true)
+			draw_line(c + Vector2(-s * 0.46, -s * 0.06), c + Vector2(-s * 0.3, -s * 0.02), col, maxf(s * 0.05, 1.2), true)
+		"tesla":
+			# Teslova věž: blesk
+			var bolt: PackedVector2Array = PackedVector2Array([c + Vector2(s * 0.12, -s * 0.46), c + Vector2(-s * 0.2, s * 0.04), c + Vector2(-s * 0.02, s * 0.04),
+				c + Vector2(-s * 0.14, s * 0.46), c + Vector2(s * 0.24, -s * 0.1), c + Vector2(s * 0.04, -s * 0.1)])
+			draw_colored_polygon(bolt, col)
+			draw_polyline(PackedVector2Array([bolt[0], bolt[1], bolt[2], bolt[3], bolt[4], bolt[5], bolt[0]]), col.lightened(0.5), maxf(s * 0.04, 1.0), true)
+		"cryo":
+			# kryo věž: šestiúhelník se sněhovou vločkou
+			var hexp: PackedVector2Array = PackedVector2Array()
+			for hi in range(7):
+				hexp.append(c + Vector2(cos(TAU * float(hi) / 6.0), sin(TAU * float(hi) / 6.0)) * s * 0.46)
+			draw_polyline(hexp, col, maxf(s * 0.06, 1.5), true)
+			for i4 in range(3):
+				var a4: float = PI * float(i4) / 3.0
+				var v4: Vector2 = Vector2(cos(a4), sin(a4)) * s * 0.34
+				draw_line(c - v4, c + v4, col, maxf(s * 0.05, 1.2), true)
+			draw_circle(c, s * 0.07, Color(1, 1, 1))
+		"strike":
+			# orbitální úder: zaměřovač a paprsek shora
+			draw_arc(c + Vector2(0, s * 0.12), s * 0.3, 0.0, TAU, 24, col, maxf(s * 0.06, 1.5), true)
+			draw_line(c + Vector2(-s * 0.42, s * 0.12), c + Vector2(-s * 0.16, s * 0.12), col, maxf(s * 0.05, 1.2), true)
+			draw_line(c + Vector2(s * 0.16, s * 0.12), c + Vector2(s * 0.42, s * 0.12), col, maxf(s * 0.05, 1.2), true)
+			draw_line(c + Vector2(0, -s * 0.46), c + Vector2(0, s * 0.0), col.lightened(0.4), maxf(s * 0.1, 2.0), true)
+			draw_circle(c + Vector2(0, s * 0.12), s * 0.08, Color(1, 1, 1, 0.95))
 		"pause":
 			draw_rect(Rect2(c + Vector2(-s * 0.26, -s * 0.3), Vector2(s * 0.18, s * 0.6)), col)
 			draw_rect(Rect2(c + Vector2(s * 0.08, -s * 0.3), Vector2(s * 0.18, s * 0.6)), col)

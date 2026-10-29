@@ -70,7 +70,7 @@ func set_shield(frac: float) -> void:
 		_shield.mesh = q
 		_shield_mat = ShaderMaterial.new()
 		_shield_mat.shader = Gfx.SH_PUFF
-		_shield_mat.set_shader_parameter("color", Color(0.5, 0.8, 1.0))
+		_shield_mat.set_shader_parameter("color", Themes.pal("shield_bubble"))
 		_shield_mat.set_shader_parameter("softness", 0.35)
 		_shield.material_override = _shield_mat
 		_shield.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -95,12 +95,15 @@ func set_status(slow: float, frozen: bool, burning: bool) -> void:
 		return
 	var c: Color = Color(1, 1, 1, 0)
 	if frozen:
-		c = Color(0.65, 0.92, 1.0, 0.7)
+		c = Themes.pal("tint_frozen")
+		c.a = 0.7
 	elif burning:
 		var f: float = 0.5 + 0.5 * sin(_t * 18.0)
-		c = Color(1.0, 0.45 + 0.2 * f, 0.1, 0.38)
+		c = Themes.pal("tint_burn").lerp(Color(1.0, 0.65, 0.1), f * 0.4)
+		c.a = 0.38
 	elif slow > 0.01:
-		c = Color(0.45, 0.78, 1.0, clampf(slow * 0.55, 0.0, 0.45))
+		c = Themes.pal("tint_slow")
+		c.a = clampf(slow * 0.55, 0.0, 0.45)
 	if not c.is_equal_approx(_tint):
 		_tint = c
 		mat.set_shader_parameter("tint", c)

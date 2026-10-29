@@ -99,10 +99,11 @@ func setup(game_ref, rig_ref) -> void:
 
 	# efekty se syntetizují hned (stovky milisekund), hudba a smyčky na pozadí
 	var t0: int = Time.get_ticks_msec()
+	var th: String = Themes.cur().audio_id
 	for n in Synth.SFX_NAMES:
-		var key: String = "sfx_" + str(n)
+		var key: String = "sfx_%s_%s" % [th, str(n)]
 		if not Synth.cache.has(key):
-			Synth.cache[key] = Synth.make_sfx(str(n))
+			Synth.cache[key] = Synth.make_sfx(str(n), th)
 		_sounds[n] = Synth.cache[key]
 	sounds_ready = _sounds.size()
 	print("[Zvuk] %d efektů připraveno za %d ms" % [sounds_ready, Time.get_ticks_msec() - t0])
@@ -125,28 +126,29 @@ func _budget() -> int:
 func _generate_async() -> void:
 	## Vygenerované zvuky se drží ve statické mezipaměti (přežije znovunačtení scény při změně ostrova).
 	var t0: int = Time.get_ticks_msec()
+	var th: String = Themes.cur().audio_id
 	for kind in ["wind", "water"]:
-		if not Synth.cache.has("amb_" + kind):
-			Synth.cache["amb_" + kind] = Synth.make_ambient(kind)
-	_wind.stream = Synth.cache["amb_wind"]
-	_water.stream = Synth.cache["amb_water"]
+		if not Synth.cache.has("amb_%s_%s" % [th, kind]):
+			Synth.cache["amb_%s_%s" % [th, kind]] = Synth.make_ambient(kind, th)
+	_wind.stream = Synth.cache["amb_%s_wind" % th]
+	_water.stream = Synth.cache["amb_%s_water" % th]
 	await get_tree().process_frame
-	if not Synth.cache.has("music_calm"):
-		Synth.cache["music_calm"] = await _render_music_async("calm")
-	_calm.stream = Synth.cache["music_calm"]
+	if not Synth.cache.has("music_%s_calm" % th):
+		Synth.cache["music_%s_calm" % th] = await _render_music_async("calm")
+	_calm.stream = Synth.cache["music_%s_calm" % th]
 	calm_ready = true
 	print("[Zvuk] klidná hudba hotová za %d ms" % (Time.get_ticks_msec() - t0))
 	_start_ready_players()
-	if not Synth.cache.has("music_battle"):
-		Synth.cache["music_battle"] = await _render_music_async("battle")
-	_battle.stream = Synth.cache["music_battle"]
+	if not Synth.cache.has("music_%s_battle" % th):
+		Synth.cache["music_%s_battle" % th] = await _render_music_async("battle")
+	_battle.stream = Synth.cache["music_%s_battle" % th]
 	battle_ready = true
 	print("[Zvuk] bojová hudba hotová za %d ms" % (Time.get_ticks_msec() - t0))
 	_start_ready_players()
 
 
 func _render_music_async(kind: String) -> AudioStreamWAV:
-	var tr: Dictionary = Synth.music_track(kind)
+	var tr: Dictionary = Synth.music_track(kind, Themes.cur().audio_id)
 	var spb: float = 60.0 / float(tr["bpm"])
 	var total: int = int(float(tr["beats"]) * spb * float(Synth.MRATE))
 	var b: PackedFloat32Array = PackedFloat32Array()

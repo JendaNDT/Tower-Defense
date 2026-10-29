@@ -128,7 +128,7 @@ func _animate_death(k: float, dt: float) -> void:
 			if k > 0.45 and not _death_fx_done:
 				_death_fx_done = true
 				var gy: float = game.map.height_at(position.x, position.z)
-				game.fx.dust_ring(Vector3(position.x, gy + 0.1, position.z), Color(0.62, 0.58, 0.52), 8, radius * 2.2, 0.8)
+				game.fx.dust_ring(Vector3(position.x, gy + 0.1, position.z), Themes.pal("crumble_dust"), 8, radius * 2.2, 0.8)
 		"crash":
 			# dráček se řítí šikmo dolů, točí se; při dopadu se rozprskne
 			var gyc: float = game.map.height_at(position.x, position.z) + 0.3
@@ -140,8 +140,8 @@ func _animate_death(k: float, dt: float) -> void:
 			visual.scale = Vector3.ONE * (1.0 if k < 0.88 else (1.0 - (k - 0.88) / 0.12))
 			if k >= 0.88 and not _death_fx_done:
 				_death_fx_done = true
-				game.fx.burst_puffs(Vector3(position.x, gyc, position.z), Color(0.85, 0.35, 0.3), 6, 1.0, 0.6, 0.6, 0.6)
-				game.fx.dust_ring(Vector3(position.x, gyc - 0.1, position.z), Color(0.7, 0.62, 0.5), 6, 1.0, 0.5)
+				game.fx.burst_puffs(Vector3(position.x, gyc, position.z), Themes.pal("crash_puff"), 6, 1.0, 0.6, 0.6, 0.6)
+				game.fx.dust_ring(Vector3(position.x, gyc - 0.1, position.z), Themes.pal("crash_dust"), 6, 1.0, 0.5)
 		"splat":
 			var e: float = 1.0 - pow(1.0 - minf(k * 2.2, 1.0), 2.0)
 			var fade: float = 1.0 - smoothstep(0.6, 1.0, k)
@@ -149,7 +149,7 @@ func _animate_death(k: float, dt: float) -> void:
 			if not _death_fx_done:
 				_death_fx_done = true
 				var gys: float = game.map.height_at(position.x, position.z)
-				game.fx.dust_ring(Vector3(position.x, gys + 0.1, position.z), def["color"], 7, radius * 2.0, 0.5)
+				game.fx.dust_ring(Vector3(position.x, gys + 0.1, position.z), Themes.enemy_color(type), 7, radius * 2.0, 0.5)
 		_:
 			visual.rotation.x = -fall * 1.45
 			visual.position.y = -0.12 * smoothstep(0.6, 1.0, k)
@@ -164,7 +164,7 @@ func _animate_absorb(k: float, dt: float) -> void:
 	visual.scale = Vector3.ONE * maxf(1.0 - k * k * 0.97, 0.03)
 	if k >= 0.97 and not _death_fx_done:
 		_death_fx_done = true
-		game.fx.hit_spark(tgt, Color(1.0, 0.5, 0.85))
+		game.fx.hit_spark(tgt, Themes.pal("absorb_spark"))
 
 
 func death_duration() -> float:
@@ -174,7 +174,7 @@ func death_duration() -> float:
 func _on_step(p: Vector3) -> void:
 	if game != null and game.fx != null:
 		var gy: float = game.map.height_at(p.x, p.z)
-		game.fx.burst_puffs(Vector3(p.x, gy + 0.15, p.z), Color(0.75, 0.68, 0.58), 3, 0.7, 0.55, 0.45)
+		game.fx.burst_puffs(Vector3(p.x, gy + 0.15, p.z), Themes.pal("step_dust"), 3, 0.7, 0.55, 0.45)
 		game.sfx("stomp", p, 0.0 if type == "boss" else -4.0)
 		if type == "boss":
 			game.camera_shake(0.05)
@@ -248,8 +248,8 @@ func take_damage(amount: float, kind: String = "phys", source = null, pierce: fl
 			source.damage_dealt += absorbed
 		game.total_damage += absorbed
 		if shield <= 0.0:
-			game.fx.burst_puffs(position + Vector3(0.0, visual.aim_height + 0.2, 0.0), Color(0.6, 0.85, 1.0), 8, 1.0, 0.5, 0.6, 1.6)
-			game.fx.ring(Vector3(position.x, position.y + 0.3, position.z), Color(0.6, 0.85, 1.0), 1.8, 0.4, 0.14, 0.1, 1.0)
+			game.fx.burst_puffs(position + Vector3(0.0, visual.aim_height + 0.2, 0.0), Themes.pal("shield_break"), 8, 1.0, 0.5, 0.6, 1.6)
+			game.fx.ring(Vector3(position.x, position.y + 0.3, position.z), Themes.pal("shield_break"), 1.8, 0.4, 0.14, 0.1, 1.0)
 			game.sfx("shield_break", position)
 	var dealt: float = minf(eff, hp)
 	hp -= eff
@@ -343,8 +343,8 @@ func _do_heal() -> void:
 		var got: float = en.heal(en.max_hp * frac)
 		if got > 0.0:
 			healed += 1
-			game.fx.burst_puffs(en.position + Vector3(0.0, en.visual.aim_height + 0.3, 0.0), Color(0.45, 1.0, 0.55), 3, 0.5, 0.3, 0.6, 1.4)
-	game.fx.ring(Vector3(position.x, position.y + 0.25, position.z), Color(0.45, 1.0, 0.55), r, 0.7, 0.08, 0.1, 1.0)
+			game.fx.burst_puffs(en.position + Vector3(0.0, en.visual.aim_height + 0.3, 0.0), Themes.pal("heal"), 3, 0.5, 0.3, 0.6, 1.4)
+	game.fx.ring(Vector3(position.x, position.y + 0.25, position.z), Themes.pal("heal"), r, 0.7, 0.08, 0.1, 1.0)
 	if healed > 0:
 		game.sfx("heal", position)
 
@@ -403,7 +403,7 @@ func update(dt: float) -> void:
 				var rz: float = position.z + dirb.x * 1.9 * side
 				var wy: float = game.map.terrain.water_y_at(rx, rz)
 				if wy > -50.0:
-					game.fx.ring(Vector3(rx, wy + 0.03, rz), Color(0.95, 0.99, 1.0), 1.2 + radius, 1.0, 0.2, 0.0, 0.6)
+					game.fx.ring(Vector3(rx, wy + 0.03, rz), Themes.pal("ripple"), 1.2 + radius, 1.0, 0.2, 0.0, 0.6)
 	cur_speed = current_speed()
 	s += cur_speed * dt
 	position = _compute_pos(s)

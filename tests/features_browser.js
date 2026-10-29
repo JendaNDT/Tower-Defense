@@ -2,6 +2,7 @@
 // noví nepřátelé, varování před letci, rekordy, nekonečný režim, nápověda.
 //   node tests/features_browser.js [--out=tests/out]
 const { chromium } = require('playwright');
+const TD_THEME_Q = process.env.TD_THEME ? '&theme=' + process.env.TD_THEME : '';   // TD_THEME=scifi => spustí test v daném prostředí
 const http = require('http'); const fs = require('fs'); const path = require('path');
 const args = Object.fromEntries(process.argv.slice(2).map(a => { const [k, v] = a.replace(/^--/, '').split('='); return [k, v === undefined ? true : v]; }));
 const ROOT = process.env.DOCS_DIR ? path.resolve(process.env.DOCS_DIR) : path.resolve(__dirname, '..', 'docs');
@@ -34,7 +35,7 @@ function check(name, ok, detail) { checks.push({ name, ok: !!ok, detail }); cons
   const approx = (a, b, t = 0.05) => Math.abs(a - b) <= t;
 
   // ---------------------------------------------------------------- 1) menu při startu
-  await page.goto('http://localhost:8128/index.html?test=1&q=low&nosound=1');
+  await page.goto('http://localhost:8128/index.html?test=1&q=low&nosound=1' + TD_THEME_Q);
   await ready();
   let h = await hud();
   check('při startu je otevřené menu s výchozími volbami (Příběh, Normální, Klikatá stezka)', h.intro_visible && h.menu.mode === 'campaign' && h.menu.diff === 'normal' && h.menu.island === 0 && h.menu.island_name === 'Klikatá stezka', h.menu);

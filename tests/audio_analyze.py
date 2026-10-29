@@ -2,7 +2,7 @@
 """Rozbor vygenerovaných WAV (nástroj scripts/tools/audio_dump.gd).
 Poslech nahradit nelze, proto kontroluje měřitelné vlastnosti: ticho, přebuzení, stejnosměrná složka,
 cvaknutí na začátku/konci, švy smyček, výšku tónů (hudba v d moll), tempo a rozdíl klidné/bojové hudby.
-Použití: python3 tests/audio_analyze.py CESTA_K_WAV [--png vystup.png]"""
+Použití: python3 tests/audio_analyze.py CESTA_K_WAV [--png vystup.png] [--key=a]   (výchozí tónina d moll, --key=a = a moll pro sci-fi)"""
 import sys, os, wave, json
 import numpy as np
 import importlib.util
@@ -13,6 +13,8 @@ def importlib_util_find(name):
 
 NOTE = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 D_MINOR = {"D", "E", "F", "G", "A", "A#", "C"}          # d moll přirozená (B♭ = A#)
+A_MINOR = {"A", "B", "C", "D", "E", "F", "G"}           # a moll přirozená (sci-fi motiv)
+KEY_SET = A_MINOR if any(a == "--key=a" for a in sys.argv) else D_MINOR
 
 
 def load(path):
@@ -91,7 +93,7 @@ def analyze(path):
     if name.startswith("music_"):
         c = chroma(x, rate)
         r["chroma"] = {NOTE[i]: round(float(c[i]), 3) for i in np.argsort(-c)[:8]}
-        r["in_key"] = float(sum(c[i] for i in range(12) if NOTE[i] in D_MINOR))
+        r["in_key"] = float(sum(c[i] for i in range(12) if NOTE[i] in KEY_SET))
         r["tempo_bpm"] = tempo(x, rate)
     return r, x, rate
 
@@ -118,7 +120,7 @@ def main():
         if r["sound_sec"] < 0.03:
             problems.append(f"{n}: téměř ticho (znělých {r['sound_sec']:.2f} s)")
         if n.startswith("music_") and r["in_key"] < 0.8:
-            problems.append(f"{n}: jen {r['in_key']*100:.0f} % energie v tónině d moll")
+            problems.append(f"{n}: jen {r['in_key']*100:.0f} % energie v tónině {"a moll" if KEY_SET is A_MINOR else "d moll"}")
     print(f"{'zvuk':14s} {'s':>5s} {'peak':>5s} {'RMS dB':>7s} {'znělé s':>7s} {'náběh ms':>8s} {'dom Hz':>7s} {'těžiště Hz':>10s} {'šev×':>5s}")
     for n, r in res.items():
         print(f"{n:14s} {r['sec']:5.2f} {r['peak']:5.2f} {r['rms_db']:7.1f} {r['sound_sec']:7.2f} {r['attack_ms']:8.0f} "
@@ -126,7 +128,7 @@ def main():
     for n in ("music_calm", "music_battle"):
         if n in res:
             r = res[n]
-            print(f"{n}: tempo≈{r['tempo_bpm']:.0f} BPM, v tónině d moll {r['in_key']*100:.0f} %, nejčastější tóny {r['chroma']}")
+            print(f"{n}: tempo≈{r['tempo_bpm']:.0f} BPM, v tónině {"a moll" if KEY_SET is A_MINOR else "d moll"} {r['in_key']*100:.0f} %, nejčastější tóny {r['chroma']}")
     if "music_calm" in res and "music_battle" in res:
         a, b = res["music_calm"], res["music_battle"]
         print(f"bojová vs. klidná: těžiště {b['centroid_hz']:.0f} vs {a['centroid_hz']:.0f} Hz, tempo {b['tempo_bpm']:.0f} vs {a['tempo_bpm']:.0f}")

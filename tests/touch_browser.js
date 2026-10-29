@@ -3,6 +3,7 @@
 // posun jedním prstem, přiblížení / otáčení dvěma prsty, klepnutí × tažení, meteor s potvrzením.
 //   node tests/touch_browser.js [--out=tests/out] [--w=844 --h=390]   (DOCS_DIR = složka s exportem, jinak docs/)
 const { chromium } = require('playwright');
+const TD_THEME_Q = process.env.TD_THEME ? '&theme=' + process.env.TD_THEME : '';   // TD_THEME=scifi => spustí test v daném prostředí
 const http = require('http'); const fs = require('fs'); const path = require('path');
 const args = Object.fromEntries(process.argv.slice(2).map(a => { const [k, v] = a.replace(/^--/, '').split('='); return [k, v === undefined ? true : v]; }));
 const ROOT = process.env.DOCS_DIR ? path.resolve(process.env.DOCS_DIR) : path.resolve(__dirname, '..', 'docs');
@@ -24,7 +25,7 @@ function check(name, ok, detail) { checks.push({ name, ok: !!ok, detail }); cons
     const page = await ctx.newPage();
     page.on('console', m => { const t = m.text(); if (m.type() === 'error' || /SCRIPT ERROR|ERROR/i.test(t)) { errors.push(t); console.log('[konzole]', t); } });
     page.on('pageerror', e => { errors.push(String(e)); console.log('[pageerror]', String(e)); });
-    await page.goto('http://localhost:8141/index.html?test=1&q=low&nosound=1&skipintro=1' + query);
+    await page.goto('http://localhost:8141/index.html?test=1&q=low&nosound=1&skipintro=1' + query + TD_THEME_Q);
     await page.waitForFunction(() => window.TD_ready === true, null, { timeout: 300000 });
     await sleep(1500);
     const cmd = async o => JSON.parse(await page.evaluate(x => { window.TD_cmd(JSON.stringify(x)); return window.TD_out; }, o));

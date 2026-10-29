@@ -39,7 +39,7 @@ func setup(map_ref: GameMap, theme_ref: GameTheme) -> void:
 	_sel = MeshInstance3D.new()
 	var sm: ShaderMaterial = ShaderMaterial.new()
 	sm.shader = Gfx.SH_GHOST
-	sm.set_shader_parameter("color", Color(1.0, 0.85, 0.3, 1.0))
+	sm.set_shader_parameter("color", Themes.pal("select_ring"))
 	sm.set_shader_parameter("fill_alpha", 0.0)
 	sm.set_shader_parameter("ring_alpha", 0.95)
 	sm.set_shader_parameter("ring_w", 0.1)

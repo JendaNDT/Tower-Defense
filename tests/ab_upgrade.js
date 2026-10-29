@@ -1,6 +1,7 @@
 // Kontrolovaný pokus v prohlížeči: jedna věž, stejná skupina nepřátel, mezi koly vylepšení KLIKNUTÍM na tlačítko v panelu.
 //   node tests/ab_upgrade.js [--type=archer]
 const { chromium } = require('playwright');
+const TD_THEME_Q = process.env.TD_THEME ? '&theme=' + process.env.TD_THEME : '';   // TD_THEME=scifi => spustí test v daném prostředí
 const http = require('http'); const fs = require('fs'); const path = require('path');
 const args = Object.fromEntries(process.argv.slice(2).map(a => { const [k, v] = a.replace(/^--/, '').split('='); return [k, v === undefined ? true : v]; }));
 const ROOT = process.env.DOCS_DIR ? path.resolve(process.env.DOCS_DIR) : path.resolve(__dirname, '..', 'docs');
@@ -19,7 +20,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   const cmd = async o => JSON.parse(await page.evaluate(x => { window.TD_cmd(JSON.stringify(x)); return window.TD_out; }, o));
   const box = async () => page.evaluate(() => { const r = document.getElementById('canvas').getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; });
   const clickNorm = async p => { const b = await box(); const x = b.x + p[0] * b.w, y = b.y + p[1] * b.h; await page.mouse.move(x, y, { steps: 3 }); await page.mouse.click(x, y); };
-  await page.goto('http://localhost:8131/index.html?test=1&skipintro=1&q=low');
+  await page.goto('http://localhost:8131/index.html?test=1&skipintro=1&q=low' + TD_THEME_Q);
   await page.waitForFunction(() => window.TD_ready === true, null, { timeout: 240000 });
   await cmd({ op: 'freeze', v: true });
   await cmd({ op: 'gold', v: 5000 });
