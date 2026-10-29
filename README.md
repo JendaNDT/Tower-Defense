@@ -54,6 +54,8 @@ Funguje v aktuálním Chrome / Edge / Firefox. První načtení stahuje ~40 MB (
 | Zvuk a hudba | tlačítka **reproduktor** (efekty a ambient) a **nota** (hudba) nahoře; klávesa **M** vypne/zapne vše. Volba se pamatuje |
 | Kvalita | tlačítko *Kvalita* (vypne stíny od slunce, vyhlazování, spáleniny a jiskry; na mobilech/slabých strojích se zapne samo) |
 | Přehled výkonu | **F3** – snímky za vteřinu, volání vykreslení, objekty, trojúhelníky a počty nepřátel / věží / stínů |
+| **Dotyk (telefon, tablet)** | karta věže → klepnutí na pole (pole se označí, náhled věže a dosahu) → tlačítko **Postavit** nebo druhé klepnutí na totéž pole; křížek stavbu zruší. Klepnutí na věž otevře panel (vylepšit, prodat, cíl, křížek zavře). **Meteor**: klepnout na schopnost, na místo dopadu a potvrdit |
+| Kamera dotykem | **jeden prst** = posun, **dva prsty** = přiblížení, otáčení (mapa se otáčí s prsty) a posun; tlačítka kamery, zvuku, kvality, celé obrazovky a nové hry jsou pod tlačítkem **…** nahoře |
 
 ## Pravidla
 
@@ -134,6 +136,14 @@ Zdraví nepřátel s vlnami roste (vlna 12 má ×5,4). Přehled další vlny je 
 - **Hloubka (levné náhrady, protože režim Kompatibilita nemá SSAO ani volumetrickou mlhu):** jemný modrý opar do dálky, měkké kontaktní stíny pod všemi věžemi a nepřáteli (létající mají stín na zemi, který je tím menší a bledší, čím výš letí) – celé je to jediné volání vykreslení – a ztmavení spodku modelů (obarvení vrcholů).
 - **Řeka:** pohyblivá pěna u břehu, kruhy na hladině po obou stranách mostu, když po něm někdo jde, a hustší mlha a sprška u vodopádu.
 - Všechny drahé efekty se v **nízké kvalitě** vypínají (spáleniny, jiskry u výstřelů, skutečné stíny od slunce); měkké stíny zůstávají, protože nahrazují ty skutečné.
+
+### Ovládání na telefonu
+
+- **Rozpoznání:** malá dotyková obrazovka (kratší strana pod 700 px) dostane profil „telefon“; adresa `?touch=1` ho vynutí i na počítači (pro zkoušení), `?touch=0` ho zakáže. Tablety a dotykové notebooky zůstávají na běžném rozložení, ale ovládají se prstem stejně (stavba s potvrzením).
+- **Kompaktní rozhraní:** obsah okna se zmenší na ~990 × 460, takže všechno je větší a čitelné (tlačítka mají aspoň 44 px na obrazovce). Karty věží mají jen ikonu, název a cenu, schopnosti jsou řada ikon vlevo dole, nástroje jsou pod tlačítkem **…**, panel věže je vpravo se zavíracím křížkem (panel vlny se přitom schová), úvodní menu je ve dvou sloupcích. Bublinové nápovědy se na telefonu nepoužívají. Rozložení hlídá test (nic se nepřekrývá a vše leží v obrazovce).
+- **Klepnutí a tažení:** prst, který se nepohnul, je klepnutí; tažení posouvá kameru a nic nestaví ani nevybírá. Dotyk začínající na tlačítku nebo panelu kameru neovládá.
+- **Na výšku:** hra se pozastaví a ukáže „Otoč telefon na šířku“.
+- **Výkon:** na telefonu se kvalita sama sníží a rozlišení plátna se omezí na dvojnásobek CSS pixelů (telefony s hustotou 3 by jinak vykreslovaly 2,25× víc bodů); `?dpr=1` ho omezí na jeden bod. Stránka nejde přibližovat štípnutím ani posouvat tažením a dlouhé podržení neotevírá nabídku.
 
 ### Zvuk a hudba
 
