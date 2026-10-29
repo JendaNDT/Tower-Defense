@@ -10,14 +10,17 @@ var cells: PackedInt32Array = PackedInt32Array()
 var obstacles: Array = []          # {cell: Vector2i, pos: Vector3, kind: String, biome: int}
 var spawn_pos: Vector3 = Vector3.ZERO
 var base_pos: Vector3 = Vector3.ZERO
-var bridge_s0: float = -1.0        # úsek trasy, který vede přes řeku (vzdálenost podél trasy)
-var bridge_s1: float = -1.0
+var bridges: Array = []            # úseky trasy vedoucí přes řeku: [[s0, s1], ...] (vzdálenost podél trasy)
 var map_seed: int = 7
+var def: Dictionary = {}           # rozložení ostrova (viz Islands)
+var base_cell: Vector2i = Vector2i(22, 4)
 var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 
 
-func _init(seed_in: int = 7) -> void:
+func _init(seed_in: int = 7, island_def: Dictionary = {}) -> void:
 	map_seed = seed_in
+	def = island_def if not island_def.is_empty() else Islands.LIST[0]
+	base_cell = def["base"]
 	_rng.seed = seed_in * 7919 + 13
 
 
@@ -26,34 +29,44 @@ func path() -> PathData:
 
 
 func build() -> void:
-	terrain = Terrain.new(map_seed)
+	terrain = Terrain.new(map_seed, def["biomes"])
+	var cells_path: Array = def["path"]
 
 	# --- polyline trasy ve světových souřadnicích
 	var poly: Array = []
-	var first: Vector2 = Cfg.cell_center(Cfg.PATH_CELLS[0].x, Cfg.PATH_CELLS[0].y)
-	var px: float = first.x
-	while terrain.edge_dist(px, first.y) > 1.6 and px > -Terrain.HALF + 1.0:
-		px -= 0.25
-	poly.append(Vector2(px, first.y))
-	for i in range(Cfg.PATH_CELLS.size()):
-		var cc: Vector2i = Cfg.PATH_CELLS[i]
+	var first: Vector2 = Cfg.cell_center(cells_path[0].x, cells_path[0].y)
+	var second: Vector2 = Cfg.cell_center(cells_path[1].x, cells_path[1].y)
+	var out_dir: Vector2 = (first - second).normalized()      # směr ven z ostrova (portál stojí u okraje)
+	var p0: Vector2 = first
+	var guard: int = 0
+	while terrain.edge_dist(p0.x, p0.y) > 1.6 and guard < 200:
+		p0 += out_dir * 0.25
+		guard += 1
+	poly.append(p0)
+	for i in range(cells_path.size()):
+		var cc: Vector2i = cells_path[i]
 		var w: Vector2 = Cfg.cell_center(cc.x, cc.y)
-		if i == Cfg.PATH_CELLS.size() - 1:
-			w = Vector2(Cfg.cell_center(Cfg.BASE_CELL.x, Cfg.BASE_CELL.y).x - Cfg.CELL * 0.5 + 0.4, w.y)
+		if i == cells_path.size() - 1:
+			# trasa končí u hrany buňky se Srdcem ostrova
+			var bc: Vector2 = Cfg.cell_center(base_cell.x, base_cell.y)
+			var dir_b: Vector2 = (bc - w).normalized()
+			w = bc - dir_b * (Cfg.CELL * 0.5 - 0.4)
 		poly.append(w)
 
-	terrain.generate(poly, Cfg.RIVER_POINTS)
+	terrain.generate(poly, def["river"])
 
 	var p: PathData = terrain.path
 	spawn_pos = p.pos_at(0.0)
 	base_pos = p.pos_at(p.length)
 
-	_find_bridge()
+	_find_bridges()
 	_classify_cells()
 	_place_obstacles()
 
 
-func _find_bridge() -> void:
+## Souvislé úseky trasy, kde vede přes řeku => mosty.
+func _find_bridges() -> void:
+	bridges.clear()
 	var p: PathData = terrain.path
 	var i0: int = -1
 	var i1: int = -1
@@ -63,13 +76,18 @@ func _find_bridge() -> void:
 			if i0 < 0:
 				i0 = i
 			i1 = i
+		elif i0 >= 0:
+			bridges.append([maxf(float(i0) * PathData.STEP - 1.0, 0.0), minf(float(i1) * PathData.STEP + 1.0, p.length)])
+			i0 = -1
 	if i0 >= 0:
-		bridge_s0 = maxf(float(i0) * PathData.STEP - 1.0, 0.0)
-		bridge_s1 = minf(float(i1) * PathData.STEP + 1.0, p.length)
+		bridges.append([maxf(float(i0) * PathData.STEP - 1.0, 0.0), minf(float(i1) * PathData.STEP + 1.0, p.length)])
 
 
 func is_on_bridge(s: float) -> bool:
-	return bridge_s0 >= 0.0 and s >= bridge_s0 and s <= bridge_s1
+	for b in bridges:
+		if s >= float(b[0]) and s <= float(b[1]):
+			return true
+	return false
 
 
 func _classify_cells() -> void:
@@ -85,7 +103,7 @@ func _classify_cells() -> void:
 			elif terrain.path_dist_at(c.x, c.y) < 1.45:
 				st = Cell.PATH
 			cells[cz * Cfg.GRID_W + cx] = st
-	cells[Cfg.BASE_CELL.y * Cfg.GRID_W + Cfg.BASE_CELL.x] = Cell.BASE
+	cells[base_cell.y * Cfg.GRID_W + base_cell.x] = Cell.BASE
 
 
 func _near_path_cell(cx: int, cz: int) -> bool:

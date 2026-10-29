@@ -21,16 +21,22 @@ const BASE_DB: Dictionary = {
 	"death_goblin": -9.0, "death_wolf": -9.0, "death_golem": -6.0, "death_drake": -8.0, "death_boss": 0.0,
 	"coin": -12.0, "base_hit": -2.0, "wave_horn": -4.0, "wave_clear": -5.0, "victory": -3.0, "defeat": -3.0,
 	"stomp": -6.0, "spawn": -12.0, "bird_1": -16.0, "bird_2": -16.0, "bird_3": -16.0,
+	"heal": -14.0, "shield_break": -9.0, "slime_split": -9.0, "death_healer": -9.0, "death_shield": -8.0,
+	"death_slime": -9.0, "death_slimeling": -11.0, "meteor_fall": -6.0, "meteor_hit": -1.0, "blizzard": -6.0,
+	"gold_rush": -9.0, "ability_ready": -12.0,
 }
 const MIN_GAP: Dictionary = {
 	"archer_shot": 0.06, "arrow_hit": 0.05, "magic_hit": 0.05, "zap": 0.03, "coin": 0.06,
 	"death_goblin": 0.05, "death_wolf": 0.05, "death_golem": 0.08, "death_drake": 0.06,
 	"stomp": 0.18, "spawn": 0.25, "ui_click": 0.04, "freeze_hit": 0.05,
+	"heal": 0.4, "shield_break": 0.15, "slime_split": 0.1, "death_slime": 0.06, "death_slimeling": 0.06,
+	"death_healer": 0.08, "death_shield": 0.08,
 }
 const PITCH_VAR: Dictionary = {
 	"archer_shot": 0.10, "arrow_hit": 0.12, "death_goblin": 0.10, "death_wolf": 0.10, "death_golem": 0.08,
 	"death_drake": 0.10, "coin": 0.05, "explosion": 0.07, "cannon_shot": 0.06, "magic_hit": 0.08,
 	"zap": 0.10, "mage_cast": 0.06, "frost_pulse": 0.04, "stomp": 0.08, "build": 0.05,
+	"death_slime": 0.1, "death_slimeling": 0.12, "slime_split": 0.1, "death_shield": 0.06, "shield_break": 0.08,
 }
 
 var game = null
@@ -94,9 +100,12 @@ func setup(game_ref, rig_ref) -> void:
 	# efekty se syntetizují hned (stovky milisekund), hudba a smyčky na pozadí
 	var t0: int = Time.get_ticks_msec()
 	for n in Synth.SFX_NAMES:
-		_sounds[n] = Synth.make_sfx(str(n))
+		var key: String = "sfx_" + str(n)
+		if not Synth.cache.has(key):
+			Synth.cache[key] = Synth.make_sfx(str(n))
+		_sounds[n] = Synth.cache[key]
 	sounds_ready = _sounds.size()
-	print("[Zvuk] %d efektů vysyntetizováno za %d ms" % [sounds_ready, Time.get_ticks_msec() - t0])
+	print("[Zvuk] %d efektů připraveno za %d ms" % [sounds_ready, Time.get_ticks_msec() - t0])
 	_generate_async()
 
 
@@ -114,15 +123,23 @@ func _budget() -> int:
 
 
 func _generate_async() -> void:
+	## Vygenerované zvuky se drží ve statické mezipaměti (přežije znovunačtení scény při změně ostrova).
 	var t0: int = Time.get_ticks_msec()
-	_wind.stream = Synth.make_ambient("wind")
-	_water.stream = Synth.make_ambient("water")
+	for kind in ["wind", "water"]:
+		if not Synth.cache.has("amb_" + kind):
+			Synth.cache["amb_" + kind] = Synth.make_ambient(kind)
+	_wind.stream = Synth.cache["amb_wind"]
+	_water.stream = Synth.cache["amb_water"]
 	await get_tree().process_frame
-	_calm.stream = await _render_music_async("calm")
+	if not Synth.cache.has("music_calm"):
+		Synth.cache["music_calm"] = await _render_music_async("calm")
+	_calm.stream = Synth.cache["music_calm"]
 	calm_ready = true
 	print("[Zvuk] klidná hudba hotová za %d ms" % (Time.get_ticks_msec() - t0))
 	_start_ready_players()
-	_battle.stream = await _render_music_async("battle")
+	if not Synth.cache.has("music_battle"):
+		Synth.cache["music_battle"] = await _render_music_async("battle")
+	_battle.stream = Synth.cache["music_battle"]
 	battle_ready = true
 	print("[Zvuk] bojová hudba hotová za %d ms" % (Time.get_ticks_msec() - t0))
 	_start_ready_players()

@@ -29,9 +29,13 @@ var _n_dune: FastNoiseLite
 
 const BIOME_CENTERS: Array = [Vector2(17.0, -17.0), Vector2(-17.0, 17.0), Vector2(17.0, 17.0), Vector2(-17.0, -17.0)]
 
+var biome_centers: Array = BIOME_CENTERS      # les, louka, poušť, sníh (podle rozložení ostrova)
 
-func _init(seed_in: int = 7) -> void:
+
+func _init(seed_in: int = 7, centers: Array = []) -> void:
 	seed_value = seed_in
+	if centers.size() == 4:
+		biome_centers = centers
 	_n_hill = _mk(seed_in + 1, 0.035, 3)
 	_n_hill2 = _mk(seed_in + 2, 0.11, 2)
 	_n_rim = _mk(seed_in + 3, 0.06, 2)
@@ -71,7 +75,7 @@ func biome_weights(x: float, z: float) -> Color:
 	var wz: float = z + 7.0 * _n_warp.get_noise_2d(x * 0.05 + 50.0, z * 0.05 + 50.0)
 	var ds: Array = []
 	var dmin: float = 1.0e9
-	for c in BIOME_CENTERS:
+	for c in biome_centers:
 		var d: float = Vector2(wx, wz).distance_to(c)
 		ds.append(d)
 		dmin = minf(dmin, d)

@@ -106,7 +106,7 @@ const HOOK = () => {
   // 1) před kliknutím nesmí hrát nic
   let a = await audio();
   check('zvukový systém existuje', a.ok, JSON.stringify({ sounds: a.sounds }));
-  check('všech 30 efektů vysyntetizováno hned při startu', a.sounds === 30, a.sounds);
+  check('všech 42 efektů připraveno hned při startu', a.sounds === 42, a.sounds);
   check('před prvním kliknutím nehraje hudba', !a.started && !a.calm_playing);
   const rms0 = await page.evaluate(() => window.__peakRms(600));
   check('před kliknutím je výstup tichý', rms0 <= 0.0005, rms0.toFixed(5));
@@ -223,6 +223,22 @@ const HOOK = () => {
   check('zabití přehrálo zvuk smrti a minci', ((a.counts.death_goblin || 0) + (a.counts.death_wolf || 0) + (a.counts.death_golem || 0) + (a.counts.death_drake || 0)) >= 1 && (a.counts.coin || 0) >= 1);
   await waitFor(async () => (await audio()).fade < 0.2, 120000, 'návrat ke klidné hudbě');
   check('po vlně se hudba vrátila ke klidné', true);
+
+  // 4b) schopnosti a noví nepřátelé mají vlastní zvuky
+  const ca = (await audio()).counts || {};
+  await cmd({ op: 'spawn', type: 'slime', n: 1, interval: 1, hp: 0.0001 });
+  await cmd({ op: 'step', t: 2 });
+  const qs = await st();
+  const sl = qs.enemies.find(e => e.type === 'slime');
+  await cmd({ op: 'cast', id: 'blizzard' });
+  await cmd({ op: 'cast', id: 'gold' });
+  await cmd({ op: 'cast', id: 'meteor', x: sl ? sl.x : 0, z: sl ? sl.z : 0 });
+  await cmd({ op: 'step', t: 2 });
+  await sleep(400);
+  const cb2 = (await audio()).counts || {};
+  const grew = k => (cb2[k] || 0) > (ca[k] || 0);
+  check('schopnosti přehrály své zvuky (meteor padá a dopadá, poryv, horečka)', grew('meteor_fall') && grew('meteor_hit') && grew('blizzard') && grew('gold_rush'), JSON.stringify({ fall: cb2.meteor_fall, hit: cb2.meteor_hit, bliz: cb2.blizzard, gold: cb2.gold_rush }));
+  check('slizák se při smrti rozpadl a ozval se (rozpad + smrt)', !!sl && grew('slime_split') && grew('death_slime'), JSON.stringify({ split: cb2.slime_split, death_slime: cb2.death_slime }));
 
   // 5) konec hry: prohra (znělka + ztlumení hudby), restart, výhra (fanfára)
   const cb = (await audio()).counts || {};

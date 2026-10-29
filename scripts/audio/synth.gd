@@ -9,6 +9,7 @@ const RATE: int = 22050        # vzorkovací frekvence efektů
 const MRATE: int = 11025       # vzorkovací frekvence hudby a ambientu (úspora výkonu)
 
 static var _rng: RandomNumberGenerator = null
+static var cache: Dictionary = {}      # už vygenerované zvuky (efekty, ambient, hudba) – nové načtení scény je nemusí počítat znovu
 
 
 static func rng() -> RandomNumberGenerator:
@@ -137,6 +138,8 @@ const SFX_NAMES: Array = [
 	"death_goblin", "death_wolf", "death_golem", "death_drake", "death_boss", "coin",
 	"base_hit", "wave_horn", "wave_clear", "victory", "defeat", "stomp", "spawn",
 	"bird_1", "bird_2", "bird_3",
+	"heal", "shield_break", "slime_split", "death_healer", "death_shield", "death_slime", "death_slimeling",
+	"meteor_fall", "meteor_hit", "blizzard", "gold_rush", "ability_ready",
 ]
 
 
@@ -240,6 +243,78 @@ static func make_sfx(sfx_name: String) -> AudioStreamWAV:
 			b = buf(0.7)
 			tone(b, R, 0.0, 0.5, 1100.0, 380.0, 0.9, 6.0, 0.003, [[2.0, 0.6], [3.0, 0.5], [4.0, 0.3]], 30.0, 0.08)
 			band_noise(b, R, 0.0, 0.4, 0.5, 3000.0, 1200.0, 0.25, 6.0, 0.005, 0.1)
+		"heal":
+			b = buf(0.8)
+			for i in range(3):
+				var hf: float = [784.0, 987.8, 1174.7][i]
+				tone(b, R, float(i) * 0.07, 0.6, hf, hf, 0.7, 5.0, 0.01, [[2.0, 0.25]])
+			band_noise(b, R, 0.0, 0.5, 0.12, 5000.0, 9000.0, 0.2, 6.0, 0.05, 0.2)
+		"shield_break":
+			b = buf(0.5)
+			noise(b, R, 0.0, 0.03, 1.0, 80.0, 1.0, true)
+			for i in range(6):
+				var sf: float = rng().randf_range(2500.0, 5000.0)
+				tone(b, R, rng().randf_range(0.0, 0.12), 0.18, sf, sf * 0.5, 0.5, 18.0, 0.001, [[2.76, 0.5]])
+			tone(b, R, 0.0, 0.35, 900.0, 300.0, 0.6, 10.0)
+			band_noise(b, R, 0.0, 0.4, 0.4, 6000.0, 2000.0, 0.3, 8.0, 0.002, 0.1)
+		"slime_split":
+			b = buf(0.4)
+			tone(b, R, 0.0, 0.18, 180.0, 420.0, 1.0, 10.0, 0.004, [[2.0, 0.5]], 26.0, 0.12)
+			tone(b, R, 0.1, 0.2, 500.0, 200.0, 0.8, 12.0, 0.004, [[2.0, 0.4]], 30.0, 0.15)
+			noise(b, R, 0.0, 0.15, 0.4, 16.0, 0.3)
+		"death_healer":
+			b = buf(0.7)
+			tone(b, R, 0.0, 0.5, 988.0, 740.0, 0.8, 5.0, 0.004, [[2.0, 0.3]], 7.0, 0.03)
+			tone(b, R, 0.12, 0.5, 740.0, 523.0, 0.7, 5.0, 0.004, [[2.0, 0.3]], 7.0, 0.03)
+			noise(b, R, 0.0, 0.1, 0.3, 30.0, 0.3)
+		"death_shield":
+			b = buf(0.7)
+			noise(b, R, 0.0, 0.04, 1.0, 70.0, 1.0)
+			for mf in [520.0, 780.0, 1310.0, 2150.0]:
+				tone(b, R, 0.0, 0.5, mf, mf * 0.98, 0.5, 9.0, 0.001)
+			tone(b, R, 0.0, 0.3, 110.0, 55.0, 0.9, 12.0)
+			noise(b, R, 0.05, 0.3, 0.3, 14.0, 0.3)
+		"death_slime":
+			b = buf(0.4)
+			tone(b, R, 0.0, 0.25, 320.0, 90.0, 1.0, 10.0, 0.003, [[2.0, 0.4]], 20.0, 0.1)
+			noise(b, R, 0.0, 0.2, 0.5, 14.0, 0.25)
+			tone(b, R, 0.02, 0.1, 900.0, 300.0, 0.4, 30.0)
+		"death_slimeling":
+			b = buf(0.28)
+			tone(b, R, 0.0, 0.16, 640.0, 200.0, 1.0, 14.0, 0.002, [[2.0, 0.3]], 22.0, 0.1)
+			noise(b, R, 0.0, 0.1, 0.4, 20.0, 0.3)
+		"meteor_fall":
+			b = buf(1.0)
+			tone(b, R, 0.0, 0.95, 2400.0, 320.0, 0.55, 0.0, 0.7, [[2.0, 0.3]], 5.0, 0.02)
+			band_noise(b, R, 0.0, 0.95, 0.7, 500.0, 2600.0, 0.18, 0.0, 0.8, 0.04)
+			noise(b, R, 0.0, 0.95, 0.35, 2.0, 0.08)
+		"meteor_hit":
+			b = buf(2.0)
+			noise(b, R, 0.0, 1.8, 1.0, 2.6, 0.14)
+			tone(b, R, 0.0, 1.5, 70.0, 24.0, 1.0, 2.6, 0.002, [[2.0, 0.4]])
+			noise(b, R, 0.0, 0.06, 1.0, 50.0, 1.0)
+			tone(b, R, 0.0, 0.3, 160.0, 50.0, 0.9, 8.0)
+			for i in range(16):
+				noise(b, R, rng().randf_range(0.05, 1.0), 0.015, 0.5, 120.0, 1.0, true)
+		"blizzard":
+			b = buf(1.8)
+			band_noise(b, R, 0.0, 1.6, 0.6, 600.0, 5000.0, 0.18, 1.2, 0.3, 0.4)
+			for i in range(4):
+				var bf: float = [2093.0, 2637.0, 3136.0, 3951.0][i]
+				tone(b, R, 0.2 + float(i) * 0.1, 0.9, bf, bf, 0.3, 3.5, 0.02, [], 8.0, 0.04)
+			tone(b, R, 0.0, 1.2, 180.0, 340.0, 0.25, 2.0, 0.2)
+		"gold_rush":
+			b = buf(1.4)
+			for i in range(12):
+				var gf: float = [1318.5, 1568.0, 1760.0, 2093.0][i % 4]
+				tone(b, R, float(i) * 0.07, 0.25, gf, gf, 0.6, 12.0, 0.002, [[2.0, 0.3]])
+			for cf in [523.25, 659.25, 783.99]:
+				tone(b, R, 0.0, 1.0, cf, cf, 0.25, 2.5, 0.05, [[2.0, 0.2]])
+			band_noise(b, R, 0.0, 0.9, 0.12, 5000.0, 9000.0, 0.2, 2.5, 0.05, 0.3)
+		"ability_ready":
+			b = buf(0.4)
+			tone(b, R, 0.0, 0.25, 880.0, 880.0, 0.7, 12.0, 0.003, [[2.0, 0.25]])
+			tone(b, R, 0.1, 0.3, 1318.5, 1318.5, 0.7, 10.0, 0.003, [[2.0, 0.25]])
 		"death_boss":
 			b = buf(2.2)
 			tone(b, R, 0.0, 1.8, 70.0, 32.0, 1.0, 1.6, 0.003, [[2.0, 0.4]])

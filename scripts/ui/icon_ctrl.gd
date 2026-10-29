@@ -127,6 +127,32 @@ func _draw() -> void:
 			draw_colored_polygon(PackedVector2Array([c + Vector2(s * 0.02, -s * 0.36), c + Vector2(s * 0.3, -s * 0.18), c + Vector2(s * 0.02, -s * 0.12)]), nc)
 			if kind == "note_off":
 				draw_line(c + Vector2(-s * 0.36, s * 0.36), c + Vector2(s * 0.36, -s * 0.36), Color(1.0, 0.4, 0.38), maxf(s * 0.08, 2.0), true)
+		"warn":
+			draw_colored_polygon(PackedVector2Array([c + Vector2(0.0, -s * 0.42), c + Vector2(s * 0.46, s * 0.38), c + Vector2(-s * 0.46, s * 0.38)]), col)
+			draw_line(c + Vector2(0.0, -s * 0.12), c + Vector2(0.0, s * 0.14), Color(0.15, 0.1, 0.05), maxf(s * 0.1, 1.5), true)
+			draw_circle(c + Vector2(0.0, s * 0.27), s * 0.055, Color(0.15, 0.1, 0.05))
+		"meteor":
+			draw_line(c + Vector2(-s * 0.44, -s * 0.44), c + Vector2(-s * 0.05, -s * 0.05), col.darkened(0.2), maxf(s * 0.14, 2.0), true)
+			draw_line(c + Vector2(-s * 0.46, -s * 0.2), c + Vector2(-s * 0.12, s * 0.06), col.darkened(0.35), maxf(s * 0.08, 1.5), true)
+			draw_circle(c + Vector2(s * 0.12, s * 0.12), s * 0.27, col)
+			draw_circle(c + Vector2(s * 0.12, s * 0.12), s * 0.27, col.darkened(0.45), false, maxf(s * 0.05, 1.0), true)
+			draw_circle(c + Vector2(s * 0.2, s * 0.2), s * 0.1, Color(1.0, 0.9, 0.5))
+		"snow":
+			for i in range(3):
+				var a: float = PI * float(i) / 3.0
+				var v: Vector2 = Vector2(cos(a), sin(a)) * s * 0.42
+				draw_line(c - v, c + v, col, maxf(s * 0.07, 1.5), true)
+			draw_circle(c, s * 0.08, Color(1, 1, 1))
+		"goldrush":
+			draw_circle(c + Vector2(-s * 0.12, s * 0.12), s * 0.26, col.darkened(0.25))
+			draw_circle(c + Vector2(-s * 0.12, s * 0.12), s * 0.2, col)
+			draw_circle(c + Vector2(s * 0.16, -s * 0.1), s * 0.22, col.darkened(0.25))
+			draw_circle(c + Vector2(s * 0.16, -s * 0.1), s * 0.16, col)
+			draw_line(c + Vector2(s * 0.3, -s * 0.4), c + Vector2(s * 0.3, -s * 0.22), Color(1, 1, 1), maxf(s * 0.05, 1.0), true)
+			draw_line(c + Vector2(s * 0.21, -s * 0.31), c + Vector2(s * 0.39, -s * 0.31), Color(1, 1, 1), maxf(s * 0.05, 1.0), true)
+		"menu":
+			for i in range(3):
+				draw_rect(Rect2(c + Vector2(-s * 0.32, -s * 0.26 + float(i) * s * 0.26), Vector2(s * 0.64, s * 0.12)), col)
 		"dot":
 			draw_circle(c, s * 0.4, col)
 			draw_arc(c, s * 0.4, 0.0, TAU, 20, col.darkened(0.4), maxf(s * 0.06, 1.0), true)

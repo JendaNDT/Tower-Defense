@@ -14,8 +14,6 @@ var handles: Dictionary = {}
 var bridge: TestBridge = null
 var audio: AudioManager = null
 
-const SETTINGS_PATH: String = "user://nastaveni.cfg"
-
 var build_type: String = ""
 var selected: Tower = null
 var hover_cell: Vector2i = Vector2i(-1, -1)
@@ -24,6 +22,8 @@ var args: Dictionary = {}
 var ready_to_play: bool = false
 var _pick_key: String = ""
 var _pick_cache = null
+var aim_ability: String = ""          # schopnost, která čeká na výběr místa (meteor)
+var island_def: Dictionary = {}
 
 
 func _parse_args() -> void:
@@ -50,6 +50,11 @@ func _parse_args() -> void:
 
 func _ready() -> void:
 	_parse_args()
+	if not args.has("simtest"):
+		GameSettings.load_all()
+	else:
+		GameSettings.loaded = true
+	GameSettings.apply_args(args)
 	hud = Hud.new()
 	add_child(hud)
 	# nechat vykreslit načítací obrazovku, pak teprve stavět (generování terénu chvíli trvá)
@@ -66,7 +71,13 @@ func _build_everything() -> void:
 	world.name = "World"
 	add_child(world)
 
-	map = GameMap.new(int(args.get("seed", "7")))
+	if GameSettings.island == Islands.RANDOM_ID and GameSettings.random_seed == 0:
+		GameSettings.random_seed = 1000 + int(Time.get_ticks_usec() % 9000)
+	island_def = Islands.resolve(GameSettings.island, GameSettings.random_seed)
+	var map_seed: int = int(island_def["seed"])
+	if args.has("seed") and GameSettings.island != Islands.RANDOM_ID:
+		map_seed = int(args["seed"])
+	map = GameMap.new(map_seed, island_def)
 	map.build()
 	theme = ThemeSkyIsland.new()
 	handles = theme.build_world(world, map, high_quality)
@@ -75,6 +86,10 @@ func _build_everything() -> void:
 
 	game = Game.new()
 	game.name = "Game"
+	game.mode_id = GameSettings.mode
+	game.diff_id = GameSettings.difficulty
+	game.island_hp = float(island_def.get("hp", 1.0))
+	game.persist_records = not args.has("simtest") and not args.has("test")     # testy rekordy nepřepisují
 	add_child(game)
 	game.setup(map, theme, world, fx)
 	game.ambient = handles.get("ambient")
@@ -95,8 +110,10 @@ func _build_everything() -> void:
 		audio.setup(game, rig)
 		game.audio = audio
 
-	hud.bind(game)
+	hud.bind(game, island_def)
 	hud.request_build.connect(_on_request_build)
+	hud.request_ability.connect(_on_request_ability)
+	hud.request_new_game.connect(_on_new_game)
 	hud.request_cancel.connect(_cancel_all)
 	hud.request_upgrade.connect(_upgrade_selected)
 	hud.request_sell.connect(_sell_selected)
@@ -132,7 +149,8 @@ func _build_everything() -> void:
 	if args.has("simtest"):
 		SimTest.run(self)
 		return
-	if args.has("skipintro"):
+	if args.has("skipintro") or GameSettings.autostart:
+		GameSettings.autostart = false
 		_on_begin()
 	else:
 		game.paused = true
@@ -161,22 +179,19 @@ func _play_ui(sound: String) -> void:
 
 
 func _load_audio_settings() -> void:
-	var cf: ConfigFile = ConfigFile.new()
-	var sfx: bool = true
-	var mus: bool = true
-	if cf.load(SETTINGS_PATH) == OK:
-		sfx = bool(cf.get_value("zvuk", "efekty", true))
-		mus = bool(cf.get_value("zvuk", "hudba", true))
+	var cf: ConfigFile = GameSettings.cfg_load()
+	var sfx: bool = bool(cf.get_value("zvuk", "efekty", true))
+	var mus: bool = bool(cf.get_value("zvuk", "hudba", true))
 	audio.set_sfx(sfx)
 	audio.set_music(mus)
 	hud.set_audio_state(sfx, mus)
 
 
 func _save_audio_settings() -> void:
-	var cf: ConfigFile = ConfigFile.new()
+	var cf: ConfigFile = GameSettings.cfg_load()
 	cf.set_value("zvuk", "efekty", audio.sfx_on)
 	cf.set_value("zvuk", "hudba", audio.music_on)
-	cf.save(SETTINGS_PATH)
+	cf.save(GameSettings.path)
 
 
 func _on_audio_toggle(kind: String, on: bool) -> void:
@@ -205,7 +220,9 @@ func _set_paused(on: bool) -> void:
 
 
 func _restart() -> void:
-	game.reset()
+	game.configure(GameSettings.mode, GameSettings.difficulty)
+	aim_ability = ""
+	hud.set_aim(false)
 	selected = null
 	build_type = ""
 	hud.show_tower(null)
@@ -222,9 +239,65 @@ func _restart() -> void:
 	hud._speed_idx = 0
 	hud.refresh_cards()
 	hud._refresh_wave_panel()
+	hud.refresh_info()
+
+
+## Nová hra z menu: stejný ostrov = jen restart pravidel, jiný ostrov = nové načtení scény (svět se staví znovu).
+func _on_new_game(mode_in: String, diff_in: String, island_in: int) -> void:
+	var old_island: int = GameSettings.island
+	var fresh: bool = game.waves_started == 0 and game.time < 0.5
+	GameSettings.mode = mode_in
+	GameSettings.difficulty = diff_in
+	GameSettings.island = island_in
+	GameSettings.save_all()
+	# stejný ostrov (nebo ještě nezačatý náhodný) = jen nová pravidla na stejné mapě
+	if island_in == old_island and (island_in != Islands.RANDOM_ID or fresh):
+		_restart()
+		hud.show_intro(false)
+		_on_begin()
+		return
+	if island_in == Islands.RANDOM_ID:
+		GameSettings.random_seed = 1000 + int(Time.get_ticks_usec() % 9000)
+	GameSettings.autostart = true
+	hud.set_loading(true)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	get_tree().reload_current_scene()
+
+
+func _on_request_ability(id: String) -> void:
+	if game.paused or game.state != Game.State.PLAYING:
+		return
+	if id == "meteor":
+		if aim_ability == "meteor":
+			_cancel_aim()
+			return
+		if not game.ability_ready("meteor"):
+			game.toast.emit("Meteor se ještě nabíjí (%d s)." % int(ceil(float(game.ability_cd["meteor"]))), "warn")
+			return
+		_cancel_all()
+		aim_ability = "meteor"
+		hud.set_aim(true)
+		game.toast.emit("Klikni na mapu, kam má meteor dopadnout (Esc zruší).", "info")
+		return
+	var ok: bool = false
+	if id == "blizzard":
+		ok = game.cast_blizzard()
+	elif id == "gold":
+		ok = game.cast_gold()
+	if not ok:
+		game.toast.emit("%s se ještě nabíjí (%d s)." % [Cfg.ABILITIES[id]["name"], int(ceil(float(game.ability_cd[id])))], "warn")
+
+
+func _cancel_aim() -> void:
+	aim_ability = ""
+	hud.set_aim(false)
+	overlays.hide_range()
 
 
 func _on_request_build(type: String) -> void:
+	if aim_ability != "":
+		_cancel_aim()
 	if build_type == type:
 		_cancel_all()
 		return
@@ -235,6 +308,8 @@ func _on_request_build(type: String) -> void:
 
 
 func _cancel_all() -> void:
+	if aim_ability != "":
+		_cancel_aim()
 	build_type = ""
 	hud.set_build_type("")
 	overlays.show_grid(false)
@@ -334,8 +409,14 @@ func _unhandled_input(event: InputEvent) -> void:
 				_on_request_build("mage")
 			KEY_4:
 				_on_request_build("frost")
+			KEY_5:
+				_on_request_ability("meteor")
+			KEY_6:
+				_on_request_ability("blizzard")
+			KEY_7:
+				_on_request_ability("gold")
 			KEY_ESCAPE:
-				if build_type != "" or selected != null:
+				if build_type != "" or selected != null or aim_ability != "":
 					_cancel_all()
 				else:
 					_set_paused(not game.paused)
@@ -352,7 +433,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_F:
 				hud.cycle_speed()
 			KEY_H:
-				hud.show_intro(true)
+				hud.show_help(true)
 			KEY_M:
 				_toggle_all_audio()
 			KEY_HOME:
@@ -362,6 +443,10 @@ func _unhandled_input(event: InputEvent) -> void:
 func _click(pos: Vector2) -> void:
 	var p = rig.pick_ground(pos, map)
 	if p == null:
+		return
+	if aim_ability == "meteor":
+		if game.cast_meteor(Vector3(p.x, 0.0, p.z)):
+			_cancel_aim()
 		return
 	var c: Vector2i = Cfg.world_to_cell(p.x, p.z)
 	if build_type != "":
@@ -400,6 +485,13 @@ func _update_hover() -> void:
 	hover_cell = Vector2i(-1, -1)
 	if p != null:
 		hover_cell = Cfg.world_to_cell(p.x, p.z)
+	if aim_ability == "meteor":
+		overlays.hide_ghost()
+		if p != null and not over_gui:
+			overlays.show_range(Vector3(p.x, map.height_at(p.x, p.z), p.z), float(Cfg.ABILITIES["meteor"]["radius"]), Color(1.0, 0.45, 0.25))
+		else:
+			overlays.hide_range()
+		return
 	if build_type != "":
 		if Cfg.cell_valid(hover_cell) and not over_gui:
 			var valid: bool = map.can_build(hover_cell) and game.gold >= Cfg.tower_cost(build_type)

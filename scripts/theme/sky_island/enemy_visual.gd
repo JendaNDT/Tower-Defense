@@ -20,6 +20,11 @@ var is_flyer: bool = false
 var mat: ShaderMaterial = null
 var bar: MeshInstance3D = null
 var bar_mat: ShaderMaterial = null
+var shield_size: float = 1.8        # průměr bubliny štítu (štítonoš)
+var _shield: MeshInstance3D = null
+var _shield_mat: ShaderMaterial = null
+var _shield_frac: float = 1.0
+var _shield_flash: float = 0.0
 
 var _phase: float = 0.0
 var _t: float = 0.0
@@ -51,6 +56,35 @@ func set_health(frac: float, always_show: bool = false) -> void:
 
 func flash() -> void:
 	_flash = 1.0
+	_shield_flash = 1.0
+
+
+## Bublina štítu: průhledný kulatý billboard, s ubývajícím štítem slábne a zmenšuje se; při 0 zmizí.
+func set_shield(frac: float) -> void:
+	if _shield == null:
+		_shield = MeshInstance3D.new()
+		var q: QuadMesh = QuadMesh.new()
+		q.size = Vector2(1.0, 1.0)
+		_shield.mesh = q
+		_shield_mat = ShaderMaterial.new()
+		_shield_mat.shader = Gfx.SH_PUFF
+		_shield_mat.set_shader_parameter("color", Color(0.5, 0.8, 1.0))
+		_shield_mat.set_shader_parameter("softness", 0.35)
+		_shield.material_override = _shield_mat
+		_shield.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		_shield.position = Vector3(0.0, aim_height + 0.1, 0.0)
+		add_child(_shield)
+	_shield_frac = clampf(frac, 0.0, 1.0)
+	_shield.visible = _shield_frac > 0.001
+	_shield.scale = Vector3.ONE * shield_size * (0.75 + 0.25 * _shield_frac)
+	_refresh_shield_alpha()
+
+
+func _refresh_shield_alpha() -> void:
+	if _shield_mat == null:
+		return
+	_shield_mat.set_shader_parameter("alpha", (0.18 + 0.2 * _shield_frac) + _shield_flash * 0.3)
+	_shield_mat.set_shader_parameter("glow", 0.5 + _shield_flash * 1.5)
 
 
 ## slow: 0..1 (síla zpomalení), frozen: zmrazen, burning: hoří.
@@ -73,6 +107,9 @@ func set_status(slow: float, frozen: bool, burning: bool) -> void:
 ## speed = skutečná rychlost pohybu v m/s (0 když stojí / je zmrazený).
 func animate(dt: float, speed: float, speed_factor: float = 1.0) -> void:
 	_t += dt
+	if _shield_flash > 0.0:
+		_shield_flash = maxf(_shield_flash - dt * 5.0, 0.0)
+		_refresh_shield_alpha()
 	if _flash > 0.0:
 		_flash = maxf(_flash - dt * 6.0, 0.0)
 		mat.set_shader_parameter("flash", _flash * 0.65)
@@ -88,6 +125,14 @@ func animate(dt: float, speed: float, speed_factor: float = 1.0) -> void:
 				body.rotation.x = sin(_t * 2.6 + 0.8) * 0.06
 			if tail != null:
 				tail.rotation.y = sin(_t * 3.4) * 0.35
+		"blob":
+			# slizák: poskakuje, při dopadu se rozplácne a při výskoku natáhne
+			_phase += speed * stride_freq * dt
+			var hop: float = absf(sin(_phase))
+			var sq: float = cos(_phase * 2.0) * 0.5 + 0.5          # 1 = rozplácnutý (na zemi), 0 = natažený
+			if body != null:
+				body.position.y = hop * bob
+				body.scale = Vector3(1.0 + 0.16 * sq, 1.0 - 0.2 * sq + 0.08 * (1.0 - sq), 1.0 + 0.16 * sq)
 		_:
 			_phase += speed * stride_freq * dt
 			var s: float = sin(_phase)

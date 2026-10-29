@@ -20,6 +20,10 @@ var lives_cost: int = 1
 var flying: bool = false
 var radius: float = 0.5
 var cc_mult: float = 1.0           # odolnost vůči zpomalení/omráčení (boss)
+var shield: float = 0.0            # štít (štítonoš): pohlcuje poškození dřív než zdraví
+var max_shield: float = 0.0
+var _shield_idle: float = 0.0      # čas od posledního zásahu do štítu
+var _heal_t: float = 0.0
 
 var s: float = 0.0                 # uražená vzdálenost po trase
 var path_len: float = 1.0
@@ -48,7 +52,7 @@ var _acc_dmg: float = 0.0
 var _acc_t: float = -10.0
 
 
-func setup(game_ref, type_id: String, wave_idx: int, hp_mult: float, lateral_offset: float) -> void:
+func setup(game_ref, type_id: String, wave_idx: int, hp_mult: float, lateral_offset: float, start_s: float = 0.0) -> void:
 	game = game_ref
 	type = type_id
 	def = Cfg.ENEMIES[type_id]
@@ -56,7 +60,7 @@ func setup(game_ref, type_id: String, wave_idx: int, hp_mult: float, lateral_off
 	max_hp = float(def["hp"]) * hp_mult
 	hp = max_hp
 	armor = float(def["armor"])
-	base_speed = float(def["speed"])
+	base_speed = float(def["speed"]) * float(game.diff["speed"])
 	reward = int(def["reward"])
 	lives_cost = int(def["lives"])
 	flying = bool(def["flying"])
@@ -64,6 +68,11 @@ func setup(game_ref, type_id: String, wave_idx: int, hp_mult: float, lateral_off
 	lateral = lateral_offset
 	if type_id == "boss":
 		cc_mult = 0.5
+	if def.has("shield"):
+		max_shield = float(def["shield"]) * hp_mult
+		shield = max_shield
+	if def.has("heal_every"):
+		_heal_t = float(def["heal_every"]) * 0.6
 	name = "%s_%d" % [type_id, uid]
 	visual = game.theme.make_enemy_visual(type_id)
 	add_child(visual)
@@ -77,12 +86,14 @@ func setup(game_ref, type_id: String, wave_idx: int, hp_mult: float, lateral_off
 		fly_alt = game.fly_altitude
 	else:
 		path_len = game.path.length
-	s = 0.0
-	position = _compute_pos(0.0)
-	var d0: Vector2 = _dir_at(0.0)
+	s = start_s
+	position = _compute_pos(start_s)
+	var d0: Vector2 = _dir_at(start_s)
 	_heading = atan2(d0.x, d0.y)
 	visual.rotation.y = _heading
 	visual.set_health(1.0, type == "boss")
+	if max_shield > 0.0:
+		visual.set_shield(1.0)
 
 
 func _on_step(p: Vector3) -> void:
@@ -151,6 +162,20 @@ func take_damage(amount: float, kind: String = "phys", source = null, pierce: fl
 	if kind == "phys":
 		var a: float = armor * (1.0 - pierce)
 		eff = maxf(amount - a, amount * 0.2)
+	var absorbed: float = 0.0
+	if shield > 0.0:
+		absorbed = minf(eff, shield)
+		shield -= absorbed
+		eff -= absorbed
+		_shield_idle = 0.0
+		visual.set_shield(maxf(shield, 0.0) / max_shield)
+		if source != null:
+			source.damage_dealt += absorbed
+		game.total_damage += absorbed
+		if shield <= 0.0:
+			game.fx.burst_puffs(position + Vector3(0.0, visual.aim_height + 0.2, 0.0), Color(0.6, 0.85, 1.0), 8, 1.0, 0.5, 0.6, 1.6)
+			game.fx.ring(Vector3(position.x, position.y + 0.3, position.z), Color(0.6, 0.85, 1.0), 1.8, 0.4, 0.14, 0.1, 1.0)
+			game.sfx("shield_break", position)
 	var dealt: float = minf(eff, hp)
 	hp -= eff
 	if source != null:
@@ -159,6 +184,7 @@ func take_damage(amount: float, kind: String = "phys", source = null, pierce: fl
 	visual.flash()
 	visual.set_health(maxf(hp, 0.0) / max_hp, type == "boss")
 	# plovoucí čísla (sloučená, ať to nepřekáží)
+	dealt += absorbed
 	_acc_dmg += dealt
 	if crit or game.time - _acc_t >= 0.3:
 		if kind != "dot" or game.time - _acc_t >= 0.6:
@@ -169,6 +195,16 @@ func take_damage(amount: float, kind: String = "phys", source = null, pierce: fl
 	if hp <= 0.0:
 		die(source)
 	return dealt
+
+
+## Vyléčení (léčitel): vrací skutečně obnovené zdraví.
+func heal(amount: float) -> float:
+	if not alive or hp >= max_hp:
+		return 0.0
+	var got: float = minf(amount, max_hp - hp)
+	hp += got
+	visual.set_health(hp / max_hp, type == "boss")
+	return got
 
 
 func apply_slow(amount: float, time: float) -> void:
@@ -214,6 +250,28 @@ func reach_base() -> void:
 	game.on_enemy_reached(self)
 
 
+## Pulz léčitele: obnoví zdraví všem ostatním živým nepřátelům v dosahu.
+func _do_heal() -> void:
+	var r: float = float(def["heal_radius"])
+	var frac: float = float(def["heal_frac"])
+	var healed: int = 0
+	for o in game.enemies:
+		var en: Enemy = o
+		if en == self or not en.is_targetable():
+			continue
+		var dx: float = en.position.x - position.x
+		var dz: float = en.position.z - position.z
+		if dx * dx + dz * dz > r * r:
+			continue
+		var got: float = en.heal(en.max_hp * frac)
+		if got > 0.0:
+			healed += 1
+			game.fx.burst_puffs(en.position + Vector3(0.0, en.visual.aim_height + 0.3, 0.0), Color(0.45, 1.0, 0.55), 3, 0.5, 0.3, 0.6, 1.4)
+	game.fx.ring(Vector3(position.x, position.y + 0.25, position.z), Color(0.45, 1.0, 0.55), r, 0.7, 0.08, 0.1, 1.0)
+	if healed > 0:
+		game.sfx("heal", position)
+
+
 # ------------------------------------------------------------------ aktualizace
 func update(dt: float) -> void:
 	if dying:
@@ -242,6 +300,16 @@ func update(dt: float) -> void:
 		take_damage(burn_dps * dt, "dot", burn_source)
 		if not alive:
 			return
+	if max_shield > 0.0 and shield > 0.0 and shield < max_shield:
+		_shield_idle += dt
+		if _shield_idle > 3.0:
+			shield = minf(shield + max_shield * float(def["shield_regen"]) * dt, max_shield)
+			visual.set_shield(shield / max_shield)
+	if def.has("heal_every"):
+		_heal_t -= dt
+		if _heal_t <= 0.0:
+			_heal_t += float(def["heal_every"])
+			_do_heal()
 	cur_speed = current_speed()
 	s += cur_speed * dt
 	position = _compute_pos(s)

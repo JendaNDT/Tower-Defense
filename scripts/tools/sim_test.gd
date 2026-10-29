@@ -11,6 +11,12 @@ const DT: float = 1.0 / 30.0
 static func run(main) -> void:
 	var g: Game = main.game
 	g.paused = false
+	if main.args.has("mech"):
+		_mech_run(main)
+		return
+	if main.args.has("islands"):
+		_islands_run(main)
+		return
 	var report: Dictionary = {}
 	report["map"] = _map_report(g)
 	if not main.args.has("noup"):
@@ -22,7 +28,7 @@ static func run(main) -> void:
 	for pol in POLICIES.keys():
 		if main.args.has("pol") and str(main.args["pol"]) != str(pol):
 			continue
-		var bot: Dictionary = _bot_game(g, str(pol))
+		var bot: Dictionary = _bot_game(g, str(pol), 30, main.args.has("abil"))
 		bots[pol] = bot
 		ok = ok and bool(bot.get("physics_ok", false))
 	report["bots"] = bots
@@ -48,7 +54,7 @@ static func _map_report(g: Game) -> Dictionary:
 			s += 0.5
 	return {
 		"free_cells": free, "cell_counts": counts, "obstacles": g.map.obstacles.size(),
-		"path_length": snappedf(p.length, 0.1), "bridge": [snappedf(g.map.bridge_s0, 0.1), snappedf(g.map.bridge_s1, 0.1)],
+		"path_length": snappedf(p.length, 0.1), "bridges": g.map.bridges.duplicate(),
 		"min_obstacle_to_path": snappedf(min_obs, 0.01), "fly_alt": snappedf(g.fly_altitude, 0.1),
 		"spawn": [snappedf(g.map.spawn_pos.x, 0.1), snappedf(g.map.spawn_pos.z, 0.1)],
 		"base": [snappedf(g.map.base_pos.x, 0.1), snappedf(g.map.base_pos.z, 0.1)],
@@ -193,9 +199,39 @@ static func _bot_spend(g: Game, wave_no: int, pol: Dictionary) -> void:
 			g.upgrade_tower(cand)
 
 
-static func _bot_game(g: Game, policy: String) -> Dictionary:
+## Bot používá schopnosti jako rozumný hráč: meteor na největší hlouček, poryv na nepřátele blízko cíle, horečku při velké vlně.
+static func _bot_abilities(g: Game) -> void:
+	if g.enemies.is_empty():
+		return
+	if g.ability_ready("meteor") and g.enemies.size() >= 4:
+		var best_n: int = 0
+		var best_pos: Vector3 = Vector3.ZERO
+		for e in g.enemies:
+			var n: int = 0
+			var sum: Vector3 = Vector3.ZERO
+			for o in g.enemies:
+				if Vector2(e.position.x - o.position.x, e.position.z - o.position.z).length() <= 3.0:
+					n += 1
+					sum += o.position
+			if n > best_n:
+				best_n = n
+				best_pos = sum / float(n)
+		if best_n >= 4:
+			g.cast_meteor(best_pos)
+	if g.ability_ready("blizzard"):
+		var near_end: int = 0
+		for e2 in g.enemies:
+			if e2.progress() > 0.7:
+				near_end += 1
+		if near_end >= 3:
+			g.cast_blizzard()
+	if g.ability_ready("gold") and g.enemies.size() >= 5:
+		g.cast_gold()
+
+
+static func _bot_game(g: Game, policy: String, max_waves: int = 30, use_abilities: bool = false) -> Dictionary:
 	var pol: Dictionary = POLICIES[policy]
-	g.reset()
+	g.configure(g.mode_id, g.diff_id)
 	var p: PathData = g.path
 	var last_pos: Dictionary = {}
 	var age: Dictionary = {}
@@ -209,7 +245,8 @@ static func _bot_game(g: Game, policy: String) -> Dictionary:
 	var tick_guard: int = 0
 	var max_ticks: int = int(60.0 * 60.0 * 40.0 / DT / 60.0)   # 40 min herního času
 	var spend_timer: float = 0.0
-	for w in range(Cfg.TOTAL_WAVES):
+	var n_waves: int = g.total_waves if g.total_waves > 0 else max_waves
+	for w in range(n_waves):
 		_bot_spend(g, w + 1, pol)
 		if not g.start_next_wave():
 			break
@@ -220,6 +257,8 @@ static func _bot_game(g: Game, policy: String) -> Dictionary:
 			g.tick(DT)
 			tick_guard += 1
 			spend_timer += DT
+			if use_abilities and tick_guard % 15 == 0:
+				_bot_abilities(g)
 			if spend_timer > 8.0:
 				spend_timer = 0.0
 				_bot_spend(g, w + 1, pol)
@@ -265,5 +304,278 @@ static func _bot_game(g: Game, policy: String) -> Dictionary:
 		"leak_types": g.leak_types, "max_enemy_age": snappedf(max_age, 0.1),
 		"min_dist_enemy_to_obstacle": snappedf(min_obs, 0.01), "max_ground_offset": snappedf(ground_off, 0.01),
 		"proj_hits": g.proj_hits, "proj_fizzles": g.proj_fizzles, "total_damage": snappedf(g.total_damage, 1.0),
-		"physics_ok": physics_ok,
+		"physics_ok": physics_ok, "best_wave": g.best_wave, "mode": g.mode_id, "difficulty": g.diff_id,
+		"abilities_used": g.abilities_used.duplicate(),
 	}
+
+
+# ------------------------------------------------------------------ C) mechaniky: nepřátelé, schopnosti, režimy, rekordy
+static func _spawn_at(g: Game, type: String, s: float, hp_mult: float = 1.0) -> Enemy:
+	g._spawn_enemy({"at": 0.0, "type": type, "wave": Game.TEST_WAVE, "hp": hp_mult})
+	var e: Enemy = g.enemies[g.enemies.size() - 1]
+	e.s = s
+	e.update(0.0)
+	return e
+
+
+static func _run_for(g: Game, seconds: float) -> void:
+	var t: float = 0.0
+	while t < seconds:
+		g.tick(DT)
+		t += DT
+
+
+static func _mech_run(main) -> void:
+	var g: Game = main.game
+	var checks: Array = []
+	var add: Callable = func(name: String, ok: bool, detail: String = "") -> void:
+		checks.append({"name": name, "ok": ok, "detail": detail})
+
+	# --- data: všichni nepřátelé a vlny jsou konzistentní
+	var data_ok: bool = true
+	var bad: String = ""
+	for i in range(0, 80):
+		for grp in Cfg.wave_def(i)["groups"]:
+			if not Cfg.ENEMIES.has(str(grp[0])) or int(grp[1]) <= 0:
+				data_ok = false
+				bad = "vlna %d: %s" % [i, str(grp)]
+	add.call("data: každá vlna (0–79) obsahuje jen existující nepřátele a kladné počty", data_ok, bad)
+	add.call("data: obtížnosti seřazené (lehká < normální < těžká podle zdraví)",
+		float(Cfg.DIFFICULTIES["easy"]["hp"]) < float(Cfg.DIFFICULTIES["normal"]["hp"]) and float(Cfg.DIFFICULTIES["normal"]["hp"]) < float(Cfg.DIFFICULTIES["hard"]["hp"]))
+
+	# --- obtížnosti: start a zdraví/rychlost nepřátel
+	for did in Cfg.DIFFICULTY_ORDER:
+		g.configure("campaign", did)
+		var d: Dictionary = Cfg.DIFFICULTIES[did]
+		g.start_next_wave()
+		_run_for(g, 1.0)
+		var gob: Enemy = null
+		for e in g.enemies:
+			if e.type == "goblin":
+				gob = e
+				break
+		var ok_d: bool = g.gold == int(d["gold"]) and g.lives == int(d["lives"]) and gob != null \
+			and is_equal_approx(gob.max_hp, 45.0 * float(d["hp"])) and is_equal_approx(gob.base_speed, 2.0 * float(d["speed"]))
+		add.call("obtížnost %s: zlato %d, životy %d, zdraví skřeta %.1f, rychlost %.2f" % [did, g.gold, g.lives, gob.max_hp if gob != null else -1.0, gob.base_speed if gob != null else -1.0], ok_d)
+
+	# --- léčitel léčí okolní nepřátele
+	g.configure("campaign", "normal")
+	var gob2: Enemy = _spawn_at(g, "goblin", 20.0, 10.0)
+	var hl: Enemy = _spawn_at(g, "healer", 20.8, 1.0)
+	gob2.take_damage(300.0, "magic", null)
+	var hp_before: float = gob2.hp
+	_run_for(g, 2.0)
+	add.call("léčitel: skřet s %d zdraví po 2 s léčení má %d (má vzrůst)" % [int(hp_before), int(gob2.hp)], gob2.hp > hp_before + 20.0)
+	# a nevyléčí sebe ani mrtvého
+	g.configure("campaign", "normal")
+
+	# --- štítonoš: štít pohlcuje, praskne, po klidu se částečně obnoví
+	var sh: Enemy = _spawn_at(g, "shield", 20.0, 1.0)
+	var hp0: float = sh.hp
+	var d1: float = sh.take_damage(100.0, "magic", null)
+	var ok1: bool = is_equal_approx(sh.hp, hp0) and sh.shield > 0.0 and sh.shield < sh.max_shield
+	sh.take_damage(60.0, "magic", null)
+	var ok2: bool = sh.shield <= 0.0 and sh.hp < hp0
+	add.call("štítonoš: štít pohlcuje zásahy (zdraví %.0f -> %.0f), pak praskne" % [hp0, sh.hp], ok1 and ok2)
+	g.configure("campaign", "normal")
+	var sh2: Enemy = _spawn_at(g, "shield", 20.0, 1.0)
+	sh2.take_damage(60.0, "magic", null)
+	var sh_low: float = sh2.shield
+	_run_for(g, 4.5)
+	add.call("štítonoš: nepoškozený štít se po 3 s klidu obnovuje (%.0f -> %.0f)" % [sh_low, sh2.shield], sh2.shield > sh_low + 10.0)
+
+	# --- slizák: rozpad na dva slizánky; vlna není hotová, dokud žijí
+	g.configure("endless", "normal")
+	g._wave_spawn_left[99] = 1
+	g._wave_alive[99] = 0
+	g._wave_done[99] = false
+	g._spawn_queue.append({"at": g.time, "type": "slime", "wave": 99, "hp": 1.0})
+	g.tick(DT)
+	var sl: Enemy = g.enemies[0]
+	sl.take_damage(100000.0, "magic", null)
+	var kids: Array = []
+	for e2 in g.enemies:
+		if e2.type == "slimeling":
+			kids.append(e2)
+	var kid_ok: bool = kids.size() == 2 and absf(kids[0].s - sl.s) < 0.5 and is_equal_approx(kids[0].max_hp, 80.0 * 0.3)
+	add.call("slizák: po smrti vzniknou 2 slizánci se 30 %% zdraví (vzniklo %d)" % kids.size(), kid_ok)
+	add.call("slizák: vlna se nedokončí, dokud potomci žijí", not bool(g._wave_done[99]))
+	for k in kids:
+		k.take_damage(100000.0, "magic", null)
+	add.call("slizák: po zabití potomků je vlna dokončena", bool(g._wave_done[99]))
+
+	# --- meteor
+	g.configure("campaign", "normal")
+	var pos0: Vector3 = g.path.pos_at(40.0)
+	var cluster: Array = []
+	for i in range(5):
+		cluster.append(_spawn_at(g, "goblin", 40.0 + float(i) * 0.4, 10.0))
+	var far: Enemy = _spawn_at(g, "goblin", 60.0, 10.0)
+	var all_full: float = cluster[0].max_hp
+	var cast_ok: bool = g.cast_meteor(pos0)
+	var again_ok: bool = g.cast_meteor(pos0)
+	_run_for(g, 1.6)
+	var hit_n: int = 0
+	for e3 in cluster:
+		if is_instance_valid(e3) and (e3.hp < all_full or not e3.alive):
+			hit_n += 1
+	add.call("meteor: zasáhne všech 5 nepřátel v okruhu (%d), vzdálený nezasáhne, druhé seslání hned selže" % hit_n,
+		cast_ok and not again_ok and hit_n == 5 and far.hp >= far.max_hp - 0.01 and float(g.ability_cd["meteor"]) > 20.0)
+	g.configure("campaign", "normal")
+	add.call("meteor: po restartu hry je schopnost zase připravena", float(g.ability_cd["meteor"]) == 0.0)
+
+	# --- mrazivý poryv
+	var bz1: Enemy = _spawn_at(g, "goblin", 30.0, 3.0)
+	var bz2: Enemy = _spawn_at(g, "drake", 5.0, 3.0)
+	var s_before: float = bz1.s
+	var ok_bz: bool = g.cast_blizzard()
+	_run_for(g, 1.0)
+	add.call("mrazivý poryv: zmrazí pozemního i létajícího (stojí na místě)", ok_bz and absf(bz1.s - s_before) < 0.05 and bz2.frozen_t > 0.0)
+
+	# --- zlatá horečka: dvojnásobné zlato
+	g.configure("campaign", "normal")
+	var g1: Enemy = _spawn_at(g, "goblin", 30.0)
+	var gold_a: int = g.gold
+	g1.take_damage(100000.0, "magic", null)
+	var plain: int = g.gold - gold_a
+	var g2: Enemy = _spawn_at(g, "goblin", 30.0)
+	var cast_g: bool = g.cast_gold()
+	var gold_b: int = g.gold
+	g2.take_damage(100000.0, "magic", null)
+	var boosted: int = g.gold - gold_b
+	add.call("zlatá horečka: odměna %d -> %d (dvojnásobek)" % [plain, boosted], cast_g and boosted == plain * 2)
+
+	# --- nekonečný režim: vlny pokračují, nikdy nevyhraje, rostou
+	g.configure("endless", "normal")
+	var w_ok: bool = g.total_waves == 0 and g.can_start_wave()
+	g.waves_started = 40
+	add.call("nekonečný režim: bez limitu vln (po vlně 40 se dá spustit další)", w_ok and g.can_start_wave() and not g.wave_preview(40).is_empty())
+	var hp12: float = float(Cfg.wave_def(11)["hp"])
+	var hp20: float = float(Cfg.wave_def(19)["hp"])
+	var hp30: float = float(Cfg.wave_def(29)["hp"])
+	add.call("nekonečný režim: zdraví nepřátel roste (vlna 12: %.1f, 20: %.1f, 30: %.1f)" % [hp12, hp20, hp30], hp12 < hp20 and hp20 < hp30)
+	g.configure("campaign", "normal")
+	g.waves_started = 12
+	add.call("příběh: po 12 vlnách se další nespustí", not g.can_start_wave())
+
+	# --- rekordy (do dočasného souboru)
+	var old_path: String = GameSettings.path
+	GameSettings.path = "user://rekordy_test.cfg"
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(GameSettings.path))
+	GameSettings.records = {}
+	GameSettings.mode = "endless"
+	GameSettings.difficulty = "normal"
+	GameSettings.island = 0
+	var r1: bool = GameSettings.submit(5, false, 3)
+	var r2: bool = GameSettings.submit(3, false, 9)
+	var r3: bool = GameSettings.submit(8, false, 1)
+	GameSettings.mode = "campaign"
+	var r4: bool = GameSettings.submit(12, true, 5)
+	var r5: bool = GameSettings.submit(12, true, 9)
+	var r6: bool = GameSettings.submit(12, true, 2)
+	GameSettings.loaded = false
+	GameSettings.records = {}
+	GameSettings.load_all()
+	var re: Dictionary = GameSettings.get_record("endless_normal_0")
+	var rc: Dictionary = GameSettings.get_record("campaign_normal_0")
+	add.call("rekordy: zlepšení se zapíše, zhoršení ne (%s %s %s | %s %s %s)" % [r1, r2, r3, r4, r5, r6], r1 and not r2 and r3 and r4 and r5 and not r6)
+	add.call("rekordy: po novém načtení ze souboru zůstaly (nekonečný vlna %d, příběh vítězství se %d životy)" % [int(re["waves"]), int(rc["lives"])],
+		int(re["waves"]) == 8 and bool(rc["won"]) and int(rc["lives"]) == 9)
+	GameSettings.path = old_path
+
+	# --- hra s botem v nekonečném režimu: nepadá, vlny se počítají
+	GameSettings.mode = "campaign"
+	var endless_bot: Dictionary = {}
+	g.configure("endless", "normal")
+	endless_bot = _bot_game(g, "mix", 16)
+	add.call("nekonečný režim: bot (mix) došel do vlny %d" % int(endless_bot.get("best_wave", 0)), int(endless_bot.get("best_wave", 0)) >= 8 and bool(endless_bot.get("physics_ok", false)))
+
+	var failed: int = 0
+	for c in checks:
+		if not bool(c["ok"]):
+			failed += 1
+	print("MECH_JSON " + JSON.stringify({"checks": checks, "failed": failed, "endless_bot": endless_bot}))
+	main.get_tree().quit(0 if failed == 0 else 1)
+
+
+# ------------------------------------------------------------------ D) kontrola rozložení ostrovů (mapa bez hry)
+static func _island_stats(def: Dictionary, seed_in: int) -> Dictionary:
+	var m: GameMap = GameMap.new(seed_in, def)
+	m.build()
+	var p: PathData = m.terrain.path
+	var free: int = 0
+	var near_free: int = 0
+	var counts: Dictionary = {}
+	for cz in range(Cfg.GRID_H):
+		for cx in range(Cfg.GRID_W):
+			var st: int = m.cell_state(Vector2i(cx, cz))
+			counts[st] = int(counts.get(st, 0)) + 1
+			if st == GameMap.Cell.FREE:
+				free += 1
+				var w: Vector2 = Cfg.cell_center(cx, cz)
+				var best: float = 1e9
+				var sv: float = 0.0
+				while sv <= p.length:
+					best = minf(best, p.xz_at(sv).distance_to(w))
+					sv += 1.0
+				if best <= 7.0:
+					near_free += 1
+	# nejmenší vzdálenost trasy od sebe samé (body, které jsou po trase aspoň 14 m od sebe)
+	var self_min: float = 1e9
+	var a: float = 0.0
+	while a <= p.length:
+		var pa: Vector2 = p.xz_at(a)
+		var b: float = a + 14.0
+		while b <= p.length:
+			self_min = minf(self_min, pa.distance_to(p.xz_at(b)))
+			b += 1.0
+		a += 1.0
+	var edge_min: float = 1e9
+	var sv2: float = 4.0
+	while sv2 <= p.length - 1.0:
+		var q: Vector2 = p.xz_at(sv2)
+		edge_min = minf(edge_min, m.terrain.edge_dist(q.x, q.y))
+		sv2 += 0.5
+	var spawn_edge: float = m.terrain.edge_dist(m.spawn_pos.x, m.spawn_pos.z)
+	var river_inside: float = 0.0
+	var rv: RiverData = m.terrain.river
+	for pt in rv.pts:
+		if m.terrain.edge_dist(pt.x, pt.y) > 0.0:
+			river_inside += RiverData.STEP
+	var bad_path_cells: int = 0
+	sv2 = 0.0
+	while sv2 <= p.length:
+		var q2: Vector2 = p.xz_at(sv2)
+		var cc: Vector2i = Cfg.world_to_cell(q2.x, q2.y)
+		var stt: int = m.cell_state(cc)
+		if stt == GameMap.Cell.VOID:
+			bad_path_cells += 1
+		sv2 += 1.0
+	var min_obs: float = 1e9
+	for ob in m.obstacles:
+		var op: Vector3 = ob["pos"]
+		var s3: float = 0.0
+		while s3 <= p.length:
+			min_obs = minf(min_obs, p.xz_at(s3).distance_to(Vector2(op.x, op.z)))
+			s3 += 0.5
+	return {
+		"name": str(def["name"]), "seed": seed_in, "path_length": snappedf(p.length, 0.1), "bridges": m.bridges.size(),
+		"free_cells": free, "free_near_path": near_free, "self_distance_min": snappedf(self_min, 0.1),
+		"path_edge_dist_min": snappedf(edge_min, 0.1), "spawn_edge_dist": snappedf(spawn_edge, 0.1),
+		"river_length_inside": snappedf(river_inside, 0.1), "path_points_in_void": bad_path_cells,
+		"min_obstacle_to_path": snappedf(min_obs, 0.01), "cells": counts,
+		"spawn": [snappedf(m.spawn_pos.x, 0.1), snappedf(m.spawn_pos.z, 0.1)], "base": [snappedf(m.base_pos.x, 0.1), snappedf(m.base_pos.z, 0.1)],
+	}
+
+
+static func _islands_run(main) -> void:
+	var rep: Array = []
+	for i in range(Islands.LIST.size()):
+		rep.append(_island_stats(Islands.LIST[i], int(Islands.LIST[i]["seed"])))
+	for sd in [1001, 1002, 1003, 1004, 1005, 1006]:
+		var d: Dictionary = Islands.resolve(Islands.RANDOM_ID, sd)
+		var st: Dictionary = _island_stats(d, sd)
+		st["layout_name"] = str(d["name"])
+		rep.append(st)
+	print("ISLANDS_JSON " + JSON.stringify(rep))
+	main.get_tree().quit(0)

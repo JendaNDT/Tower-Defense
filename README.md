@@ -3,6 +3,8 @@
 Hra pro webový prohlížeč, postavená na **Godotu 4.7.2** (aktuální stabilní verze, vykreslování *Compatibility* = WebGL 2).
 Veškerá grafika (terén, stromy, voda, věže, nepřátelé, efekty, rozhraní, ikony) i **zvuk a hudba** jsou vytvořené **přímo v kódu** – ve hře nejsou žádné obrázky, modely ani zvukové soubory.
 
+Hru si můžeš nastavit: **režim** (příběh 12 vln, nebo nekonečný s rekordem), **obtížnost** (lehká / normální / těžká) a **ostrov** (tři rozložení cesty a krajiny, nebo náhodný). K obraně patří i tři **aktivní schopnosti** (meteor, mrazivý poryv, zlatá horečka) a mezi nepřáteli se objevují **léčitelé, štítonoši a slizáci**.
+
 ![Celý ostrov](screenshots/ostrov.png)
 
 | | |
@@ -10,6 +12,9 @@ Veškerá grafika (terén, stromy, voda, věže, nepřátelé, efekty, rozhraní
 | ![Věže úroveň 1](screenshots/veze_L1.png) **Věže, úroveň 1** | ![Věže úroveň 4](screenshots/veze_L4.png) **Stejné věže po vylepšení na úroveň 4** |
 | ![Boj](screenshots/boj.png) **Boj: mrazový pulz, výbuchy, čísla poškození** | ![Nepřátelé](screenshots/nepratele.png) **Skřet, vlk, obrněnec a kamenný obr** |
 | ![Panel věže](screenshots/panel_veze.png) **Panel věže s náhledem vylepšení** | ![Vodopád](screenshots/vodopad.png) **Řeka padá z ostrova jako vodopád do oblaků** |
+| ![Nové menu](screenshots/menu.png) **Menu: režim, obtížnost, ostrov, rekord** | ![Noví nepřátelé](screenshots/novi_nepratele.png) **Léčitel, štítonoš, slizák a slizánek** |
+| ![Podkova](screenshots/ostrov_podkova.png) **Ostrov Podkova** | ![Hadí údolí](screenshots/ostrov_hadi_udoli.png) **Ostrov Hadí údolí** |
+| ![Meteor](screenshots/schopnost_meteor.png) **Meteor: dopad, výbuch, poškození v okruhu** | ![Poryv](screenshots/schopnost_poryv.png) **Mrazivý poryv zmrazí všechny nepřátele** |
 
 ## Jak hru spustit
 
@@ -23,7 +28,7 @@ Hra je už sestavená ve složce `docs/`. Prohlížeč ji ale nespustí dvojklik
 
 Otevře se prohlížeč s hrou (adresa `http://localhost:8765/index.html`). Ukončíš ji zavřením okna terminálu.
 
-**Záložní verze pro starší Godot.** Kdyby hra v tvém prohlížeči nešla nebo sekala, zkus build z předchozího Godotu **4.6.3** (stejná hra, stejný kód): dvojklik na `spustit_godot-4.6.bat` (Windows) / `spustit_godot-4.6.command` (macOS) / `./spustit_godot-4.6.sh` (Linux), případně `python3 spustit.py docs-4.6`. Ověřeno: pod 4.6.3 projekt projde importem i exportem, celá simulace dává stejné výsledky a v prohlížeči bot dohrál všech 12 vln bez chyb v konzoli. Zvukový test (33 kontrol, viz níže) prošel i na tomto buildu.
+**Záložní verze pro starší Godot.** Kdyby hra v tvém prohlížeči nešla nebo sekala, zkus build z předchozího Godotu **4.6.3** (stejná hra, stejný kód): dvojklik na `spustit_godot-4.6.bat` (Windows) / `spustit_godot-4.6.command` (macOS) / `./spustit_godot-4.6.sh` (Linux), případně `python3 spustit.py docs-4.6`. Ověřeno: pod 4.6.3 projekt projde importem i exportem a na tomto buildu prošly i kontrola mechanik (21 kontrol), test menu a nových funkcí v prohlížeči (44) a zvukový test (35), vše bez chyb v konzoli.
 Funguje v aktuálním Chrome / Edge / Firefox. První načtení stahuje ~40 MB (engine), pak už je to rychlé.
 
 ## Ovládání
@@ -35,18 +40,52 @@ Funguje v aktuálním Chrome / Edge / Firefox. První načtení stahuje ~40 MB (
 | Vybrat věž | klik na ni → panel vlevo (statistiky, náhled vylepšení, prodej, cílení) |
 | Vylepšit / prodat / cíl | tlačítka v panelu nebo **U** / **X** / **T** |
 | Spustit vlnu | tlačítko vpravo dole nebo **mezerník** (tlačítko „auto“ nahoře spouští vlny samo) |
+| Aktivní schopnosti | panel vlevo dole, nebo klávesy **5** (Meteor – pak klikni na mapu, **Esc** zruší), **6** (Mrazivý poryv), **7** (Zlatá horečka) |
+| Nová hra, změna režimu / obtížnosti / ostrova | tlačítko **☰** nahoře (nebo „Změnit nastavení“ na konci hry); volby se pamatují |
 | Otáčení kamery | **pravé tlačítko myši + tažení**, **Q / E**, tlačítka nahoře |
 | Zoom | **kolečko myši**, **+ / −**, tlačítka nahoře |
 | Posun kamery | **W A S D** / šipky, nebo prostřední tlačítko myši + tažení |
 | Rychlost 1× / 2× / 3× | tlačítko nahoře nebo **F** |
 | Pauza | **P** (nebo Esc, když není nic vybráno) |
-| Nápověda | **?** nahoře (nebo **H**) |
+| Nápověda (pravidla a ovládání) | **?** nahoře (nebo **H**) |
 | Zvuk a hudba | tlačítka **reproduktor** (efekty a ambient) a **nota** (hudba) nahoře; klávesa **M** vypne/zapne vše. Volba se pamatuje |
 | Kvalita | tlačítko *Kvalita* (vypne stíny a vyhlazování; na mobilech/slabých strojích se zapne samo) |
 
 ## Pravidla
 
-Z **portálu** na jednom konci ostrova vycházejí vlny nepřátel a jdou po cestě (přes sníh, louku, most přes řeku, poušť a les) k **Srdci ostrova**. Když nepřítel dojde na konec, ztratíš životy (boss 5). Za každého zabitého dostaneš zlato, za zvládnutou vlnu bonus. Máš 20 životů a 240 zlata, vln je **12**.
+Z **portálu** na jednom konci ostrova vycházejí vlny nepřátel a jdou po cestě (přes sníh, louku, most přes řeku, poušť a les) k **Srdci ostrova**. Když nepřítel dojde na konec, ztratíš životy (boss 5). Za každého zabitého dostaneš zlato, za zvládnutou vlnu bonus. V příběhu je vln **12**, v nekonečném režimu bez konce.
+
+### Režimy, obtížnosti a ostrovy
+
+Na začátku (a později přes tlačítko ☰) si vybereš:
+
+| Režim | Co to je |
+|---|---|
+| **Příběh** | přežij všech 12 vln |
+| **Nekonečný** | vlny nikdy nekončí: zdraví nepřátel roste o ~11,5 % za vlnu, počty o 7 %, každá čtvrtá vlna má bosse. Hraješ, dokud Srdce nepadne. Ukládá se **rekord** (nejlepší zvládnutá vlna) zvlášť pro každou kombinaci režimu, obtížnosti a ostrova |
+
+| Obtížnost | Zlato | Životy | Zdraví nepřátel | Bonus za vlnu | Rychlost nepřátel |
+|---|---|---|---|---|---|
+| **Lehká** | 320 | 30 | 80 % | 120 % | 100 % |
+| **Normální** | 240 | 20 | 100 % | 100 % | 100 % |
+| **Těžká** | 220 | 15 | 125 % | 95 % | 105 % |
+
+| Ostrov | Cesta | Poznámka |
+|---|---|---|
+| **Klikatá stezka** | 137 m, jeden most | původní ostrov: ze sněhu přes louku a poušť do lesa |
+| **Podkova** | 109 m, jeden most | cesta obkrouží ostrov, uprostřed je velký prostor pro věže; kratší cesta, proto mají nepřátelé o 12 % méně zdraví |
+| **Hadí údolí** | 123 m, jeden most | tři dlouhé vlnovky za sebou, řeka teče napříč |
+| **Náhodný ostrov** | podle losu | náhodně jedno z rozložení, náhodně otočené biomy a nový seed (číslo ostrova se ukáže v záhlaví) |
+
+Volby a rekordy se ukládají v prohlížeči (úložiště webu). Změna ostrova znovu postaví svět (pár sekund), změna režimu nebo obtížnosti jen začne novou hru na stejné mapě.
+
+### Aktivní schopnosti (panel vlevo dole)
+
+| Schopnost | Nabíjení | Co dělá |
+|---|---|---|
+| **Meteor** [5] | 35 s | klikni na mapu: za chvíli (je vidět varovný kruh) dopadne a zasáhne všechny nepřátele v okruhu 3,6 m (i létající), způsobí jim velké magické poškození (ignoruje brnění; **roste s vlnou**) a zapálí je |
+| **Mrazivý poryv** [6] | 55 s | zmrazí všechny nepřátele na mapě na 2,6 s a potom je na 4 s zpomalí o 50 % (boss odolává) |
+| **Zlatá horečka** [7] | 80 s | na 15 s dostaneš za každého zabitého dvojnásobek zlata |
 
 ### Věže (každá má 4 úrovně, vzhled se s úrovní mění; počet zlatých drahokamů na podstavci = úroveň)
 
@@ -68,8 +107,11 @@ Vylepšení stojí 50–240 zlata, prodej vrací 70 % vložených peněz. Věž 
 | **Obrněnec** | pomalý, hodně zdraví, **brnění** (snižuje poškození šípů a děl; magie ho ignoruje) |
 | **Dráček** (létající) | letí přímo od portálu k Srdci nad stromy, kanón ho nezasáhne |
 | **Kamenný obr** (boss) | obří, hodně zdraví a brnění, odolný proti zpomalení; vlny 5, 10 a 12 |
+| **Léčitel** (od vlny 7) | každé 2 s vyléčí 7 % zdraví všem okolním nepřátelům (dosah 4,6 m, kruh se ukáže). Zabij ho první |
+| **Štítonoš** (od vlny 6) | před zdravím má **štít**, který pohlcuje všechno poškození; po 3 s bez zásahu se nepřetržitě obnovuje, dokud nepraskne. Slabé pomalé zásahy ho nezlomí, silné rány (kanón, mág) ano |
+| **Slizák** (od vlny 4) | po smrti se rozpadne na dva rychlé **slizánky** (30 % jeho zdraví). Vlna se nedokončí, dokud žijí. Plošné poškození je výhodné |
 
-Zdraví nepřátel s vlnami roste (vlna 12 má ×5,4). Přehled další vlny je vpravo dole.
+Zdraví nepřátel s vlnami roste (vlna 12 má ×5,4). Přehled další vlny je vpravo dole, **létající** nepřátele ohlásí oranžové varování a při prvním výskytu nového typu hra vypíše jeho vlastnost.
 
 ## Svět a technika
 
@@ -83,7 +125,7 @@ Zdraví nepřátel s vlnami roste (vlna 12 má ×5,4). Přehled další vlny je 
 
 Žádné zvukové soubory – všechno se **vysyntetizuje v kódu** (`scripts/audio/synth.gd`) při startu hry:
 
-- **30 efektů**: výstřel šípu, rána kanónu a výbuch, kouzlo mága a blesk, mrazový pulz, zásahy, smrt každého typu nepřítele (boss má vlastní), zvonění mince, stavba / vylepšení / prodej, roh na začátku vlny, ztráta života, fanfára výhry a znělka prohry, kroky obra, kliknutí v menu. Efekty jsou **prostorové** (stereo podle toho, kde na ostrově se stanou, a tišší, když jsou daleko), mají drobnou náhodnou změnu výšky a omezení počtu, aby se při velké bitvě nesmísily.
+- **42 efektů**: výstřel šípu, rána kanónu a výbuch, kouzlo mága a blesk, mrazový pulz, zásahy, smrt každého typu nepřítele (boss má vlastní), zvonění mince, stavba / vylepšení / prodej, roh na začátku vlny, ztráta života, fanfára výhry a znělka prohry, kroky obra, kliknutí v menu, léčení, prasknutí štítu, rozpad slizáku, smrt nových nepřátel, pád a dopad meteoru, mrazivý poryv, zlatá horečka a ping, že se schopnost nabila. Efekty jsou **prostorové** (stereo podle toho, kde na ostrově se stanou, a tišší, když jsou daleko), mají drobnou náhodnou změnu výšky a omezení počtu, aby se při velké bitvě nesmísily.
 - **Hudba** (d moll): klidná smyčka (88 BPM, pad + brnkání + zvonky) a bojová (124 BPM, basa, bicí, žestě). Při vlně se klidná **plynule prolne** do bojové a po ní zase zpět. Pauza a konec hry hudbu ztlumí.
 - **Ambient**: vítr, šumění vody a občas ptáci na různých místech ostrova.
 - Prohlížeče zvuk bez kliknutí nepustí, proto se spouští až **po kliknutí na „Začít hru“**. Hudba se dopočítává na pozadí po malých dávkách (hra přitom neseká) a začne hrát zhruba 10–30 s po načtení, na pomalém stroji později; do té doby hraje ambient a efekty.
@@ -92,9 +134,10 @@ Zdraví nepřátel s vlnami roste (vlna 12 má ×5,4). Přehled další vlny je 
 
 ```
 project.godot, export_presets.cfg   nastavení Godotu a exportu pro web
-scripts/core/       cfg.gd (všechna čísla: věže, nepřátelé, vlny), mesh_kit.gd (stavba modelů z primitiv), gfx.gd
+scripts/core/       cfg.gd (všechna čísla: věže, nepřátelé, vlny, obtížnosti, schopnosti), islands.gd (rozložení ostrovů),
+                    game_settings.gd (volby a rekordy), mesh_kit.gd (stavba modelů z primitiv), gfx.gd
 scripts/world/      terén, trasa, řeka, mřížka polí, generování sítí ostrova
-scripts/game/       hra (vlny, zlato, životy), věž, nepřítel, projektil, efekty, kamera, překryvy
+scripts/game/       hra (vlny, zlato, životy, schopnosti), věž, nepřítel, projektil, meteor, efekty, kamera, překryvy
 scripts/theme/      rozhraní motivu + motiv „Ostrov v oblacích“ (svět, modely věží a nepřátel, ambient)
 scripts/ui/         rozhraní (česky), ikony kreslené v kódu
 scripts/audio/      syntezátor zvuků a hudby (synth.gd), správce zvuku (audio_manager.gd)
@@ -124,13 +167,16 @@ Všechno níže běželo na této verzi (Godot 4.7.2.stable, Chromium s programo
 | Test | Spuštění | Výsledek |
 |---|---|---|
 | Headless simulace (pravidla, vylepšení, fyzika, 4 strategie bota na celých 12 vlnách) | `godot --headless --path . -- --simtest --skipintro` | průběh bez chyb, viz níže |
+| Headless kontrola mechanik: obtížnosti, léčitel, štítonoš, slizák, meteor, poryv, horečka, nekonečný režim, ukládání rekordů, bot v nekonečném režimu | `godot --headless --path . -- --simtest --skipintro --mech` | 21 / 21 kontrol |
+| Kontrola rozložení ostrovů (délka cesty, mosty, volná pole, cesta uvnitř ostrova) | `godot --headless --path . -- --simtest --islands` | všechna rozložení v pořádku |
+| Menu a nové funkce v prohlížeči skutečnými kliky: výběr režimu / obtížnosti / ostrova, start, uložení voleb po obnovení stránky, schopnosti (tlačítka i klávesy, míření meteoru), varování před letci, noví nepřátelé, nekonečný režim, rekordy, konec hry, náhodný ostrov | `node tests/features_browser.js` | 44 / 44 kontrol, 0 chyb v konzoli |
 | Odehrání v prohlížeči skutečnou myší a klávesnicí: úvodní okno, stavba 2 lučištníků a kanónu, vylepšení kliknutím na tlačítko, 3 vlny | `node tests/e2e_play.js --low --waves=3` | všechny 3 vlny dokončeny (celkem 37 zabitých, ve vlně 3 proklouzli 4 dráčci – kanón po vzduchu nestřílí), 0 chyb v konzoli |
 | Kontrolovaný pokus „jedna věž, stejní nepřátelé, mezi koly vylepšení kliknutím“ pro všechny 4 typy | `node tests/ab_upgrade.js --type=archer` (cannon, mage, frost) | síla roste s každou úrovní, tabulka níže |
 | Ovládání a obrazovky (kamera, nepovolená stavba, prodej, cílení, pauza, rychlost, prohra + restart, výhra) | `node tests/ui_flow.js` | 17 / 17 kontrol, 0 chyb v konzoli |
 | Celá hra botem uvnitř exportované webové verze | `node tests/browser_bot.js` | 12 vln dohráno, 0 chyb v konzoli |
-| Snímky světa / věží / nepřátel / boje | `tests/tour.js`, `gallery.js`, `combat.js` | kontrola vzhledu |
-| Zvuk v prohlížeči (měří se skutečný výstup Web Audio, viz níže) | `node tests/audio_browser.js --low` | 33 / 33 kontrol, 0 chyb v konzoli |
-| Rozbor všech zvuků (délka, hlasitost, přebuzení, tónina, tempo hudby) | `godot --headless -s scripts/tools/audio_dump.gd -- složka` a pak `python3 tests/audio_analyze.py složka` | všech 30 efektů + ambient + obě písně bez nalezených problémů |
+| Snímky světa / věží / nepřátel / boje / nových věcí | `tests/tour.js`, `gallery.js`, `combat.js`, `shots_new.js` | kontrola vzhledu |
+| Zvuk v prohlížeči (měří se skutečný výstup Web Audio, viz níže) | `node tests/audio_browser.js --low` | 35 / 35 kontrol, 0 chyb v konzoli |
+| Rozbor všech zvuků (délka, hlasitost, přebuzení, tónina, tempo hudby) | `godot --headless -s scripts/tools/audio_dump.gd -- složka` a pak `python3 tests/audio_analyze.py složka` | všech 42 efektů + ambient + obě písně bez nalezených problémů |
 
 **Zvuk – co přesně se měřilo** (poslech to nenahradí, viz „Co ověřeno nebylo“). Test `audio_browser.js` zachytí skutečný výstup Web Audio v prohlížeči a ověří:
 
@@ -161,14 +207,25 @@ Rozbor vygenerovaných souborů (`audio_analyze.py`): žádné NaN, žádné oř
 | Mág | 1020 / 0 | 1630 / 2 | 3905 / 5 | 6710 / 22 |
 | Mráz | 535 / 0 | 1336 / 0 | 3120 / 0 | 6810 / 24 |
 
-**Fyzika a animace** (všech 12 vln, všechny strategie): žádný skok polohy nepřítele mezi kroky větší než jeho rychlost (vnější strana zatáčky ≤ +30 %), svislý pohyb po zemi nejvýš 1,8 cm za krok, nepřítel nikdy blíž než 1,45 m ke stromu či skále, žádný nepřítel neuvízl (nejdelší život 132 s = boss na celé trase). Projektily: ~2400 zásahů a ~4 % „vyšumělých“ (cíl zemřel jiným projektilem dřív, než střela dorazila).
+**Fyzika a animace** (celkem 48 odehraných her botem: všechny 3 ostrovy, 3 obtížnosti, 4 strategie, všech 12 vln, včetně léčitelů, štítonošů a slizáků): žádný skok polohy nepřítele mezi kroky větší než jeho rychlost (vnější strana zatáčky ≤ +30 %), svislý pohyb po zemi nejvýš 2 cm za krok, nepřítel nikdy blíž než 1,36 m ke stromu či skále, žádný nepřítel neuvízl (nejdelší život 141 s = boss na celé trase). Projektily: asi 84 000 zásahů a 8 % „vyšumělých“ (cíl zemřel jiným projektilem dřív, než střela dorazila; s plošným poškozením a rozpadajícími se slizáky je to víc než dřív).
 
-**Vyvážení** (bot s dokonalým umístěním věží): strategie „vylepšuj málo věží“ vyhraje se 15 životy, strategie „hodně slabých věží bez vylepšování“ padne kolem 7. vlny, strategie s mnoha věžemi a slabým vylepšením nezvládne bossy v poslední vlně. První tři vlny zvládnou všichni bez ztráty života (lidský hráč ve vlně 3 narazí na dráčky: kanón na ně nestačí).
+**Vyvážení** (headless boti: 4 strategie, nehrají dokonale; od `--abil` používají schopnosti jako rozumný hráč: meteor na největší hlouček, poryv na nepřátele blízko cíle, horečku při velké vlně). `V` = vyhrál (s kolika životy), `P` = prohrál (ve které vlně), pořadí strategií: široká, vysoká, mix, vzduch:
+
+| Ostrov | Lehká | Normální | Těžká |
+|---|---|---|---|
+| Klikatá stezka | V21 V30 V30 V25 | P12 V10 V5 V5 | P8 P12 P12 P12 |
+| Podkova | P9 V30 V30 V30 | P7 V15 P12 P12 | P7 P10 P10 P10 |
+| Hadí údolí | V30 V25 V30 V30 | V9 V5 P12 V5 | P10 P10 P10 P10 |
+
+Lehká se dá vyhrát skoro vždy, **normální** zvládne většina strategií (na hraně, hlavně poslední vlna s třemi bossy), **těžká** nevyhrál žádný bot (došli do vlny 7–12), takže je určená zkušeným hráčům. Bez schopností je normální o hodně těžší (na Klikaté stezce vyhrála ze 4 strategií jediná). Boti umí jen stavět a vylepšovat, člověk umí víc, takže těžká může být pro lidi zvládnutelnější, než tabulka naznačuje. První tři vlny zvládnou boti bez ztráty života, ve vlně 3 ale proklouznou dráčci, pokud na ně hráč nemá střelce nebo mága.
 
 ### Co ověřeno nebylo
 
 - **Plynulost (FPS) na skutečné grafické kartě.** Tady běží WebGL jen programově (~1–2 snímky/s), takže rychlost vykreslování nejde posoudit. Změřeno: ~207 volání vykreslení, ~800 objektů, ~0,5 mil. trojúhelníků na snímek včetně stínů. Kdyby hra na slabším stroji sekala, přepni tlačítkem *Kvalita* na nízkou.
-- Safari, mobilní prohlížeče a dotykové ovládání (kód pro dva prsty a posun je, ale netestováno).
+- Safari, mobilní prohlížeče a dotykové ovládání (kód pro dva prsty a posun je, ale netestováno; míření meteoru je klik, takže by mělo jít i dotykem).
+- **Jak se nové věci hrají člověku.** Vyvážení jsem měřil jen boty. Nevím, jestli je těžká obtížnost zábavně těžká, nebo zbytečně krutá, ani jak se ti budou líbit nové schopnosti a nepřátelé. Čísla jsou na jednom místě (`scripts/core/cfg.gd`: `DIFFICULTIES`, `ABILITIES`, `ENEMIES`, `WAVES`), takže jdou snadno ladit.
+- **Náhodné ostrovy.** Ověřil jsem rozložení cesty a krajiny pro 6 náhodných čísel, ale hru botem jsem na nich nehrál. Cesta je vždy jedno ze tří existujících rozložení (vybrané náhodně), náhodné je jen otočení biomů a rozmístění stromů a skal.
+- **Dvě cesty, které se sbíhají.** To jsem nedělal (hra má jeden portál a jednu trasu).
 - **Jak zvuk skutečně zní.** Poslouchat neumím, takže kvalitu (jestli je hudba příjemná, jestli jsou efekty vyvážené a nepřehlušují se) musíš posoudit ty. Ověřil jsem jen to, co se dá změřit: že zvuk hraje, kdy má, že tlačítka ho vypnou, že se hudba přepíná podle boje a že výstup nepřebuzuje. Kdyby ti nějaký zvuk nevyhovoval, jsou v `scripts/audio/synth.gd` (receptury) a `audio_manager.gd` (hlasitosti `BASE_DB`, `CALM_DB`…) snadno upravitelné.
 - **Smyčky ve webové verzi.** Godot je na webu přehrává tak, že po dohrání zdroj spustí znovu. Na přechodu proto může být krátká mezera, jejíž délka závisí na plynulosti hry (zhruba jeden snímek). V testu na pomalém stroji s ~1–2 snímky/s byla mezera stovky milisekund, na normálním počítači by měla být řádově desítky milisekund. Aby se to dělo zřídka, jsou hudební smyčky dlouhé 31 s a 44 s a ambient 24 s. Na skutečném stroji jsem to neměřil.
 - Binárku Godotu 4.7.2 (a web šablony) jsem získal ze zrcadla komunitního Docker image `barichello/godot-ci`, protože oficiální stránky byly v prostředí zablokované. Oficiální kontrolní součet jsem proto neověřil; program hlásí `4.7.2.stable.official`. Výsledný web (`docs/`) ti ale nic dalšího nestahuje – obsahuje jen engine a hru.

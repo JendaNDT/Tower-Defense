@@ -108,11 +108,12 @@ func cmd(req: Dictionary) -> Dictionary:
 			return {"ok": true}
 		"win":
 			# vynutí dokončení poslední vlny (pro kontrolu obrazovky výhry)
-			g.waves_started = Cfg.TOTAL_WAVES
-			g._wave_done[Cfg.TOTAL_WAVES - 1] = false
-			g._wave_spawn_left[Cfg.TOTAL_WAVES - 1] = 0
-			g._wave_alive[Cfg.TOTAL_WAVES - 1] = 0
-			g._check_wave_done(Cfg.TOTAL_WAVES - 1)
+			var last: int = maxi(g.total_waves, 1) - 1
+			g.waves_started = last + 1
+			g._wave_done[last] = false
+			g._wave_spawn_left[last] = 0
+			g._wave_alive[last] = 0
+			g._check_wave_done(last)
 			return {"ok": true, "state": g.state}
 		"freeze":
 			g.paused = bool(req.get("v", true))
@@ -245,8 +246,55 @@ func cmd(req: Dictionary) -> Dictionary:
 			main.hud.set_audio_state(main.audio.sfx_on, main.audio.music_on)
 			return {"ok": true}
 		"hud":
+			var rows: Array = []
+			for ch in main.hud._wave_rows.get_children():
+				var txt: String = ""
+				for lc in ch.get_children():
+					if lc is Label:
+						txt += (lc as Label).text
+				rows.append(txt)
 			return {"ok": true, "toast": main.hud._toast_lbl.text, "gold_lbl": main.hud._gold_lbl.text,
-				"lives_lbl": main.hud._lives_lbl.text, "wave_lbl": main.hud._wave_lbl.text}
+				"lives_lbl": main.hud._lives_lbl.text, "wave_lbl": main.hud._wave_lbl.text, "info": main.hud._info_lbl.text,
+				"wave_title": main.hud._wave_title.text, "wave_rows": rows, "end_title": main.hud._end_title.text,
+				"end_body": main.hud._end_body.text, "intro_visible": main.hud._intro.visible, "help_visible": main.hud._help.visible,
+				"end_visible": main.hud._end.visible, "aiming": main.aim_ability,
+				"menu": {"mode": main.hud._menu_mode, "diff": main.hud._menu_diff, "island": main.hud._menu_island,
+					"island_name": main.hud._menu_island_name.text, "record": main.hud._menu_rec.text,
+					"back_visible": main.hud._menu_back_btn.visible, "start_text": main.hud._menu_start_btn.text}}
+		"settings":
+			return {"ok": true, "mode": GameSettings.mode, "difficulty": GameSettings.difficulty, "island": GameSettings.island,
+				"random_seed": GameSettings.random_seed, "records": GameSettings.records, "game_mode": g.mode_id, "game_diff": g.diff_id,
+				"total_waves": g.total_waves, "island_name": str(main.island_def.get("name", "")), "persist": g.persist_records,
+				"abilities_used": g.abilities_used, "ability_cd": g.ability_cd, "gold_boost": g.gold_boost_t, "best_wave": g.best_wave}
+		"records":
+			# pro test: povolit/zakázat zápis rekordů a vyčistit je
+			g.persist_records = bool(req.get("persist", true))
+			if bool(req.get("clear", false)):
+				GameSettings.records = {}
+			return {"ok": true}
+		"cast":
+			# pro test: sešle schopnost přímo (meteor na souřadnice x, z)
+			var cid: String = str(req.get("id", "meteor"))
+			var ok_c: bool = false
+			if cid == "meteor":
+				ok_c = g.cast_meteor(Vector3(float(req.get("x", 0.0)), 0.0, float(req.get("z", 0.0))))
+			elif cid == "blizzard":
+				ok_c = g.cast_blizzard()
+			elif cid == "gold":
+				ok_c = g.cast_gold()
+			return {"ok": ok_c}
+		"set_wave":
+			# pro test: přeskočí na vlnu v (zvládnuté předchozí), nic dalšího se nespustí
+			g.waves_started = int(req.get("v", 0))
+			main.hud._refresh_wave_panel()
+			main.hud._on_wave(g.waves_started, g.total_waves)
+			return {"ok": true}
+		"set_cd":
+			g.ability_cd[str(req.get("id", "meteor"))] = float(req.get("v", 0.0))
+			return {"ok": true}
+		"help":
+			main.hud.show_help(bool(req.get("v", true)))
+			return {"ok": true}
 	return {"ok": false, "error": "unknown op " + op}
 
 

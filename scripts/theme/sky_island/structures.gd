@@ -65,7 +65,7 @@ static func build_portal(map: GameMap) -> Node3D:
 static func build_base(map: GameMap) -> Node3D:
 	var root: Node3D = Node3D.new()
 	root.name = "Heart"
-	var c: Vector2 = Cfg.cell_center(Cfg.BASE_CELL.x, Cfg.BASE_CELL.y)
+	var c: Vector2 = Cfg.cell_center(map.base_cell.x, map.base_cell.y)
 	var y: float = map.terrain.height_at(c.x, c.y)
 	root.position = Vector3(c.x, y, c.y)
 
@@ -114,12 +114,18 @@ static func _ring_kit() -> MeshKit:
 static func build_bridge(map: GameMap) -> Node3D:
 	var root: Node3D = Node3D.new()
 	root.name = "Bridge"
-	if map.bridge_s0 < 0.0:
+	if map.bridges.is_empty():
 		return root
-	var p: PathData = map.terrain.path
 	var k: MeshKit = MeshKit.new(15, 0.07)
-	var s0: float = map.bridge_s0
-	var s1: float = map.bridge_s1
+	for br in map.bridges:
+		_add_bridge(k, map, float(br[0]), float(br[1]))
+	root.add_child(Gfx.mesh_node(k, Gfx.model_mat(0.9)))
+	return root
+
+
+## Přidá do sítě jeden most (prkna, zábradlí, opěry) podél úseku trasy s0..s1.
+static func _add_bridge(k: MeshKit, map: GameMap, s0: float, s1: float) -> void:
+	var p: PathData = map.terrain.path
 	var s: float = s0
 	var prev_pos: Vector3 = p.pos_at(s0)
 	var plank_i: int = 0
@@ -166,6 +172,3 @@ static func build_bridge(map: GameMap) -> Node3D:
 		var de: Vector2 = p.dir_at(e2)
 		var yawe: float = atan2(de.x, de.y) * 180.0 / PI
 		k.box(Vector3(2.6, 0.5, 1.0), STONE_DARK, MeshKit.xf(pe + Vector3(0.0, -0.32, 0.0), Vector3(0.0, yawe, 0.0)))
-	var mi: MeshInstance3D = Gfx.mesh_node(k, Gfx.model_mat(0.9))
-	root.add_child(mi)
-	return root

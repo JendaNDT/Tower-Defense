@@ -24,6 +24,14 @@ static func build(type: String) -> EnemyVisual:
 			_golem(ev)
 		"drake":
 			_drake(ev)
+		"healer":
+			_healer(ev)
+		"shield":
+			_shield(ev)
+		"slime":
+			_slime(ev, 1.0)
+		"slimeling":
+			_slime(ev, 0.55)
 		_:
 			_boss(ev)
 	return ev
@@ -205,6 +213,122 @@ static func _drake(ev: EnemyVisual) -> void:
 	ev.height = 0.9
 	ev.aim_height = 0.0
 	ev.setup_bar(0.8, 0.85)
+
+
+# ------------------------------------------------------------------ léčitel
+static func _healer(ev: EnemyVisual) -> void:
+	var robe: Color = Color(0.80, 0.93, 0.84)
+	var sash: Color = Color(0.25, 0.65, 0.40)
+	var skin: Color = Color(0.50, 0.74, 0.34)
+	var glow: Color = Color(0.40, 1.0, 0.55)
+	var kb: MeshKit = MeshKit.new(61, 0.05)
+	kb.cyl(0.34, 0.17, 0.85, 8, robe, _x(Vector3(0.0, 0.18, 0.0)), 0.0, false, true)
+	kb.cyl(0.355, 0.33, 0.12, 8, sash, _x(Vector3(0.0, 0.2, 0.0)), 0.0, false, true)
+	kb.cyl(0.19, 0.17, 0.1, 8, sash, _x(Vector3(0.0, 0.66, 0.0)), 0.0, false, true)
+	kb.sphere(0.19, skin, _x(Vector3(0.0, 1.14, 0.02)), 0.0, 8, 6)
+	kb.cone(0.27, 0.34, 8, robe, _x(Vector3(0.0, 1.2, -0.03), Vector3(-10.0, 0.0, 0.0)), 0.0, false)            # kapuce
+	kb.sphere(0.04, Color(0.4, 1.0, 0.5), _x(Vector3(0.07, 1.14, 0.17)), 2.0, 5, 3)
+	kb.sphere(0.04, Color(0.4, 1.0, 0.5), _x(Vector3(-0.07, 1.14, 0.17)), 2.0, 5, 3)
+	kb.cone(0.035, 0.09, 5, skin.darkened(0.12), _x(Vector3(0.0, 1.09, 0.2), Vector3(90.0, 0.0, 0.0)), 0.0, false)
+	# svítící halo nad hlavou (znamení léčitele)
+	kb.torus(0.26, 0.028, glow, _x(Vector3(0.0, 1.62, 0.0)), 2.4, 18, 5)
+	kb.box(Vector3(0.07, 0.2, 0.025), glow, _x(Vector3(0.0, 1.62, 0.0)), 2.2)
+	kb.box(Vector3(0.2, 0.07, 0.025), glow, _x(Vector3(0.0, 1.62, 0.0)), 2.2)
+	_body_mesh(ev, kb)
+	for i in range(2):
+		var sx: float = -1.0 if i == 0 else 1.0
+		var lk: MeshKit = MeshKit.new(62 + i, 0.05)
+		lk.box(Vector3(0.12, 0.12, 0.2), Color(0.4, 0.3, 0.2), _x(Vector3(0.0, -0.05, 0.05)))
+		ev.legs.append(_limb(ev, Vector3(sx * 0.1, 0.12, 0.0), lk))
+	for j in range(2):
+		var sx2: float = -1.0 if j == 0 else 1.0
+		var ak: MeshKit = MeshKit.new(64 + j, 0.05)
+		ak.box(Vector3(0.09, 0.3, 0.09), robe.darkened(0.08), _x(Vector3(0.0, -0.15, 0.0)))
+		ak.sphere(0.055, skin, _x(Vector3(0.0, -0.31, 0.0)), 0.0, 5, 3)
+		if j == 1:
+			# hůl se svítícím kamenem
+			ak.cyl(0.035, 0.04, 1.25, 6, Color(0.5, 0.36, 0.2), _x(Vector3(0.0, -0.42, 0.04)), 0.0, false, true)
+			ak.sphere(0.12, glow, _x(Vector3(0.0, 0.88, 0.04)), 2.6, 7, 5)
+			ak.cone(0.05, 0.14, 5, Color(0.5, 0.36, 0.2), _x(Vector3(0.05, 0.84, 0.04), Vector3(0.0, 0.0, -90.0)), 0.0, false)
+			ak.cone(0.05, 0.14, 5, Color(0.5, 0.36, 0.2), _x(Vector3(-0.05, 0.84, 0.04), Vector3(0.0, 0.0, 90.0)), 0.0, false)
+		ev.arms.append(_limb(ev, Vector3(sx2 * 0.22, 0.86, 0.0), ak))
+	ev.gait = "biped"
+	ev.stride_freq = 3.2
+	ev.swing = 0.45
+	ev.bob = 0.03
+	ev.height = 1.75
+	ev.aim_height = 0.75
+	ev.setup_bar(0.75, 1.95)
+
+
+# ------------------------------------------------------------------ štítonoš
+static func _shield(ev: EnemyVisual) -> void:
+	var steel: Color = Color(0.50, 0.62, 0.84)
+	var dark: Color = Color(0.26, 0.32, 0.46)
+	var skin: Color = Color(0.46, 0.70, 0.32)
+	var gold: Color = Color(1.0, 0.82, 0.3)
+	var kb: MeshKit = MeshKit.new(71, 0.05)
+	kb.box(Vector3(0.5, 0.52, 0.34), steel, _x(Vector3(0.0, 0.88, 0.0)))
+	kb.box(Vector3(0.52, 0.12, 0.36), dark, _x(Vector3(0.0, 0.62, 0.0)))
+	kb.sphere(0.2, skin, _x(Vector3(0.0, 1.32, 0.02)), 0.0, 8, 6)
+	kb.sphere(0.235, steel, _x(Vector3(0.0, 1.38, 0.0), Vector3.ZERO, Vector3(1.0, 0.9, 1.0)), 0.0, 8, 5)      # přilba
+	kb.box(Vector3(0.06, 0.2, 0.34), gold, _x(Vector3(0.0, 1.55, 0.0)), 0.5)                                    # hřeben
+	kb.box(Vector3(0.3, 0.07, 0.04), Color(0.05, 0.05, 0.08), _x(Vector3(0.0, 1.31, 0.2)))                       # průzor
+	kb.sphere(0.04, Color(1.0, 0.9, 0.2), _x(Vector3(0.07, 1.31, 0.21)), 1.8, 5, 3)
+	kb.sphere(0.04, Color(1.0, 0.9, 0.2), _x(Vector3(-0.07, 1.31, 0.21)), 1.8, 5, 3)
+	for sx in [-1.0, 1.0]:
+		kb.sphere(0.17, dark, _x(Vector3(float(sx) * 0.33, 1.08, 0.0), Vector3.ZERO, Vector3(1.0, 0.8, 1.0)), 0.0, 7, 4)
+	_body_mesh(ev, kb)
+	for i in range(2):
+		var sx2: float = -1.0 if i == 0 else 1.0
+		var lk: MeshKit = MeshKit.new(72 + i, 0.05)
+		lk.box(Vector3(0.14, 0.4, 0.15), dark, _x(Vector3(0.0, -0.2, 0.0)))
+		lk.box(Vector3(0.16, 0.07, 0.26), Color(0.2, 0.2, 0.26), _x(Vector3(0.0, -0.38, 0.05)))
+		ev.legs.append(_limb(ev, Vector3(sx2 * 0.12, 0.42, 0.0), lk))
+	for j in range(2):
+		var sx3: float = -1.0 if j == 0 else 1.0
+		var ak: MeshKit = MeshKit.new(74 + j, 0.05)
+		ak.box(Vector3(0.1, 0.34, 0.1), skin, _x(Vector3(0.0, -0.17, 0.0)))
+		ak.sphere(0.065, skin, _x(Vector3(0.0, -0.35, 0.0)), 0.0, 5, 3)
+		if j == 0:
+			# velký kulatý štít vpředu (osa válce míří dopředu)
+			ak.cyl(0.46, 0.44, 0.08, 12, steel, _x(Vector3(-0.08, -0.28, 0.3), Vector3(90.0, 0.0, 0.0)), 0.0, false, true)
+			ak.cyl(0.32, 0.30, 0.06, 12, dark, _x(Vector3(-0.08, -0.28, 0.36), Vector3(90.0, 0.0, 0.0)), 0.0, false, true)
+			ak.sphere(0.1, gold, _x(Vector3(-0.08, -0.28, 0.42)), 0.8, 6, 4)
+		else:
+			ak.cyl(0.03, 0.03, 0.9, 6, Color(0.5, 0.36, 0.2), _x(Vector3(0.0, -0.3, 0.05), Vector3(75.0, 0.0, 0.0)), 0.0, false, true)
+			ak.cone(0.06, 0.2, 5, Color(0.8, 0.82, 0.9), _x(Vector3(0.0, -0.22, 0.88), Vector3(75.0, 0.0, 0.0)), 0.2, false)
+		ev.arms.append(_limb(ev, Vector3(sx3 * 0.34, 1.1, 0.0), ak))
+	ev.gait = "biped"
+	ev.stride_freq = 3.2
+	ev.swing = 0.5
+	ev.bob = 0.035
+	ev.height = 1.7
+	ev.aim_height = 0.9
+	ev.shield_size = 2.0
+	ev.setup_bar(0.8, 1.95)
+
+
+# ------------------------------------------------------------------ slizák (a malý slizánek: sc < 1)
+static func _slime(ev: EnemyVisual, sc: float) -> void:
+	var green: Color = Color(0.32, 0.82, 0.42)
+	var light: Color = Color(0.55, 0.96, 0.62)
+	var kb: MeshKit = MeshKit.new(81, 0.04)
+	kb.blob(0.52 * sc, green, _x(Vector3(0.0, 0.42 * sc, 0.0), Vector3.ZERO, Vector3(1.15, 0.85, 1.15)), 0.5, 9, 6, 0.06, 811)
+	kb.blob(0.3 * sc, light, _x(Vector3(-0.1 * sc, 0.62 * sc, -0.08 * sc), Vector3.ZERO, Vector3(1.0, 0.7, 1.0)), 0.7, 7, 5, 0.06, 812)
+	kb.blob(0.18 * sc, green.lightened(0.1), _x(Vector3(0.28 * sc, 0.22 * sc, -0.18 * sc)), 0.4, 6, 4, 0.08, 813)
+	# oči a pusa
+	for sx in [-1.0, 1.0]:
+		kb.sphere(0.12 * sc, Color(1.0, 1.0, 1.0), _x(Vector3(float(sx) * 0.18 * sc, 0.55 * sc, 0.4 * sc)), 0.3, 6, 4)
+		kb.sphere(0.06 * sc, Color(0.05, 0.08, 0.05), _x(Vector3(float(sx) * 0.18 * sc, 0.55 * sc, 0.5 * sc)), 0.0, 5, 3)
+	kb.box(Vector3(0.2 * sc, 0.04 * sc, 0.03 * sc), Color(0.1, 0.3, 0.12), _x(Vector3(0.0, 0.36 * sc, 0.52 * sc)))
+	_body_mesh(ev, kb)
+	ev.gait = "blob"
+	ev.stride_freq = 3.4 if sc >= 1.0 else 4.6
+	ev.bob = 0.2 * sc
+	ev.height = 0.95 * sc
+	ev.aim_height = 0.4 * sc
+	ev.setup_bar(0.7 * maxf(sc, 0.8), 1.15 * maxf(sc, 0.75))
 
 
 # ------------------------------------------------------------------ boss: kamenný obr
