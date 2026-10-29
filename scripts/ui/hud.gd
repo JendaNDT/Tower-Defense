@@ -923,8 +923,7 @@ func _build_help() -> void:
 		body += "• Věž postavíš klepnutím na kartu dole a pak na zvýrazněné pole vedle cesty. Pole se označí a stavbu potvrdíš tlačítkem Postavit (křížek stavbu zruší).\n"
 		body += "• Klepnutím na postavenou věž otevřeš její panel: vylepšení, prodej a cíl. Každá úroveň mění vzhled i sílu.\n"
 		body += "• Vlnu spustíš tlačítkem vpravo dole. " + Themes.t("help_units") + "\n"
-		body += "• Minimapa vlevo ukazuje celý ostrov: klepnutím nebo tažením po ní přesuneš kameru, knoflíkem v rohu ji sbalíš.\n"
-		body += "• Zlatá pole na kopcích jsou lepší místa: věž tam dohlédne o 15 % dál, na vrcholu o 30 %.\n"
+		body += "• Minimapa vlevo: klepnutím nebo tažením přesuneš kameru, knoflíkem ji sbalíš. Věže na zlatých polích kopců dohlédnou o 15 % dál, na vrcholu o 30 %.\n"
 		body += "• " + Themes.t("help_enemies") + "\n"
 		body += "• " + Themes.t("help_abilities_touch") + "\n\n"
 		body += "Kamera: jeden prst posouvá, dva prsty přibližují a otáčejí. Zvuk, kvalita, celá obrazovka a nová hra jsou pod tlačítkem „…“ nahoře."
@@ -932,14 +931,14 @@ func _build_help() -> void:
 		body += "• Věže stavíš na zvýrazněná pole vedle cesty – klikni na kartu dole (klávesy 1–4) a pak na pole.\n"
 		body += "• Klikni na postavenou věž a vylepši ji. Každá úroveň mění vzhled i sílu (dosah, poškození, rychlost, speciální schopnost).\n"
 		body += "• Vlnu spustíš tlačítkem vpravo dole nebo mezerníkem.\n"
-		body += "• Minimapa vlevo ukazuje celý ostrov: klikni nebo táhni po ní a kamera se přesune (N ji sbalí).\n"
-		body += "• Zlatá pole na kopcích jsou lepší místa: věž tam dohlédne o 15 % dál, na vrcholu (dva kroužky) o 30 %.\n"
+		body += "• Minimapa vlevo: klikni nebo táhni a kamera se přesune (N ji sbalí). Věže na zlatých polích kopců dohlédnou o 15 % dál, na vrcholu o 30 %.\n"
 		body += "• " + Themes.t("help_units") + "\n"
 		body += "• " + Themes.t("help_enemies") + "\n"
 		body += "• " + Themes.t("help_abilities") + "\n\n"
 		body += "Kamera: pravé tlačítko myši = otáčení, kolečko = zoom, W/A/S/D = posun, Q/E = otáčení, F = rychlost, P = pauza, M = zvuk, F3 = přehled výkonu.\n"
 		body += "Na dotykové obrazovce: jeden prst posouvá kameru, dva prsty přibližují a otáčejí; stavbu potvrdíš tlačítkem Postavit."
 	var m: Dictionary = _modal("Jak hrát", body, "Zavřít", C_GOLD)
+	(m["body"] as Label).add_theme_font_size_override("font_size", int(_k(15, 13)))
 	_help = m["root"]
 	(m["button"] as Button).pressed.connect(func(): show_help(false))
 	_ui["help_close"] = m["button"]

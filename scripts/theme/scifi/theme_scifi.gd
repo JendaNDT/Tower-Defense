@@ -26,7 +26,7 @@ func _init() -> void:
 		"mode_campaign": "Přežij všech %d vln a ubraň reaktor stanice.",
 		"base_fell": "Reaktor stanice byl zničen.",
 		"base_hit": "Nepřítel zasáhl reaktor! −%d životů",
-		"help_intro": "Braň reaktor stanice před vlnami nepřátel, kteří přicházejí z hvězdných bran po cestách přes celou plošinu. Některé mapy mají víc bran a rozcestí.",
+		"help_intro": "Braň reaktor stanice před vlnami nepřátel, kteří přicházejí z hvězdných bran po cestách přes celou plošinu.",
 		"help_units": "Plazmomet nezasáhne vzdušné cíle, pancíř snižuje poškození laseru – proti němu pomůže Teslova věž.",
 		"help_enemies": "Opraváře znič jako prvního, štítové droidy prorazí silné rány, nanorój se po zničení rozdělí.",
 		"help_abilities_touch": "Schopnosti vlevo dole: Orbitální úder (klepni na místo dopadu a potvrď), Kryo vlna a Kreditový šok. Po použití se nabíjejí.",

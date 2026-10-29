@@ -59,7 +59,7 @@ const DEFAULT_STRINGS: Dictionary = {
 	"mode_campaign": "Přežij všech %d vln a zachraň ostrov.",
 	"base_fell": "Srdce ostrova padlo.",
 	"base_hit": "Nepřítel dorazil k Srdci ostrova! −%d životů",
-	"help_intro": "Braň Srdce ostrova před vlnami nepřátel, kteří přicházejí z portálů po cestách přes celý ostrov. Některé mapy mají víc bran a rozcestí.",
+	"help_intro": "Braň Srdce ostrova před vlnami nepřátel, kteří přicházejí z portálů po cestách přes celý ostrov.",
 	"help_units": "Kanón nezasáhne vzdušné cíle, brnění snižuje poškození šípů – proti němu pomůže mág.",
 	"help_enemies": "Léčitele zabij první, štítonoše prorazí silné rány, slizák se po smrti rozpadne.",
 	"help_abilities_touch": "Schopnosti vlevo dole: Meteor (klepni na místo dopadu a potvrď), Mrazivý poryv a Zlatá horečka. Po použití se nabíjejí.",

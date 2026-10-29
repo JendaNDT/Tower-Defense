@@ -91,7 +91,7 @@ function check(name, ok, detail) { checks.push({ name, ok: !!ok, detail }); cons
   h = await hud();
   const abBefore = (await settings()).ability_cd;
   check('všechny schopnosti jsou na začátku připravené', abBefore.meteor === 0 && abBefore.blizzard === 0 && abBefore.gold === 0, abBefore);
-  await cmd({ op: 'spawn', type: 'goblin', n: 6, interval: 0.5, hp: 8 });
+  await cmd({ op: 'spawn', type: 'goblin', n: 6, interval: 0.5, hp: 8, lane: 0 });     // jedna trasa = hlouček, na který míří meteor
   await cmd({ op: 'step', t: 5 });
   q = await st();
   check('nepřátelé vyšli z portálu', q.enemies.length === 6, q.enemies.length);
