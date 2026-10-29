@@ -4,9 +4,9 @@ extends RefCounted
 ## Hra se na motiv ptá přes tyto funkce, takže pravidla (Cfg) zůstávají společná a mění se jen vzhled, texty a zvuk.
 
 const LIST: Array = [
-	{"id": "sky_island", "name": "Ostrov v oblacích",
+	{"id": "sky_island", "name": "Ostrov v oblacích", "short": "Ostrov",
 		"desc": "Plovoucí ostrov s lesem, loukou, pouští a sněhem. Řeka padá z okraje jako vodopád do oblaků."},
-	{"id": "scifi", "name": "Vesmírná stanice",
+	{"id": "scifi", "name": "Vesmírná stanice", "short": "Stanice",
 		"desc": "Plošina s neonovými biomy v hlubokém vesmíru. Lasery, plazma, roboti a energetická řeka."},
 ]
 const DEFAULT_ID: String = "sky_island"

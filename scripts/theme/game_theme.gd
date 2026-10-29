@@ -1,7 +1,7 @@
 class_name GameTheme
 extends RefCounted
 ## Rozhraní motivu (theme). Hra (pravidla, vlny, věže, nepřátelé) je oddělená od vzhledu.
-## Nový motiv (sci-fi, fantasy, ...) = nová třída, která dědí z GameTheme, přepíše metody pro svět, modely
+## Nový motiv (další prostředí) = nová třída, která dědí z GameTheme, přepíše metody pro svět, modely
 ## věží a nepřátel, projektily a doplní `palette` (barvy efektů), `strings` (texty) a jména věží a nepřátel.
 ## Pravidla a čísla zůstávají v Cfg; motiv mění jen vzhled, texty a zvuk.
 

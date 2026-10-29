@@ -343,6 +343,35 @@ static func _mech_run(main) -> void:
 	add.call("data: obtížnosti seřazené (lehká < normální < těžká podle zdraví)",
 		float(Cfg.DIFFICULTIES["easy"]["hp"]) < float(Cfg.DIFFICULTIES["normal"]["hp"]) and float(Cfg.DIFFICULTIES["normal"]["hp"]) < float(Cfg.DIFFICULTIES["hard"]["hp"]))
 
+	# --- prostředí (motivy): úplnost textů, jmen, barev a paleta bez překlepů v klíčích
+	for tid in Themes.ids():
+		var th: GameTheme = Themes.create(str(tid))
+		var miss: Array = []
+		for tw in Cfg.TOWER_ORDER:
+			var ttx: Dictionary = th.tower_text.get(tw, {})
+			if th.theme_id != "sky_island" and (str(ttx.get("name", "")) == "" or str(ttx.get("short", "")) == "" or str(ttx.get("desc", "")) == "" or (ttx.get("notes", []) as Array).size() != Cfg.MAX_LEVEL):
+				miss.append("věž " + str(tw))
+		for en in Cfg.ENEMIES.keys():
+			if th.theme_id != "sky_island" and str((th.enemy_text.get(en, {}) as Dictionary).get("name", "")) == "":
+				miss.append("nepřítel " + str(en))
+			if th.theme_id != "sky_island" and Cfg.ENEMIES[en].has("tip") and str((th.enemy_text.get(en, {}) as Dictionary).get("tip", "")) == "":
+				miss.append("tip " + str(en))
+		for ab in Cfg.ABILITY_ORDER:
+			if th.theme_id != "sky_island" and (str((th.ability_text.get(ab, {}) as Dictionary).get("name", "")) == "" or str((th.ability_text.get(ab, {}) as Dictionary).get("desc", "")) == ""):
+				miss.append("schopnost " + str(ab))
+		for pk in th.palette.keys():
+			if not GameTheme.DEFAULT_PALETTE.has(pk):
+				miss.append("barva " + str(pk))
+		for sk in th.strings.keys():
+			if not GameTheme.DEFAULT_STRINGS.has(sk):
+				miss.append("text " + str(sk))
+		var uniq: Dictionary = {}
+		for tw2 in Cfg.TOWER_ORDER:
+			uniq[Themes.create(str(tid)).tower_text.get(tw2, {}).get("name", Cfg.TOWERS[tw2]["name"])] = true
+		if uniq.size() != Cfg.TOWER_ORDER.size():
+			miss.append("jména věží nejsou různá")
+		add.call("prostředí %s: jména věží, nepřátel a schopností, texty a paleta jsou úplné a bez překlepů v klíčích" % str(tid), miss.is_empty(), ", ".join(miss))
+
 	# --- obtížnosti: start a zdraví/rychlost nepřátel
 	for did in Cfg.DIFFICULTY_ORDER:
 		g.configure("campaign", did)

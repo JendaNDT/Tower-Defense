@@ -5,7 +5,9 @@ Veškerá grafika (terén, stromy, voda, věže, nepřátelé, efekty, rozhraní
 
 **Hraj online: https://jenda.cool/tower-defense/** (nasazeno 29. 10. 2026 jako verze `1.0.0-web.1`; nasazení a postup jsou popsané v repozitáři webu `JendaNDT/JendaWeb`, soubor `TOWER_DEFENSE_RELEASE.md`).
 
-Hru si můžeš nastavit: **režim** (příběh 12 vln, nebo nekonečný s rekordem), **obtížnost** (lehká / normální / těžká) a **ostrov** (tři rozložení cesty a krajiny, nebo náhodný). K obraně patří i tři **aktivní schopnosti** (meteor, mrazivý poryv, zlatá horečka) a mezi nepřáteli se objevují **léčitelé, štítonoši a slizáci**.
+Hra má **dvě prostředí** (v menu volba *Prostředí*): **Ostrov v oblacích** (původní) a **Vesmírná stanice** (sci-fi). Prostředí mění svět, věže, nepřátele, efekty, texty i zvuk a hudbu; **pravidla, čísla a vyvážení jsou ve všech stejné**.
+
+Hru si můžeš nastavit: **prostředí**, **režim** (příběh 12 vln, nebo nekonečný s rekordem), **obtížnost** (lehká / normální / těžká) a **ostrov** (tři rozložení cesty a krajiny, nebo náhodný). K obraně patří i tři **aktivní schopnosti** (meteor, mrazivý poryv, zlatá horečka) a mezi nepřáteli se objevují **léčitelé, štítonoši a slizáci**.
 
 ![Celý ostrov](screenshots/ostrov.png)
 
@@ -60,6 +62,22 @@ Funguje v aktuálním Chrome / Edge / Firefox. První načtení stahuje ~40 MB (
 | Přehled výkonu | **F3** – snímky za vteřinu, volání vykreslení, objekty, trojúhelníky a počty nepřátel / věží / stínů |
 | **Dotyk (telefon, tablet)** | karta věže → klepnutí na pole (pole se označí, náhled věže a dosahu) → tlačítko **Postavit** nebo druhé klepnutí na totéž pole; křížek stavbu zruší. Klepnutí na věž otevře panel (vylepšit, prodat, cíl, křížek zavře). **Meteor**: klepnout na schopnost, na místo dopadu a potvrdit |
 | Kamera dotykem | **jeden prst** = posun, **dva prsty** = přiblížení, otáčení (mapa se otáčí s prsty) a posun; tlačítka kamery, zvuku, kvality, celé obrazovky a nové hry jsou pod tlačítkem **…** nahoře |
+
+## Prostředí
+
+V menu (při startu i později přes tlačítko ☰) je volba **Prostředí**. Změna znovu postaví svět (pár sekund) a volba se pamatuje v prohlížeči; jde ji vynutit i adresou `?theme=scifi` nebo `?theme=sky_island`. Věže mají v obou prostředích stejná čísla (cena, dosah, poškození, vylepšení), nepřátelé stejné vlastnosti a vlny jsou stejné – mění se vzhled, jména, texty, efekty a zvuk.
+
+| | **Ostrov v oblacích** | **Vesmírná stanice** |
+|---|---|---|
+| Svět | plovoucí ostrov nad mraky, biomy les / louka / poušť / sníh, řeka a vodopád | plošina na asteroidu v hlubokém vesmíru s mlhovinou a hvězdami, neonové biomy, dlažba s tenkými světelnými okraji, energetická řeka a vodopád, plující trosky a satelity, hlídkové drony a svítící můry |
+| Začátek / cíl | portál / Srdce ostrova | hvězdná brána / reaktor stanice |
+| Věže | Lučištník, Kanón, Mág, Mráz | Laser, Plazmomet, Teslova věž, Kryo věž |
+| Nepřátelé | skřet, vlk, obrněnec, dráček, léčitel, štítonoš, slizák, kamenný obr | pěšák-bot, robopes, těžký mech, dron, opravář, štítový droid, nanorój, titán |
+| Schopnosti | Meteor, Mrazivý poryv, Zlatá horečka | Orbitální úder, Kryo vlna, Kreditový šok |
+| Měna | zlato | kredity |
+| Zvuk | d moll: klidná a bojová smyčka (pad, brnkání, zvonky, žestě), vítr, voda, ptáci | a moll: synthové smyčky (pad, basa, arpeggio, lead, clap), laserové a plazmové efekty, hukot stanice, tok energie, drony |
+
+![Vesmírná stanice](screenshots/scifi_svet.png)
 
 ## Pravidla
 

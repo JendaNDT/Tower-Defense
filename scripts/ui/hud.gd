@@ -808,7 +808,7 @@ func _build_intro() -> void:
 	left.add_child(_label("Prostředí", 15, C_DIM))
 	var trow: Array = []
 	for td in Themes.LIST:
-		trow.append([td["id"], td["name"]])
+		trow.append([td["id"], td["short"]])
 	left.add_child(_toggle_row(trow, _menu_theme, _menu_pick_theme, _menu_theme_btns, "menu_theme_"))
 	_menu_theme_desc = _label("", int(_k(13, 12)), C_DIM)
 	_menu_theme_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
