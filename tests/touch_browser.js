@@ -74,8 +74,15 @@ function check(name, ok, detail) { checks.push({ name, ok: !!ok, detail }); cons
   await t.tap(p[0], p[1]);
   s = await t.state();
   check('klepnutí na kartu zapne stavění lučištníka', s.build_type === 'archer', s.build_type);
-  const cells = (await t.cmd({ op: 'cells' })).cells;
-  const c1 = cells[Math.floor(cells.length * 0.3)], c2 = cells[Math.floor(cells.length * 0.55)];
+  // pole, která na obrazovce neleží pod žádným panelem (karty dole, panely nahoře a vpravo)
+  const allCells = (await t.cmd({ op: 'cells' })).cells;
+  const cells = [];
+  for (const c of allCells) {
+    const sp = await t.cell(c.cx, c.cz);
+    if (sp[0] > 90 && sp[0] < W - 200 && sp[1] > 90 && sp[1] < H - 110) cells.push(Object.assign({ sx: sp[0], sy: sp[1] }, c));
+  }
+  check('na obrazovce je dost volných polí mimo panely (pro zkoušky klepáním)', cells.length >= 8, cells.length);
+  const c1 = cells[Math.floor(cells.length * 0.2)], c2 = cells[Math.floor(cells.length * 0.5)];
   p = await t.cell(c1.cx, c1.cz);
   await t.tap(p[0], p[1]);
   s = await t.state();
