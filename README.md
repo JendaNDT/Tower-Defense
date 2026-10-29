@@ -288,19 +288,19 @@ Rozbor vygenerovaných souborů (`audio_analyze.py`): žádné NaN, žádné oř
 | Mág | 1020 / 0 | 1630 / 2 | 3905 / 5 | 6710 / 22 |
 | Mráz | 535 / 0 | 1336 / 0 | 3120 / 0 | 6810 / 24 |
 
-**Fyzika a animace** (celkem 48 odehraných her botem: všechny 3 ostrovy, 3 obtížnosti, 4 strategie, všech 12 vln, včetně léčitelů, štítonošů a slizáků): žádný skok polohy nepřítele mezi kroky větší než jeho rychlost (vnější strana zatáčky ≤ +30 %), svislý pohyb po zemi nejvýš 2 cm za krok, nepřítel nikdy blíž než 1,36 m ke stromu či skále, žádný nepřítel neuvízl (nejdelší život 141 s = boss na celé trase). Projektily: asi 84 000 zásahů a 8 % „vyšumělých“ (cíl zemřel jiným projektilem dřív, než střela dorazila; s plošným poškozením a rozpadajícími se slizáky je to víc než dřív).
+**Fyzika a animace** (36 odehraných her botem se schopnostmi na nových mapách: 3 mapy, 3 obtížnosti, 4 strategie, všech 12 vln, včetně léčitelů, štítonošů a slizáků): žádný skok polohy nepřítele mezi kroky větší než jeho rychlost (vnější strana zatáčky ≤ +30 %), svislý pohyb po zemi nejvýš 2,2 cm za krok, nepřítel nikdy blíž než 1,35 m ke stromu či skále, žádný nepřítel neuvízl (nejdelší život 135 s = boss na celé trase). Výška tras se na společných úsecích shoduje s terénem (chyba nejvýš 2 cm, i na všech 21 převrácených variantách map). Projektily: asi 98 000 zásahů a 7 % „vyšumělých“ (cíl zemřel jiným projektilem dřív, než střela dorazila; s plošným poškozením a rozpadajícími se slizáky je to víc než dřív).
 
-Po přidání grafických animací (nepřátelé po smrti ještě 0,5–1,1 s dohrávají animaci, ale ze hry jsou odebráni hned) jsem celou simulaci pustil znovu: 4 boti na Klikaté stezce a bot uvnitř exportu v prohlížeči dopadli stejně jako v headless simulaci (bot „vysoká“: výhra, 5 životů, 425 zabitých), fyzika beze změny (žádný skok polohy, svislý pohyb po zemi nejvýš 1,8 cm za krok, nejbližší překážka 1,36–1,47 m).
+Bot uvnitř exportu v prohlížeči (bez schopností, strategie „vysoká“, normální obtížnost, mapa Dvě brány) dopadl jako headless simulace bez schopností: prohrál ve vlně 12, fyzika v pořádku (žádný skok polohy, svislý pohyb po zemi nejvýš 2,1 cm za krok, nejbližší překážka 1,43 m).
 
-**Vyvážení** (headless boti: 4 strategie, nehrají dokonale; od `--abil` používají schopnosti jako rozumný hráč: meteor na největší hlouček, poryv na nepřátele blízko cíle, horečku při velké vlně). `V` = vyhrál (s kolika životy), `P` = prohrál (ve které vlně), pořadí strategií: široká, vysoká, mix, vzduch:
+**Vyvážení** (headless boti: 4 strategie, nehrají dokonale; používají schopnosti jako rozumný hráč: meteor na největší hlouček, poryv na nepřátele blízko cíle, horečku při velké vlně). `V` = vyhrál (s kolika životy), `P` = prohrál (ve které vlně), pořadí strategií: široká, vysoká, mix, vzduch:
 
-| Ostrov | Lehká | Normální | Těžká |
+| Mapa | Lehká | Normální | Těžká |
 |---|---|---|---|
-| Klikatá stezka | V21 V30 V30 V25 | P12 V10 V5 V5 | P8 P12 P12 P12 |
-| Podkova | P9 V30 V30 V30 | P7 V15 P12 P12 | P7 P10 P10 P10 |
-| Hadí údolí | V30 V25 V30 V30 | V9 V5 P12 V5 | P10 P10 P10 P10 |
+| Dvě brány | V15 V29 V30 V30 | P11 V14 V4 V15 | P8 P12 P10 V5 |
+| Rozcestí | V30 V30 V30 V30 | P12 V20 V20 V20 | P9 P12 P10 V5 |
+| Tři brány (zdraví nepřátel +10 %) | V28 V30 V30 V30 | V2 V20 P12 V20 | P10 P12 P10 P12 |
 
-Lehká se dá vyhrát skoro vždy, **normální** zvládne většina strategií (na hraně, hlavně poslední vlna s třemi bossy), **těžká** nevyhrál žádný bot (došli do vlny 7–12), takže je určená zkušeným hráčům. Bez schopností je normální o hodně těžší (na Klikaté stezce vyhrála ze 4 strategií jediná). Boti umí jen stavět a vylepšovat, člověk umí víc, takže těžká může být pro lidi zvládnutelnější, než tabulka naznačuje. První tři vlny zvládnou boti bez ztráty života, ve vlně 3 ale proklouznou dráčci, pokud na ně hráč nemá střelce nebo mága.
+Lehká se dá vyhrát skoro vždy, **normální** zvládne většina strategií (na hraně, hlavně poslední vlna s bossy), na **těžké** vyhrály jen 2 z 12 her (strategie „vzduch“ na mapách Dvě brány a Rozcestí s 5 životy) a ostatní došly do vlny 8–12, takže je určená zkušeným hráčům. Bez schopností je normální o hodně těžší (na každé mapě vyhrála ze 4 strategií nejvýš jedna; na Dvou branách žádná). Boti umí jen stavět a vylepšovat a stavějí hlavně podél jedné cesty, člověk umí víc, takže těžká může být pro lidi zvládnutelnější, než tabulka naznačuje. První tři vlny zvládne bez ztráty života 27 ze 36 botů; unikají hlavně dráčci (letí přímo k Srdci mimo cesty) a bossové.
 
 ### Co ověřeno nebylo
 
