@@ -15,6 +15,9 @@ Hru si můžeš nastavit: **režim** (příběh 12 vln, nebo nekonečný s rekor
 | ![Nové menu](screenshots/menu.png) **Menu: režim, obtížnost, ostrov, rekord** | ![Noví nepřátelé](screenshots/novi_nepratele.png) **Léčitel, štítonoš, slizák a slizánek** |
 | ![Podkova](screenshots/ostrov_podkova.png) **Ostrov Podkova** | ![Hadí údolí](screenshots/ostrov_hadi_udoli.png) **Ostrov Hadí údolí** |
 | ![Meteor](screenshots/schopnost_meteor.png) **Meteor: dopad, výbuch, poškození v okruhu** | ![Poryv](screenshots/schopnost_poryv.png) **Mrazivý poryv zmrazí všechny nepřátele** |
+| ![Stavba](screenshots/stavba_veze.png) **Stavba: věž vyrůstá ze země, prach a měkký stín** | ![Vylepšení](screenshots/vylepseni_veze.png) **Vylepšení: nový model se „nafoukne“, starý mizí** |
+| ![Smrt](screenshots/smrt_nepratel.png) **Smrt podle typu: golem se rozpadá, dráček se řítí, slizák se rozplácne** | ![Dělo](screenshots/delo_spalenina.png) **Výstřel z děla, výbuch a spálená skvrna na zemi** |
+| ![Most](screenshots/most_kruhy.png) **Kruhy na hladině u mostu, pohyblivá pěna u břehu** | ![F3](screenshots/prehled_vykonu_f3.png) **Přehled výkonu na klávese F3 (vlevo nahoře)** |
 
 ## Jak hru spustit
 
@@ -185,6 +188,7 @@ Všechno níže běželo na této verzi (Godot 4.7.2.stable, Chromium s programo
 | Kontrolovaný pokus „jedna věž, stejní nepřátelé, mezi koly vylepšení kliknutím“ pro všechny 4 typy | `node tests/ab_upgrade.js --type=archer` (cannon, mage, frost) | síla roste s každou úrovní, tabulka níže |
 | Ovládání a obrazovky (kamera, nepovolená stavba, prodej, cílení, pauza, rychlost, prohra + restart, výhra) | `node tests/ui_flow.js` | 17 / 17 kontrol, 0 chyb v konzoli |
 | Celá hra botem uvnitř exportované webové verze | `node tests/browser_bot.js` | 12 vln dohráno, 0 chyb v konzoli |
+| Grafika a animace: stavba / vylepšení / prodej věže (hodnoty v přesných okamžicích), příchod, smrt podle typu a vsáknutí do Srdce, spáleniny, záblesky, měkké stíny, kruhy u mostu, mlha, přehled F3, vypínání efektů v nízké kvalitě (+ snímky uprostřed pohybu) | `node tests/gfx_browser.js` | 41 / 41 kontrol, 0 chyb v konzoli |
 | Snímky světa / věží / nepřátel / boje / nových věcí | `tests/tour.js`, `gallery.js`, `combat.js`, `shots_new.js` | kontrola vzhledu |
 | Zvuk v prohlížeči (měří se skutečný výstup Web Audio, viz níže) | `node tests/audio_browser.js --low` | 35 / 35 kontrol, 0 chyb v konzoli |
 | Rozbor všech zvuků (délka, hlasitost, přebuzení, tónina, tempo hudby) | `godot --headless -s scripts/tools/audio_dump.gd -- složka` a pak `python3 tests/audio_analyze.py složka` | všech 42 efektů + ambient + obě písně bez nalezených problémů |
@@ -220,6 +224,8 @@ Rozbor vygenerovaných souborů (`audio_analyze.py`): žádné NaN, žádné oř
 
 **Fyzika a animace** (celkem 48 odehraných her botem: všechny 3 ostrovy, 3 obtížnosti, 4 strategie, všech 12 vln, včetně léčitelů, štítonošů a slizáků): žádný skok polohy nepřítele mezi kroky větší než jeho rychlost (vnější strana zatáčky ≤ +30 %), svislý pohyb po zemi nejvýš 2 cm za krok, nepřítel nikdy blíž než 1,36 m ke stromu či skále, žádný nepřítel neuvízl (nejdelší život 141 s = boss na celé trase). Projektily: asi 84 000 zásahů a 8 % „vyšumělých“ (cíl zemřel jiným projektilem dřív, než střela dorazila; s plošným poškozením a rozpadajícími se slizáky je to víc než dřív).
 
+Po přidání grafických animací (nepřátelé po smrti ještě 0,5–1,1 s dohrávají animaci, ale ze hry jsou odebráni hned) jsem celou simulaci pustil znovu: 4 boti na Klikaté stezce a bot uvnitř exportu v prohlížeči dopadli stejně jako v headless simulaci (bot „vysoká“: výhra, 5 životů, 425 zabitých), fyzika beze změny (žádný skok polohy, svislý pohyb po zemi nejvýš 1,8 cm za krok, nejbližší překážka 1,36–1,47 m).
+
 **Vyvážení** (headless boti: 4 strategie, nehrají dokonale; od `--abil` používají schopnosti jako rozumný hráč: meteor na největší hlouček, poryv na nepřátele blízko cíle, horečku při velké vlně). `V` = vyhrál (s kolika životy), `P` = prohrál (ve které vlně), pořadí strategií: široká, vysoká, mix, vzduch:
 
 | Ostrov | Lehká | Normální | Těžká |
@@ -232,7 +238,8 @@ Lehká se dá vyhrát skoro vždy, **normální** zvládne většina strategií 
 
 ### Co ověřeno nebylo
 
-- **Plynulost (FPS) na skutečné grafické kartě.** Tady běží WebGL jen programově (~1–2 snímky/s), takže rychlost vykreslování nejde posoudit. Změřeno: ~207 volání vykreslení, ~800 objektů, ~0,5 mil. trojúhelníků na snímek včetně stínů. Kdyby hra na slabším stroji sekala, přepni tlačítkem *Kvalita* na nízkou.
+- **Plynulost (FPS) na skutečné grafické kartě.** Tady běží WebGL jen programově (~1–2 snímky/s), takže rychlost vykreslování nejde posoudit. Změřené zatížení vykreslování (to jde i programově; klávesa **F3** ho ukáže přímo ve hře): prázdný ostrov 293 volání vykreslení / ~1 100 objektů / 0,55 mil. trojúhelníků ve vysoké kvalitě a 265 / ~1 090 / 0,30 mil. v nízké; scéna s 10 věžemi a 10 nepřáteli 512 / ~1 400 / 0,57 mil. (vysoká) a 409 / ~1 300 / 0,31 mil. (nízká). Proti verzi před grafickými úpravami přibylo asi 4 % volání vykreslení (491 → 512 ve vysoké, 393 → 409 v nízké kvalitě), trojúhelníků je stejně. Kdyby hra na slabším stroji sekala, přepni tlačítkem *Kvalita* na nízkou.
+- **Jak se nové animace a efekty tváří v pohybu.** Animace jsem ověřil číselně (velikost, otočení a poloha v přesných okamžicích) a na snímcích zastavených uprostřed pohybu, ale pohyb samotný jsem neviděl. Jestli je odraz při stavbě věže přiměřený, smrt nepřátel nevleklá a mlha, stíny a ztmavení modelů dost nebo příliš výrazné, musíš posoudit ty. Hodnoty jsou na jednom místě: trvání a odraz v `tower_visual.gd` (`BUILD_TIME`, `ease_out_back`), smrti v `enemy.gd` (`_animate_death`) a `enemy_models.gd`, mlha ve `world_builder.gd` (`fog_*`), síla stínů v `blob_shadows.gd`.
 - Safari, mobilní prohlížeče a dotykové ovládání (kód pro dva prsty a posun je, ale netestováno; míření meteoru je klik, takže by mělo jít i dotykem).
 - **Jak se nové věci hrají člověku.** Vyvážení jsem měřil jen boty. Nevím, jestli je těžká obtížnost zábavně těžká, nebo zbytečně krutá, ani jak se ti budou líbit nové schopnosti a nepřátelé. Čísla jsou na jednom místě (`scripts/core/cfg.gd`: `DIFFICULTIES`, `ABILITIES`, `ENEMIES`, `WAVES`), takže jdou snadno ladit.
 - **Náhodné ostrovy.** Ověřil jsem rozložení cesty a krajiny pro 6 náhodných čísel, ale hru botem jsem na nich nehrál. Cesta je vždy jedno ze tří existujících rozložení (vybrané náhodně), náhodné je jen otočení biomů a rozmístění stromů a skal.
