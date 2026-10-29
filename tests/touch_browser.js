@@ -178,6 +178,7 @@ function check(name, ok, detail) { checks.push({ name, ok: !!ok, detail }); cons
   await t.shot('04_kamera');
 
   // ===================================================================== C) meteor
+  await t.cmd({ op: 'freeze', v: false });                 // schopnosti se za pauzy nesesílají
   await t.cmd({ op: 'cam', yaw: 45, zoom: 44, px: 0, pz: 0 });
   p = await t.ui('ability_meteor');
   await t.tap(p[0], p[1]);
