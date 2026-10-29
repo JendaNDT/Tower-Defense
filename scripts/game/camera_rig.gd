@@ -1,14 +1,15 @@
 class_name CameraRig
 extends Node3D
-## Izometrická kamera (ortogonální projekce, sklon 35,264° = pravá izometrie).
+## Izometrická kamera (ortogonální projekce, sklon 35,264° = pravá izometrie) s přepínačem na pohled přesně shora (sklon 90°).
 ## Ovládání: pravé tlačítko myši = otáčení, kolečko = přiblížení, prostřední tlačítko = posun,
-## Q/E = otáčení, W/A/S/D nebo šipky = posun, +/− = zoom, F = původní pohled.
+## Q/E = otáčení, W/A/S/D nebo šipky = posun, +/− = zoom, V = pohled shora / izometrie, Home = původní pohled.
 ## Dotyk: jeden prst = posun, dva prsty = přiblížení, otáčení a posun; krátké klepnutí vyšle signál `tapped`.
 
 signal tapped(pos: Vector2)
 
 const TAP_MOVE_MAX: float = 14.0       # největší posun prstu (v pixelech obsahu), aby se ještě počítalo jako klepnutí
-const PITCH_DEG: float = 35.264
+const PITCH_DEG: float = 35.264        # izometrický sklon
+const TOP_PITCH_DEG: float = 90.0      # pohled přesně shora
 const DIST: float = 150.0
 const DEFAULT_YAW: float = 45.0
 const DEFAULT_SIZE: float = 56.0
@@ -22,6 +23,8 @@ var target_yaw: float = DEFAULT_YAW
 var zoom_size: float = DEFAULT_SIZE
 var target_zoom: float = DEFAULT_SIZE
 var target_pivot: Vector3 = Vector3.ZERO
+var pitch_deg: float = PITCH_DEG
+var target_pitch: float = PITCH_DEG
 var input_enabled: bool = true
 
 var _shake: float = 0.0
@@ -32,6 +35,8 @@ var _drag_dist: float = 0.0
 var ui_blocker: Callable = Callable()   # (Vector2) -> bool: bod leží na prvku rozhraní, takový dotyk kameru neovládá
 var _touch: Dictionary = {}              # index prstu -> {"pos", "start", "t0", "ui"}
 var _tap_ok: bool = false
+var _yaw_before_top: float = DEFAULT_YAW   # natočení před přepnutím na pohled shora (po návratu se obnoví, pokud se nezměnilo)
+var _yaw_top: float = 0.0
 
 
 func _ready() -> void:
@@ -43,10 +48,15 @@ func _ready() -> void:
 	camera.near = 1.0
 	camera.far = 420.0
 	camera.current = true
-	var p: float = deg_to_rad(PITCH_DEG)
-	camera.transform = Transform3D(Basis(Vector3.RIGHT, -p), Vector3(0.0, sin(p) * DIST, cos(p) * DIST))
 	add_child(camera)
+	_apply_pitch()
 	_apply()
+
+
+## Postaví kameru ve vzdálenosti DIST pod aktuálním sklonem (90° = přímo nad středem pohledu).
+func _apply_pitch() -> void:
+	var p: float = deg_to_rad(pitch_deg)
+	camera.transform = Transform3D(Basis(Vector3.RIGHT, -p), Vector3(0.0, sin(p) * DIST, cos(p) * DIST))
 
 
 func _apply() -> void:
@@ -60,6 +70,7 @@ func add_shake(amount: float) -> void:
 
 
 func reset_view() -> void:
+	target_pitch = PITCH_DEG
 	target_yaw = DEFAULT_YAW
 	target_zoom = DEFAULT_SIZE
 	target_pivot = Vector3.ZERO
@@ -69,6 +80,30 @@ func reset_view() -> void:
 func focus_xz(p: Vector2) -> void:
 	target_pivot = Vector3(p.x, 0.0, p.y)
 	_clamp_pivot()
+
+
+func top_view() -> bool:
+	return target_pitch > (PITCH_DEG + TOP_PITCH_DEG) * 0.5
+
+
+## Pohled přesně shora: mřížka polí je pak souměrná čtvercová síť, proto se natočení zarovná na nejbližší násobek 90°.
+## Při návratu do izometrie se vrátí původní natočení (pokud ho hráč mezitím neotočil).
+func set_top_view(on: bool) -> void:
+	if on == top_view():
+		return
+	if on:
+		_yaw_before_top = target_yaw
+		target_yaw = roundf((target_yaw - 0.01) / 90.0) * 90.0
+		_yaw_top = target_yaw
+		target_pitch = TOP_PITCH_DEG
+	else:
+		if absf(target_yaw - _yaw_top) < 1.0:
+			target_yaw = _yaw_before_top
+		target_pitch = PITCH_DEG
+
+
+func toggle_top_view() -> void:
+	set_top_view(not top_view())
 
 
 func rotate_by(deg: float) -> void:
@@ -91,7 +126,7 @@ func _pan_pixels(rel: Vector2) -> void:
 	var fwd: Vector3 = -global_transform.basis.z
 	fwd.y = 0.0
 	fwd = fwd.normalized()
-	var sinp: float = sin(deg_to_rad(PITCH_DEG))
+	var sinp: float = maxf(sin(deg_to_rad(pitch_deg)), 0.2)
 	target_pivot += -right * rel.x * k + fwd * (rel.y * k / sinp)
 	_clamp_pivot()
 
@@ -246,6 +281,11 @@ func _process(delta: float) -> void:
 	var k: float = 1.0 - exp(-11.0 * delta)
 	yaw_deg = lerpf(yaw_deg, target_yaw, k)
 	zoom_size = lerpf(zoom_size, target_zoom, k)
+	if absf(pitch_deg - target_pitch) > 0.001:
+		pitch_deg = lerpf(pitch_deg, target_pitch, k)
+		if absf(pitch_deg - target_pitch) < 0.02:
+			pitch_deg = target_pitch
+		_apply_pitch()
 	position = position.lerp(target_pivot, k)
 	rotation.y = deg_to_rad(yaw_deg)
 	camera.size = zoom_size

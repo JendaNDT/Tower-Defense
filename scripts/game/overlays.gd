@@ -16,6 +16,8 @@ var _ghost_mat: ShaderMaterial = null
 var _sel: MeshInstance3D = null
 var _last_range_key: String = ""
 var _last_sel_key: String = ""
+var _grid_build: bool = false       # mřížku chce stavební režim
+var _grid_pinned: bool = false      # mřížku si hráč zapnul trvale (G / tlačítko)
 
 
 func setup(map_ref: GameMap, theme_ref: GameTheme) -> void:
@@ -102,7 +104,18 @@ func rebuild_grid() -> void:
 
 
 func show_grid(on: bool) -> void:
-	_grid.visible = on
+	_grid_build = on
+	_grid.visible = _grid_build or _grid_pinned
+
+
+## Trvale zapnutá mřížka (hráč ji vidí i mimo stavbu).
+func set_grid_pinned(on: bool) -> void:
+	_grid_pinned = on
+	_grid.visible = _grid_build or _grid_pinned
+
+
+func is_grid_pinned() -> bool:
+	return _grid_pinned
 
 
 # ------------------------------------------------------------------ dosah

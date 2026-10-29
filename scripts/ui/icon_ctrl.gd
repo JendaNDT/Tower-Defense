@@ -135,6 +135,20 @@ func _draw() -> void:
 			var perp2: Vector2 = Vector2(-tang.y, tang.x)
 			draw_colored_polygon(PackedVector2Array([endp + tang * s * 0.2, endp + perp2 * s * 0.14, endp - perp2 * s * 0.14]), col)
 			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		"topview":
+			# čtverec s kruhem uvnitř = pohled shora na věž
+			draw_rect(Rect2(c - Vector2(s * 0.32, s * 0.32), Vector2(s * 0.64, s * 0.64)), col, false, maxf(s * 0.08, 1.5))
+			draw_circle(c, s * 0.14, col)
+			for q2 in range(4):
+				var a2: float = PI * 0.5 * float(q2)
+				var d2: Vector2 = Vector2(cos(a2), sin(a2))
+				draw_line(c + d2 * s * 0.2, c + d2 * s * 0.32, col, maxf(s * 0.06, 1.5), true)
+		"grid":
+			var gw: float = maxf(s * 0.07, 1.5)
+			for q3 in range(2):
+				var off: float = (float(q3) - 0.5) * s * 0.3
+				draw_line(c + Vector2(off, -s * 0.36), c + Vector2(off, s * 0.36), col, gw, true)
+				draw_line(c + Vector2(-s * 0.36, off), c + Vector2(s * 0.36, off), col, gw, true)
 		"plus":
 			draw_line(c + Vector2(-s * 0.28, 0), c + Vector2(s * 0.28, 0), col, maxf(s * 0.09, 2.0), true)
 			draw_line(c + Vector2(0, -s * 0.28), c + Vector2(0, s * 0.28), col, maxf(s * 0.09, 2.0), true)

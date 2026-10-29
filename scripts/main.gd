@@ -397,6 +397,11 @@ func _on_cam(action: String) -> void:
 			rig.zoom_by(1.25)
 		"reset":
 			rig.reset_view()
+		"view":
+			rig.toggle_top_view()
+		"grid":
+			overlays.set_grid_pinned(not overlays.is_grid_pinned())
+	hud.sync_view_buttons(rig.top_view(), overlays.is_grid_pinned())
 
 
 ## Text přehledu výkonu (F3); obnovuje se čtyřikrát za vteřinu, aby nezatěžoval.
@@ -495,8 +500,12 @@ func _unhandled_input(event: InputEvent) -> void:
 				_toggle_all_audio()
 			KEY_N:
 				hud.toggle_minimap()
+			KEY_V:
+				_on_cam("view")
+			KEY_G:
+				_on_cam("grid")
 			KEY_HOME:
-				rig.reset_view()
+				_on_cam("reset")
 
 
 ## Klepnutí na mapu (dotyk). Při stavbě a míření meteoru se místo nejdřív jen označí a potvrdí se tlačítkem

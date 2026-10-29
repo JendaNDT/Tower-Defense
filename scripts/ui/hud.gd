@@ -61,6 +61,8 @@ var _speed_lbl: Label
 var _pause_btn: Button
 var _pause_icon: IconCtrl
 var _auto_btn: Button
+var _view_btn: Button
+var _grid_btn: Button
 var _sfx_btn: Button
 var _music_btn: Button
 var _quality_btn: Button
@@ -349,6 +351,19 @@ func _build_top_right() -> void:
 	_auto_btn.toggled.connect(func(on): _auto_on = on; request_auto.emit(on))
 	h.add_child(_auto_btn)
 
+	# pohled shora a trvalá mřížka: na telefonu přímo v liště, na počítači ve svislém pruhu pod ní
+	_view_btn = _icon_button("topview", "Pohled shora / izometrie (V)")
+	_view_btn.toggle_mode = true
+	_view_btn.pressed.connect(func(): request_cam.emit("view"))
+	_grid_btn = _icon_button("grid", "Mřížka polí (G)")
+	_grid_btn.toggle_mode = true
+	_grid_btn.pressed.connect(func(): request_cam.emit("grid"))
+	_ui["view_btn"] = _view_btn
+	_ui["grid_btn"] = _grid_btn
+	if _c:
+		h.add_child(_view_btn)
+		h.add_child(_grid_btn)
+
 	_sfx_btn = _icon_button("speaker", "Zvukové efekty (M = vše)")
 	_sfx_btn.toggle_mode = true
 	_sfx_btn.set_pressed_no_signal(true)
@@ -433,6 +448,24 @@ func _build_top_right() -> void:
 		_ui["more_panel"] = _more_panel
 	_root.add_child(p)
 	_place(p, Vector2(1, 0), Vector2(_k(12, 8), _k(12, 8)))
+	if not _c:
+		var strip: PanelContainer = _panel(C_BG, 14, Vector4(6, 6, 6, 6))
+		var sv: VBoxContainer = VBoxContainer.new()
+		sv.add_theme_constant_override("separation", 6)
+		sv.add_child(_view_btn)
+		sv.add_child(_grid_btn)
+		strip.add_child(sv)
+		_ui["cam_strip"] = strip
+		_root.add_child(strip)
+		_place(strip, Vector2(1, 0), Vector2(12, 12 + 62))
+
+
+## Tlačítka pohledu shora a mřížky ukazují skutečný stav (mění se i klávesami V, G a Home).
+func sync_view_buttons(top: bool, grid: bool) -> void:
+	if _view_btn != null:
+		_view_btn.set_pressed_no_signal(top)
+	if _grid_btn != null:
+		_grid_btn.set_pressed_no_signal(grid)
 
 
 func _build_cards() -> void:
@@ -926,7 +959,7 @@ func _build_help() -> void:
 		body += "• Minimapa vlevo: klepnutím nebo tažením přesuneš kameru, knoflíkem ji sbalíš. Věže na zlatých polích kopců dohlédnou o 15 % dál, na vrcholu o 30 %.\n"
 		body += "• " + Themes.t("help_enemies") + "\n"
 		body += "• " + Themes.t("help_abilities_touch") + "\n\n"
-		body += "Kamera: jeden prst posouvá, dva prsty přibližují a otáčejí. Zvuk, kvalita, celá obrazovka a nová hra jsou pod tlačítkem „…“ nahoře."
+		body += "Kamera: jeden prst posouvá, dva prsty přibližují a otáčejí. Tlačítka nahoře: pohled shora, mřížka polí. Zvuk, kvalita, celá obrazovka a nová hra jsou pod tlačítkem „…“."
 	else:
 		body += "• Věže stavíš na zvýrazněná pole vedle cesty – klikni na kartu dole (klávesy 1–4) a pak na pole.\n"
 		body += "• Klikni na postavenou věž a vylepši ji. Každá úroveň mění vzhled i sílu (dosah, poškození, rychlost, speciální schopnost).\n"
@@ -935,7 +968,7 @@ func _build_help() -> void:
 		body += "• " + Themes.t("help_units") + "\n"
 		body += "• " + Themes.t("help_enemies") + "\n"
 		body += "• " + Themes.t("help_abilities") + "\n\n"
-		body += "Kamera: pravé tlačítko myši = otáčení, kolečko = zoom, W/A/S/D = posun, Q/E = otáčení, F = rychlost, P = pauza, M = zvuk, F3 = přehled výkonu.\n"
+		body += "Kamera: pravé tlačítko myši = otáčení, kolečko = zoom, W/A/S/D = posun, Q/E = otáčení, V = pohled shora, G = mřížka, F = rychlost, P = pauza, M = zvuk, F3 = přehled výkonu.\n"
 		body += "Na dotykové obrazovce: jeden prst posouvá kameru, dva prsty přibližují a otáčejí; stavbu potvrdíš tlačítkem Postavit."
 	var m: Dictionary = _modal("Jak hrát", body, "Zavřít", C_GOLD)
 	(m["body"] as Label).add_theme_font_size_override("font_size", int(_k(15, 13)))

@@ -19,6 +19,8 @@ Hru si můžeš nastavit: **prostředí**, **režim** (příběh 12 vln, nebo ne
 | ![Nové menu](screenshots/menu.png) **Menu: režim, obtížnost, ostrov, rekord** | ![Noví nepřátelé](screenshots/novi_nepratele.png) **Léčitel, štítonoš, slizák a slizánek** |
 | ![Rozcestí](screenshots/mapa_rozcesti.png) **Mapa Rozcestí: jedna brána, cesta se rozdělí a znovu spojí** | ![Tři brány](screenshots/mapa_tri_brany.png) **Mapa Tři brány: tři vstupy, spojení a rozdělení cest** |
 | ![Kopce](screenshots/kopce_mrizka.png) **Kopce a vrcholy na mřížce stavby: zlaté kroužky = větší dosah** | ![Telefon: minimapa](screenshots/telefon_minimapa.png) **Telefon na šířku s minimapou vlevo nahoře** |
+| ![Pohled shora](screenshots/pohled_shora.png) **Pohled shora (V): mapa Rozcestí s trvalou mřížkou (G)** | ![Mřížka](screenshots/mrizka_izo.png) **Výraznější mřížka: světlá čára s tmavým lemem, zlatá pole kopců, náhled věže a dosahu** |
+| ![Pohled shora, Vesmírná stanice](screenshots/pohled_shora_scifi.png) **Pohled shora ve Vesmírné stanici (mapa Tři brány)** | ![Telefon: pohled shora](screenshots/telefon_pohled_shora.png) **Telefon: pohled shora a mřížka přímo v horní liště** |
 | ![Meteor](screenshots/schopnost_meteor.png) **Meteor: dopad, výbuch, poškození v okruhu** | ![Poryv](screenshots/schopnost_poryv.png) **Mrazivý poryv zmrazí všechny nepřátele** |
 | ![Stavba](screenshots/stavba_veze.png) **Stavba: věž vyrůstá ze země, prach a měkký stín** | ![Vylepšení](screenshots/vylepseni_veze.png) **Vylepšení: nový model se „nafoukne“, starý mizí** |
 | ![Smrt](screenshots/smrt_nepratel.png) **Smrt podle typu: golem se rozpadá, dráček se řítí, slizák se rozplácne** | ![Dělo](screenshots/delo_spalenina.png) **Výstřel z děla, výbuch a spálená skvrna na zemi** |
@@ -53,6 +55,8 @@ Funguje v aktuálním Chrome / Edge / Firefox. První načtení stahuje ~40 MB (
 | Aktivní schopnosti | panel vlevo dole, nebo klávesy **5** (Meteor – pak klikni na mapu, **Esc** zruší), **6** (Mrazivý poryv), **7** (Zlatá horečka) |
 | Nová hra, změna režimu / obtížnosti / mapy | tlačítko **☰** nahoře (nebo „Změnit nastavení“ na konci hry); volby se pamatují |
 | **Minimapa** | vlevo pod panelem životů a zlata: **klik nebo tažení** přesune kameru, knoflík v rohu ji sbalí, klávesa **N** ji skryje a ukáže. Otáčí se spolu s kamerou, vidíš na ní cesty, řeku, kopce, portály, věže, nepřátele a výřez kamery |
+| **Pohled shora** | klávesa **V** nebo tlačítko se čtvercem pod horní lištou (na telefonu přímo v liště): kamera se plynule sklopí na 90° a mřížka polí je pak pravidelná čtvercová síť (natočení se zarovná na násobek 90°). Druhé **V** vrátí izometrii i původní natočení, **Home** vrátí původní pohled. Přiblížení, posun, minimapa i stavba fungují stejně |
+| **Mřížka polí** | při výběru věže se ukáže sama; klávesa **G** nebo tlačítko s mřížkou ji **zapne trvale**, i když nestavíš (zlatá pole = kopce a vrcholy). Má světlou čáru s tmavým lemem, takže je vidět na sněhu, trávě i písku |
 | Otáčení kamery | **pravé tlačítko myši + tažení**, **Q / E**, tlačítka nahoře |
 | Zoom | **kolečko myši**, **+ / −**, tlačítka nahoře |
 | Posun kamery | **W A S D** / šipky, nebo prostřední tlačítko myši + tažení |
@@ -63,7 +67,7 @@ Funguje v aktuálním Chrome / Edge / Firefox. První načtení stahuje ~40 MB (
 | Kvalita | tlačítko *Kvalita* (vypne stíny od slunce, vyhlazování, spáleniny a jiskry; na mobilech/slabých strojích se zapne samo) |
 | Přehled výkonu | **F3** – snímky za vteřinu, volání vykreslení, objekty, trojúhelníky a počty nepřátel / věží / stínů |
 | **Dotyk (telefon, tablet)** | karta věže → klepnutí na pole (pole se označí, náhled věže a dosahu) → tlačítko **Postavit** nebo druhé klepnutí na totéž pole; křížek stavbu zruší. Klepnutí na věž otevře panel (vylepšit, prodat, cíl, křížek zavře). **Meteor**: klepnout na schopnost, na místo dopadu a potvrdit |
-| Kamera dotykem | **jeden prst** = posun, **dva prsty** = přiblížení, otáčení (mapa se otáčí s prsty) a posun; tlačítka kamery, zvuku, kvality, celé obrazovky a nové hry jsou pod tlačítkem **…** nahoře |
+| Kamera dotykem | **jeden prst** = posun, **dva prsty** = přiblížení, otáčení (mapa se otáčí s prsty) a posun; tlačítka pohledu shora a mřížky jsou přímo v horní liště, ostatní tlačítka kamery, zvuku, kvality, celé obrazovky a nové hry pod tlačítkem **…** |
 
 ## Prostředí
 

@@ -128,7 +128,24 @@ func cmd(req: Dictionary) -> Dictionary:
 		"cancel":
 			main._cancel_all()
 			return {"ok": true}
+		"cam_info":
+			return {"ok": true, "yaw": main.rig.yaw_deg, "target_yaw": main.rig.target_yaw, "pitch": main.rig.pitch_deg, "target_pitch": main.rig.target_pitch,
+				"zoom": main.rig.zoom_size, "pivot": [main.rig.position.x, main.rig.position.z], "top": main.rig.top_view(),
+				"grid_pinned": main.overlays.is_grid_pinned(), "grid_visible": main.overlays._grid.visible,
+				"view_btn": main.hud._view_btn.button_pressed, "grid_btn": main.hud._grid_btn.button_pressed}
+		"minimap_view":
+			if main.hud._minimap == null:
+				return {"ok": false}
+			var vh: Vector2 = main.hud._minimap.view_half()
+			return {"ok": true, "half": [vh.x, vh.y]}
 		"cam":
+			if req.has("top"):
+				main.rig.set_top_view(bool(req["top"]))
+				if bool(req.get("now", true)):
+					main.rig.yaw_deg = main.rig.target_yaw
+					main.rig.pitch_deg = main.rig.target_pitch
+					main.rig._apply_pitch()
+				main.hud.sync_view_buttons(main.rig.top_view(), main.overlays.is_grid_pinned())
 			if req.has("yaw"):
 				main.rig.target_yaw = float(req["yaw"])
 				main.rig.yaw_deg = float(req["yaw"])

@@ -102,6 +102,15 @@ func _process(delta: float) -> void:
 		queue_redraw()
 
 
+## Poloviční rozměry (m) části světa viditelné kamerou: vodorovně a svisle po zemi (v izometrii je svisle delší než na obrazovce).
+func view_half() -> Vector2:
+	var vp: Vector2 = get_viewport().get_visible_rect().size
+	var aspect: float = vp.x / maxf(vp.y, 1.0)
+	var hw: float = float(rig.zoom_size) * aspect * 0.5
+	var hh: float = float(rig.zoom_size) * 0.5 / maxf(sin(deg_to_rad(rig.pitch_deg)), 0.2)
+	return Vector2(hw, hh)
+
+
 ## Světový bod (x, z) -> bod v obrazovce minimapy (kruh se středem `c`, otočený podle kamery).
 func _to_px(wp: Vector2, yaw: float, c: Vector2) -> Vector2:
 	var cs: float = cos(yaw)
@@ -159,10 +168,9 @@ func _draw() -> void:
 	# výřez kamery
 	if rig != null:
 		var piv: Vector2 = Vector2(rig.position.x, rig.position.z)
-		var vp: Vector2 = get_viewport().get_visible_rect().size
-		var aspect: float = vp.x / maxf(vp.y, 1.0)
-		var hw: float = float(rig.zoom_size) * aspect * 0.5
-		var hh: float = float(rig.zoom_size) * 0.5 / sin(deg_to_rad(CameraRig.PITCH_DEG))
+		var vhalf: Vector2 = view_half()
+		var hw: float = vhalf.x
+		var hh: float = vhalf.y
 		var right: Vector2 = Vector2(cos(yaw), -sin(yaw))
 		var fwd: Vector2 = Vector2(-sin(yaw), -cos(yaw))
 		var corners: Array = [Vector2(-1, -1), Vector2(1, -1), Vector2(1, 1), Vector2(-1, 1), Vector2(-1, -1)]
