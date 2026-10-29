@@ -34,14 +34,37 @@ static func build(type: String) -> EnemyVisual:
 			_slime(ev, 0.55)
 		_:
 			_boss(ev)
+	match type:
+		"wolf":
+			ev.death_style = "fall_side"
+			ev.death_time = 0.55
+		"golem":
+			ev.death_style = "crumble"
+			ev.death_time = 0.8
+		"boss":
+			ev.death_style = "crumble"
+			ev.death_time = 1.1
+		"drake":
+			ev.death_style = "crash"
+			ev.death_time = 0.85
+		"slime", "slimeling":
+			ev.death_style = "splat"
+			ev.death_time = 0.5
+		_:
+			ev.death_style = "fall_back"
+			ev.death_time = 0.6
 	return ev
 
 
 static func _body_mesh(ev: EnemyVisual, kit: MeshKit) -> void:
+	kit.ao = 0.28
+	kit.ao_height = 1.0
 	ev.body.add_child(kit.instance(ev.mat))
 
 
 static func _limb(ev: EnemyVisual, pos: Vector3, kit: MeshKit) -> Node3D:
+	kit.ao = 0.25
+	kit.ao_height = 0.45
 	var piv: Node3D = Node3D.new()
 	piv.position = pos
 	piv.add_child(kit.instance(ev.mat))

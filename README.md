@@ -49,7 +49,8 @@ Funguje v aktuálním Chrome / Edge / Firefox. První načtení stahuje ~40 MB (
 | Pauza | **P** (nebo Esc, když není nic vybráno) |
 | Nápověda (pravidla a ovládání) | **?** nahoře (nebo **H**) |
 | Zvuk a hudba | tlačítka **reproduktor** (efekty a ambient) a **nota** (hudba) nahoře; klávesa **M** vypne/zapne vše. Volba se pamatuje |
-| Kvalita | tlačítko *Kvalita* (vypne stíny a vyhlazování; na mobilech/slabých strojích se zapne samo) |
+| Kvalita | tlačítko *Kvalita* (vypne stíny od slunce, vyhlazování, spáleniny a jiskry; na mobilech/slabých strojích se zapne samo) |
+| Přehled výkonu | **F3** – snímky za vteřinu, volání vykreslení, objekty, trojúhelníky a počty nepřátel / věží / stínů |
 
 ## Pravidla
 
@@ -120,6 +121,16 @@ Zdraví nepřátel s vlnami roste (vlna 12 má ×5,4). Přehled další vlny je 
 - **Izometrická kamera:** ortogonální projekce, přesný izometrický sklon 35,264°, otáčení, zoom i posun.
 - **Fyzika projektilů:** v každém kroku se projektilu přepočítá rychlost tak, aby letěl po balistické křivce přesně do *předpovězeného* místa cíle v čase dopadu. Cíl jde po známé trase, takže projektil vždy dorazí a zasáhne (i když se cíl zpomalí – křivka se plynule opraví). Dělová koule dopadá s výbuchem, magická koule se vlní a přeskakuje blesky.
 - **Pohyb nepřátel** je dán uraženou vzdáleností po vyhlazené trase (zatáčky jsou zaoblené), takže se nemohou zaseknout ani projít skrz překážky; stromy a skály jsou jen mimo trasu a v zablokovaných polích.
+
+### Grafika a animace (vše v kódu, běží na WebGL 2 / režimu Kompatibilita)
+
+- **Stavba věže:** věž vyroste ze země s přeskokem (krátce přeroste 100 % a vrátí se) a kolem základny se zvedne prstenec prachu. **Vylepšení:** starý model se zmenší a zmizí, nový se „nafoukne“ z menšího na plnou velikost. **Prodej:** věž se zmenší a zvedne.
+- **Střelba:** u hlavně zableskne podle typu věže (lučištník drobný, kanón velký s jiskrami, mág fialový). Šípy a koule za sebou táhnou světelnou stopu, dělová koule kouřovou. Po výbuchu zůstane na zemi **spálená skvrna** (kopíruje terén, po ~12 s sama mizí, najednou jich je nejvýš 14); po meteoru velká.
+- **Příchod nepřátel:** vystoupí zpoza portálu a „nafouknou se“ (slizánci po rozpadu vyskočí na místě).
+- **Smrt podle typu:** skřet a léčitel padají na záda, vlk na bok, golem a boss se rozsypou (třesou se, rozpláclé, prach), dráček se zřítí a při dopadu se rozprskne, slizák se rozplácne. Kdo dorazí k Srdci, nezmizí, ale **proletí do krystalu**, točí se a zmenšuje.
+- **Hloubka (levné náhrady, protože režim Kompatibilita nemá SSAO ani volumetrickou mlhu):** jemný modrý opar do dálky, měkké kontaktní stíny pod všemi věžemi a nepřáteli (létající mají stín na zemi, který je tím menší a bledší, čím výš letí) – celé je to jediné volání vykreslení – a ztmavení spodku modelů (obarvení vrcholů).
+- **Řeka:** pohyblivá pěna u břehu, kruhy na hladině po obou stranách mostu, když po něm někdo jde, a hustší mlha a sprška u vodopádu.
+- Všechny drahé efekty se v **nízké kvalitě** vypínají (spáleniny, jiskry u výstřelů, skutečné stíny od slunce); měkké stíny zůstávají, protože nahrazují ty skutečné.
 
 ### Zvuk a hudba
 

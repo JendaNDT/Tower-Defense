@@ -33,7 +33,7 @@ func setup(game_ref, type_id: String, c: Vector2i, world_pos: Vector3, id: int) 
 	position = world_pos
 	name = "Tower_%s_%d" % [type_id, id]
 	_rng.seed = 1000 + id
-	_build_visual()
+	_build_visual("build")
 
 
 func stats() -> Dictionary:
@@ -62,7 +62,7 @@ func upgrade_cost() -> int:
 
 func upgrade() -> void:
 	level += 1
-	_build_visual()
+	_build_visual("upgrade")
 	# efekt vylepšení
 	var p: Vector3 = position
 	game.fx.ring(Vector3(p.x, p.y + 0.3, p.z), Color(1.0, 0.85, 0.4), 2.6, 0.55, 0.16, 0.25, 1.0)
@@ -70,12 +70,28 @@ func upgrade() -> void:
 	game.fx.text(p + Vector3(0.0, 3.4, 0.0), "Úroveň %d" % level, Color(1.0, 0.9, 0.4), 1.5, 1.2)
 
 
-func _build_visual() -> void:
+## Prodej: model se zmenší a zmizí, pak se uzel uvolní (věž už není v seznamu věží, nestřílí).
+func retire_and_free() -> void:
+	if visual != null and is_instance_valid(visual):
+		visual.retire()
+	var tw: Tween = create_tween()
+	tw.tween_interval(0.35)
+	tw.tween_callback(queue_free)
+
+
+func _build_visual(animate: String = "") -> void:
 	if visual != null:
-		remove_child(visual)
-		visual.queue_free()
+		if animate == "upgrade":
+			visual.retire()                 # starý model se zmenší a zmizí, nový se „nafoukne“
+		else:
+			remove_child(visual)
+			visual.queue_free()
 	visual = game.theme.make_tower_visual(type, level)
 	add_child(visual)
+	if animate == "build":
+		visual.play_build()
+	elif animate == "upgrade":
+		visual.play_upgrade()
 
 
 func is_valid_target(e) -> bool:
@@ -127,6 +143,14 @@ func update(dt: float) -> void:
 func _fire(targets: Array, st: Dictionary) -> void:
 	visual.play_fire()
 	var from: Vector3 = visual.muzzle_pos()
+	var fdir: Vector3 = (targets[0].aim_pos() - from).normalized()
+	match type:
+		"archer":
+			game.fx.muzzle_flash(from, fdir, Color(1.0, 0.9, 0.6), 0.22, 2)
+		"cannon":
+			game.fx.muzzle_flash(from, fdir, Color(1.0, 0.6, 0.2), 0.9, 5)
+		"mage":
+			game.fx.muzzle_flash(from, fdir, Color(0.75, 0.5, 1.0), 0.45, 3)
 	match type:
 		"archer":
 			var n: int = int(st["shots"])

@@ -63,6 +63,7 @@ func setup(game_ref, k: String, from_tower, tgt, params: Dictionary) -> void:
 	_phase = randf() * TAU
 	visual = game.theme.make_projectile_visual(k)
 	add_child(visual)
+	add_child(Gfx.streak_node(k))     # světelná stopa (+Z = za střelou)
 	visible = false
 	position = from_tower.visual.muzzle_pos()
 
@@ -124,13 +125,10 @@ func update(dt: float) -> void:
 	if _trail >= 0.035:
 		_trail = 0.0
 		match kind:
-			"arrow":
-				game.fx.puff(position, Color(1, 1, 1), 0.07, 0.02, 0.22, 0.0, 0.0, 0.35)
 			"ball":
-				game.fx.puff(position, Color(0.4, 0.38, 0.36), 0.25, 0.75, 0.55, 0.3, 0.0, 0.5)
-				game.fx.puff(position, Color(1.0, 0.6, 0.2), 0.2, 0.05, 0.18, 0.0, 2.0, 0.8)
-			_:
-				game.fx.puff(position, Color(0.72, 0.5, 1.0), 0.22, 0.04, 0.3, 0.0, 2.2, 0.7)
+				game.fx.puff(position, Color(0.40, 0.38, 0.36), 0.3, 0.9, 0.7, 0.3, 0.0, 0.5)
+			"orb":
+				game.fx.puff(position, Color(0.72, 0.5, 1.0), 0.16, 0.03, 0.32, 0.0, 2.2, 0.6)
 
 
 func _finish() -> void:
@@ -153,6 +151,7 @@ func _on_impact() -> void:
 		"ball":
 			var gy: float = game.map.height_at(hit_pos.x, hit_pos.z)
 			game.fx.explosion(Vector3(hit_pos.x, gy + 0.2, hit_pos.z), splash)
+			game.fx.scorch(Vector3(hit_pos.x, gy, hit_pos.z), splash * 0.85, 0.5)
 			game.sfx("explosion", hit_pos)
 			game.camera_shake(0.12)
 			var any_hit: bool = false

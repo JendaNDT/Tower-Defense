@@ -62,6 +62,7 @@ func _impact() -> void:
 	_body.visible = false
 	var fx: Fx = game.fx
 	fx.explosion(target + Vector3(0.0, 0.3, 0.0), radius)
+	fx.scorch(target, radius * 1.15, 0.8, 22.0)
 	fx.explosion(target + Vector3(0.0, 0.3, 0.0), radius * 0.6)
 	fx.ring(Vector3(target.x, target.y + 0.2, target.z), Color(1.0, 0.9, 0.5), radius * 1.4, 0.55, 0.1, 0.1, 1.4)
 	fx.debris(target + Vector3(0.0, 0.5, 0.0), Color(0.34, 0.22, 0.16), 14, 6.0, 0.22, 1.3)

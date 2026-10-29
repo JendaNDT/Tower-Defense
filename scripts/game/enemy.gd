@@ -3,7 +3,7 @@ extends Node3D
 ## Nepřítel: pohyb po vyhlazené trase podle uražené vzdálenosti `s` (nemůže se zaseknout ani projít objektem),
 ## létající letí po přímce nad nejvyšší překážkou. Stavy: zpomalení, omráčení, zmrazení, hoření.
 
-const DEATH_TIME: float = 0.4
+const SPAWN_TIME: float = 0.5
 
 var game = null                    # Game
 var type: String = "goblin"
@@ -50,6 +50,13 @@ var _death_t: float = 0.0
 var _heading: float = 0.0
 var _acc_dmg: float = 0.0
 var _acc_t: float = -10.0
+var spawn_style: String = "portal"   # portal = vystoupí z portálu, pop = vyskočí na místě (potomci slizáku)
+var _age: float = 0.0
+var _spawn_done: bool = false
+var _reach_pos: Vector3 = Vector3.ZERO
+var _death_from: Vector3 = Vector3.ZERO
+var _death_fx_done: bool = false
+var _ripple_t: float = 0.0
 
 
 func setup(game_ref, type_id: String, wave_idx: int, hp_mult: float, lateral_offset: float, start_s: float = 0.0) -> void:
@@ -94,6 +101,74 @@ func setup(game_ref, type_id: String, wave_idx: int, hp_mult: float, lateral_off
 	visual.set_health(1.0, type == "boss")
 	if max_shield > 0.0:
 		visual.set_shield(1.0)
+
+
+## Příchod: nepřítel vystoupí zpoza portálu (nebo vyskočí na místě) a „nafoukne“ se na plnou velikost.
+func _animate_spawn(k: float) -> void:
+	var e: float = TowerVisual.ease_out_back(clampf(k, 0.0, 1.0))
+	visual.scale = Vector3.ONE * (0.35 + 0.65 * e)
+	if spawn_style == "portal":
+		var back: Vector3 = Vector3(-sin(_heading), 0.0, -cos(_heading)) * 1.1 * (1.0 - clampf(k, 0.0, 1.0))
+		visual.position = back
+
+
+## Smrt podle typu: skřet a léčitel padají na záda, vlk na bok, obři se rozsypou, dráček se zřítí, slizák se rozplácne.
+func _animate_death(k: float, dt: float) -> void:
+	var fall: float = 1.0 - (1.0 - k) * (1.0 - k)
+	var shrink: float = 1.0 - smoothstep(0.65, 1.0, k)
+	match visual.death_style:
+		"fall_side":
+			visual.rotation.z = fall * 1.5
+			visual.position.y = -0.1 * smoothstep(0.6, 1.0, k)
+			visual.scale = Vector3.ONE * shrink
+		"crumble":
+			visual.position = Vector3(sin(_death_t * 70.0) * 0.07 * (1.0 - k), -0.45 * k * k, cos(_death_t * 63.0) * 0.07 * (1.0 - k))
+			var sq: float = pow(k, 1.4)
+			visual.scale = Vector3(1.0 + 0.18 * sq, maxf(1.0 - 0.85 * sq, 0.03), 1.0 + 0.18 * sq) * (1.0 if k < 0.85 else (1.0 - (k - 0.85) / 0.15))
+			if k > 0.45 and not _death_fx_done:
+				_death_fx_done = true
+				var gy: float = game.map.height_at(position.x, position.z)
+				game.fx.dust_ring(Vector3(position.x, gy + 0.1, position.z), Color(0.62, 0.58, 0.52), 8, radius * 2.2, 0.8)
+		"crash":
+			# dráček se řítí šikmo dolů, točí se; při dopadu se rozprskne
+			var gyc: float = game.map.height_at(position.x, position.z) + 0.3
+			position.y = lerpf(_death_from.y, gyc, k * k)
+			var dirc: Vector2 = _dir_at(s)
+			position += Vector3(dirc.x, 0.0, dirc.y) * dt * 2.0 * (1.0 - k)
+			visual.rotation.z = -k * PI * 3.0
+			visual.rotation.x = k * 1.1
+			visual.scale = Vector3.ONE * (1.0 if k < 0.88 else (1.0 - (k - 0.88) / 0.12))
+			if k >= 0.88 and not _death_fx_done:
+				_death_fx_done = true
+				game.fx.burst_puffs(Vector3(position.x, gyc, position.z), Color(0.85, 0.35, 0.3), 6, 1.0, 0.6, 0.6, 0.6)
+				game.fx.dust_ring(Vector3(position.x, gyc - 0.1, position.z), Color(0.7, 0.62, 0.5), 6, 1.0, 0.5)
+		"splat":
+			var e: float = 1.0 - pow(1.0 - minf(k * 2.2, 1.0), 2.0)
+			var fade: float = 1.0 - smoothstep(0.6, 1.0, k)
+			visual.scale = Vector3(1.0 + 0.8 * e, maxf(1.0 - 0.93 * e, 0.05), 1.0 + 0.8 * e) * fade
+			if not _death_fx_done:
+				_death_fx_done = true
+				var gys: float = game.map.height_at(position.x, position.z)
+				game.fx.dust_ring(Vector3(position.x, gys + 0.1, position.z), def["color"], 7, radius * 2.0, 0.5)
+		_:
+			visual.rotation.x = -fall * 1.45
+			visual.position.y = -0.12 * smoothstep(0.6, 1.0, k)
+			visual.scale = Vector3.ONE * shrink
+
+
+## Dorazil k Srdci: letí do krystalu, točí se a zmenšuje.
+func _animate_absorb(k: float, dt: float) -> void:
+	var tgt: Vector3 = game.map.base_pos + Vector3(0.0, 1.9, 0.0)
+	position = _reach_pos.lerp(tgt, k * k)
+	visual.rotation.y += dt * 9.0
+	visual.scale = Vector3.ONE * maxf(1.0 - k * k * 0.97, 0.03)
+	if k >= 0.97 and not _death_fx_done:
+		_death_fx_done = true
+		game.fx.hit_spark(tgt, Color(1.0, 0.5, 0.85))
+
+
+func death_duration() -> float:
+	return 0.7 if reached else visual.death_time
 
 
 func _on_step(p: Vector3) -> void:
@@ -237,6 +312,7 @@ func die(source) -> void:
 	alive = false
 	dying = true
 	_death_t = 0.0
+	_death_from = position
 	game.on_enemy_killed(self, source)
 
 
@@ -247,6 +323,7 @@ func reach_base() -> void:
 	dying = true
 	reached = true
 	_death_t = 0.0
+	_reach_pos = position
 	game.on_enemy_reached(self)
 
 
@@ -276,17 +353,22 @@ func _do_heal() -> void:
 func update(dt: float) -> void:
 	if dying:
 		_death_t += dt
-		var k: float = clampf(_death_t / DEATH_TIME, 0.0, 1.0)
-		var sc: float = 1.0 - k * k
-		if reached:
-			visual.scale = Vector3.ONE * sc
-		else:
-			# zhroucení: smrsknutí + pád
-			visual.scale = Vector3(1.0 + 0.25 * k, maxf(1.0 - k, 0.02), 1.0 + 0.25 * k)
+		var kd: float = clampf(_death_t / death_duration(), 0.0, 1.0)
 		visual.set_health(0.0)
 		if visual.bar != null:
 			visual.bar.visible = false
+		if reached:
+			_animate_absorb(kd, dt)
+		else:
+			_animate_death(kd, dt)
 		return
+	_age += dt
+	if _age < SPAWN_TIME:
+		_animate_spawn(_age / SPAWN_TIME)
+	elif not _spawn_done:
+		_spawn_done = true
+		visual.scale = Vector3.ONE
+		visual.position = Vector3.ZERO
 	if slow_t > 0.0:
 		slow_t -= dt
 		if slow_t <= 0.0:
@@ -310,6 +392,18 @@ func update(dt: float) -> void:
 		if _heal_t <= 0.0:
 			_heal_t += float(def["heal_every"])
 			_do_heal()
+	if not flying and game.map.is_on_bridge(s):
+		_ripple_t -= dt
+		if _ripple_t <= 0.0:
+			_ripple_t = 0.6
+			# kruhy se šíří po hladině po obou stranách mostu (přímo pod mostem by je nebylo vidět)
+			var dirb: Vector2 = _dir_at(s)
+			for side in [-1.0, 1.0]:
+				var rx: float = position.x - dirb.y * 1.9 * side
+				var rz: float = position.z + dirb.x * 1.9 * side
+				var wy: float = game.map.terrain.water_y_at(rx, rz)
+				if wy > -50.0:
+					game.fx.ring(Vector3(rx, wy + 0.03, rz), Color(0.9, 0.97, 1.0), 1.1 + radius, 1.0, 0.12, 0.0, 0.45)
 	cur_speed = current_speed()
 	s += cur_speed * dt
 	position = _compute_pos(s)

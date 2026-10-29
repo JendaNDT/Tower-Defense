@@ -168,6 +168,16 @@ func river_sd_at(x: float, z: float) -> float:
 	return d - river.half_w[i]
 
 
+## Výška hladiny řeky v bodě (nejbližší bod osy řeky); mimo údolí řeky -100.
+func water_y_at(x: float, z: float) -> float:
+	var fx: float = clampf((x + HALF) / STEP, 0.0, float(N - 1))
+	var fz: float = clampf((z + HALF) / STEP, 0.0, float(N - 1))
+	var i: int = river_i[int(roundf(fz)) * N + int(roundf(fx))]
+	if i < 0:
+		return -100.0
+	return river.water_y[i]
+
+
 # ------------------------------------------------------------------ generování
 func _stamp(points: PackedVector2Array, radius: float) -> Array:
 	var d: PackedFloat32Array = PackedFloat32Array()

@@ -33,6 +33,15 @@ static func make_environment() -> Environment:
 	env.glow_bloom = 0.04
 	env.glow_hdr_threshold = 1.1
 	env.glow_blend_mode = Environment.GLOW_BLEND_MODE_SOFTLIGHT
+	# jemný opar do dálky (hloubková mlha): vzdálenější část ostrova (nahoře na obrazovce) a oblaka se ztrácejí v modři
+	env.fog_enabled = true
+	env.fog_mode = Environment.FOG_MODE_DEPTH
+	env.fog_light_color = Color(0.70, 0.83, 0.98)
+	env.fog_depth_begin = 150.0
+	env.fog_depth_end = 300.0
+	env.fog_depth_curve = 1.0
+	env.fog_density = 0.55
+	env.fog_sky_affect = 0.0
 	env.adjustment_enabled = true
 	env.adjustment_contrast = 1.06
 	env.adjustment_saturation = 1.14

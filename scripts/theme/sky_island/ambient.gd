@@ -247,11 +247,11 @@ func _build_particles(map: GameMap, high: bool) -> void:
 		var lip: Vector3 = wf["lip"]
 		var fl: Vector2 = wf["flow"]
 		var out: Vector3 = Vector3(fl.x, 0.0, fl.y)
-		_particles(lip + out * 0.5, Vector3(wf["half_w"] * 0.8, 0.1, 0.1), int(80.0 * f), 1.3, 0.14, Color(1, 1, 1, 0.8), 0.6,
+		_particles(lip + out * 0.5, Vector3(wf["half_w"] * 0.8, 0.1, 0.1), int(150.0 * f), 1.3, 0.15, Color(1, 1, 1, 0.8), 0.6,
 			Vector3(0, -9.0, 0), Vector3(out.x, 0.25, out.z), 25.0, 1.6, 2.6, 0.0, 0.1)
-		_particles(Vector3(lip.x + out.x * 3.6, lip.y - 30.0, lip.z + out.z * 3.6), Vector3(2.8, 1.0, 2.8), int(22.0 * f), 5.0, 5.0, Color(1, 1, 1, 0.38), 0.2,
+		_particles(Vector3(lip.x + out.x * 3.6, lip.y - 30.0, lip.z + out.z * 3.6), Vector3(2.8, 1.0, 2.8), int(36.0 * f), 5.0, 5.5, Color(1, 1, 1, 0.42), 0.2,
 			Vector3(0.0, 0.25, 0.0), Vector3(0, 1, 0), 40.0, 0.2, 0.6, 0.2, 0.3)
-		_particles(Vector3(lip.x + out.x * 1.6, lip.y - 6.0, lip.z + out.z * 1.6), Vector3(wf["half_w"], 4.0, 0.6), int(30.0 * f), 3.0, 0.9, Color(1, 1, 1, 0.22), 0.2,
+		_particles(Vector3(lip.x + out.x * 1.6, lip.y - 6.0, lip.z + out.z * 1.6), Vector3(wf["half_w"], 4.0, 0.6), int(46.0 * f), 3.0, 1.0, Color(1, 1, 1, 0.26), 0.2,
 			Vector3(0.0, -0.4, 0.0), Vector3(out.x, 0, out.z), 40.0, 0.2, 0.5, 0.3, 0.3)
 
 

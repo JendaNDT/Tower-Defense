@@ -220,7 +220,64 @@ func cmd(req: Dictionary) -> Dictionary:
 			if tw4 == null:
 				return {"ok": false}
 			return {"ok": true, "type": tw4.type, "level": tw4.level, "stats": tw4.stats(), "damage_dealt": tw4.damage_dealt,
-				"kills": tw4.kills, "shots": tw4.shots_fired}
+				"kills": tw4.kills, "shots": tw4.shots_fired, "pos": [tw4.position.x, tw4.position.y, tw4.position.z], "visuals": _visual_count(tw4)}
+		"kill":
+			# zabije nepřátele daných typů (nebo všechny) bez vlivu věže – pro snímky smrti
+			var kt: Array = req.get("types", [])
+			var nk: int = 0
+			for en2 in g.enemies.duplicate():
+				if kt.is_empty() or kt.has(en2.type):
+					en2.die(null)
+					nk += 1
+			return {"ok": true, "killed": nk}
+		"reach":
+			# nepřátelé „dorazí“ k Srdci (animace vsáknutí) bez ztráty životů navíc
+			var nr: int = 0
+			for en3 in g.enemies.duplicate():
+				en3.reach_base()
+				nr += 1
+			return {"ok": true, "reached": nr}
+		"tower_anim":
+			var tw5 = _tower_by_id(int(req["id"]))
+			if tw5 == null:
+				return {"ok": false}
+			tw5.visual.seek_anim(str(req.get("kind", "build")), float(req.get("t", 0.0)))
+			var tv = tw5.visual
+			return {"ok": true, "sx": tv.scale.x, "sy": tv.scale.y, "y": tv.position.y}
+		"quality":
+			main._on_quality(bool(req.get("v", true)))
+			return {"ok": true, "quality": Gfx.quality_high}
+		"fx_test":
+			var fp: Vector3 = Vector3(float(req.get("x", 0.0)), float(req.get("y", 0.0)), float(req.get("z", 0.0)))
+			match str(req.get("kind", "scorch")):
+				"scorch":
+					g.fx.scorch(fp, float(req.get("r", 2.0)), float(req.get("a", 0.6)))
+				"dust":
+					g.fx.dust_ring(fp, Color(0.74, 0.66, 0.52), 10, 1.2, 0.55)
+				"flash":
+					g.fx.muzzle_flash(fp, Vector3(0.0, 0.2, 1.0).normalized(), Color(1.0, 0.7, 0.3), 0.9, 5)
+			return {"ok": true}
+		"gfx_info":
+			return {"ok": true, "quality": Gfx.quality_high, "blobs": main.blobs.count(), "scorches": g.fx.scorch_count(), "rings": g.fx._rings.size(),
+				"bridges": g.map.bridges,
+				"fog": _fog_on(),
+				"draw_calls": int(RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME)),
+				"objects": int(RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_OBJECTS_IN_FRAME)),
+				"primitives": int(RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_PRIMITIVES_IN_FRAME)),
+				"stats_visible": main.hud.stats_visible()}
+		"enemies":
+			# stav všech živých i umírajících nepřátel (pro kontrolu animací)
+			var list: Array = []
+			for en4 in g.enemies + g.dying:
+				list.append({"type": en4.type, "dying": en4.dying, "reached": en4.reached, "dur": en4.death_duration(),
+					"t": en4._death_t, "age": en4._age, "pos": [en4.position.x, en4.position.y, en4.position.z],
+					"sx": en4.visual.scale.x, "sy": en4.visual.scale.y, "vy": en4.visual.position.y,
+					"rx": en4.visual.rotation.x, "rz": en4.visual.rotation.z, "s": en4.s})
+			return {"ok": true, "list": list, "path_len": g.path.length, "base": [g.map.base_pos.x, g.map.base_pos.y, g.map.base_pos.z]}
+		"stats":
+			if main.hud.stats_visible() != bool(req.get("v", true)):
+				main.hud.toggle_stats()
+			return {"ok": true}
 		"audio":
 			var am = main.audio
 			if am == null:
@@ -296,6 +353,19 @@ func cmd(req: Dictionary) -> Dictionary:
 			main.hud.show_help(bool(req.get("v", true)))
 			return {"ok": true}
 	return {"ok": false, "error": "unknown op " + op}
+
+
+func _visual_count(t: Node) -> int:
+	var n: int = 0
+	for c in t.get_children():
+		if c is TowerVisual:
+			n += 1
+	return n
+
+
+func _fog_on() -> bool:
+	var we: Node = main.world.find_child("WorldEnvironment", true, false)
+	return we != null and (we as WorldEnvironment).environment != null and (we as WorldEnvironment).environment.fog_enabled
 
 
 func _is_disabled(nm: String) -> bool:

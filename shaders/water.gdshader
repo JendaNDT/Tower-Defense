@@ -34,6 +34,10 @@ void fragment() {
 	float streak = smoothstep(0.62, 0.9, n1 * 0.6 + n2 * 0.55);
 	float foam = clamp(edge * (0.45 + n2) * 0.9 + streak * 0.35, 0.0, 1.0);
 	foam *= smoothstep(0.25, 0.75, n1 + 0.25);
+	// pohyblivé pěnové vlnky těsně u břehu
+	float wave = 0.5 + 0.5 * sin(along * 1.7 - TIME * 2.1 + n1 * 6.0 + across * 3.0);
+	float shore = smoothstep(0.72, 0.97, a) * (1.0 - smoothstep(0.985, 1.0, a));
+	foam = clamp(foam + shore * (0.35 + 0.55 * wave) * (0.55 + n2), 0.0, 1.0);
 
 	ALBEDO = mix(col, foam_color.rgb, foam);
 	ROUGHNESS = mix(0.05, 0.7, foam);

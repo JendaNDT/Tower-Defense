@@ -24,6 +24,9 @@ var _pick_key: String = ""
 var _pick_cache = null
 var aim_ability: String = ""          # schopnost, která čeká na výběr místa (meteor)
 var island_def: Dictionary = {}
+var blobs: BlobShadows = null
+var _stats_t: float = 0.0
+var _stats_ft: float = 0.0
 
 
 func _parse_args() -> void:
@@ -93,6 +96,10 @@ func _build_everything() -> void:
 	add_child(game)
 	game.setup(map, theme, world, fx)
 	game.ambient = handles.get("ambient")
+
+	blobs = BlobShadows.new()
+	world.add_child(blobs)
+	blobs.setup(game)
 
 	rig = CameraRig.new()
 	add_child(rig)
@@ -377,8 +384,27 @@ func _on_cam(action: String) -> void:
 			rig.reset_view()
 
 
+## Text přehledu výkonu (F3); obnovuje se čtyřikrát za vteřinu, aby nezatěžoval.
+func _update_stats(delta: float) -> void:
+	_stats_ft = lerpf(_stats_ft, delta, 0.1)
+	_stats_t -= delta
+	if _stats_t > 0.0:
+		return
+	_stats_t = 0.25
+	var calls: int = int(RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME))
+	var objs: int = int(RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_OBJECTS_IN_FRAME))
+	var prims: int = int(RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_PRIMITIVES_IN_FRAME))
+	var txt: String = "FPS: %d   (snímek %.1f ms)\n" % [int(Engine.get_frames_per_second()), _stats_ft * 1000.0]
+	txt += "Volání vykreslení: %d\nObjekty: %d\nTrojúhelníky: %dk\n" % [calls, objs, int(prims / 1000)]
+	txt += "Kvalita: %s\n" % ("vysoká" if high_quality else "nízká")
+	txt += "Nepřátelé: %d   Věže: %d   Stíny: %d   Spáleniny: %d" % [game.enemies.size(), game.towers.size(), blobs.count(), game.fx.scorch_count()]
+	hud.set_stats_text(txt)
+
+
 func _on_quality(high: bool) -> void:
 	high_quality = high
+	Gfx.quality_high = high
+	hud.set_quality_state(high)
 	var sun: DirectionalLight3D = handles.get("sun")
 	if sun != null:
 		sun.shadow_enabled = high
@@ -387,6 +413,9 @@ func _on_quality(high: bool) -> void:
 
 # ------------------------------------------------------------------ vstupy
 func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and (event as InputEventKey).pressed and not (event as InputEventKey).echo and (event as InputEventKey).keycode == KEY_F3:
+		hud.toggle_stats()
+		return
 	if not ready_to_play or hud.is_modal_open():
 		return
 	if event is InputEventMouseButton:
@@ -462,6 +491,10 @@ func _process(_delta: float) -> void:
 	if not ready_to_play:
 		return
 	game.advance(_delta)
+	if blobs != null:
+		blobs.refresh()
+	if hud.stats_visible():
+		_update_stats(_delta)
 	_update_hover()
 
 

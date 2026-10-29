@@ -17,7 +17,10 @@ var _beams: Array = []
 var _disc: ArrayMesh = null
 var _quad: QuadMesh = null
 var _box_cache: Dictionary = {}
+var _scorches: Array = []
 var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
+
+const MAX_SCORCH: int = 14
 
 
 func _init() -> void:
@@ -202,7 +205,81 @@ func beam(points: Array, color: Color, life: float = 0.18, width: float = 0.07) 
 	_beams.append({"node": mi, "age": 0.0, "life": life})
 
 
+# ------------------------------------------------------------------ spálené skvrny
+## Tmavá skvrna přilepená na terén, pomalu mizí (jen ve vysoké kvalitě). Tvar sleduje terén.
+func scorch(pos: Vector3, radius: float, alpha: float = 0.5, life: float = 12.0) -> void:
+	if not Gfx.quality_high or map == null:
+		return
+	var segs: int = 20
+	var rings: int = 3
+	var verts: PackedVector3Array = PackedVector3Array()
+	var uvs: PackedVector2Array = PackedVector2Array()
+	var idx: PackedInt32Array = PackedInt32Array()
+	verts.append(Vector3(pos.x, map.height_at(pos.x, pos.z) + 0.07, pos.z))
+	uvs.append(Vector2(0.5, 0.5))
+	for r in range(1, rings + 1):
+		var rr: float = radius * float(r) / float(rings)
+		for i in range(segs):
+			var a: float = TAU * float(i) / float(segs)
+			var x: float = pos.x + cos(a) * rr
+			var z: float = pos.z + sin(a) * rr
+			verts.append(Vector3(x, map.height_at(x, z) + 0.07, z))
+			uvs.append(Vector2(0.5 + 0.5 * cos(a) * float(r) / float(rings), 0.5 + 0.5 * sin(a) * float(r) / float(rings)))
+	for i2 in range(segs):
+		var i3: int = (i2 + 1) % segs
+		idx.append_array([0, 1 + i2, 1 + i3])
+	for r2 in range(1, rings):
+		var b0: int = 1 + (r2 - 1) * segs
+		var b1: int = 1 + r2 * segs
+		for i4 in range(segs):
+			var i5: int = (i4 + 1) % segs
+			idx.append_array([b0 + i4, b1 + i4, b1 + i5, b0 + i4, b1 + i5, b0 + i5])
+	var arrays: Array = []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = verts
+	arrays[Mesh.ARRAY_TEX_UV] = uvs
+	arrays[Mesh.ARRAY_INDEX] = idx
+	var mesh: ArrayMesh = ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	var mi: MeshInstance3D = MeshInstance3D.new()
+	mi.mesh = mesh
+	var m: ShaderMaterial = ShaderMaterial.new()
+	m.shader = Gfx.SH_SCORCH
+	m.set_shader_parameter("alpha", alpha)
+	m.set_shader_parameter("seed", _rng.randf() * 20.0)
+	mi.material_override = m
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(mi)
+	_scorches.append({"node": mi, "mat": m, "age": 0.0, "life": life, "alpha": alpha})
+	while _scorches.size() > MAX_SCORCH:
+		var old: Dictionary = _scorches.pop_front()
+		(old["node"] as Node).queue_free()
+
+
+func scorch_count() -> int:
+	return _scorches.size()
+
+
 # ------------------------------------------------------------------ hotové kombinace
+## Prstenec prachu rozlétající se po zemi (stavba věže, dopad).
+func dust_ring(pos: Vector3, color: Color, count: int, radius: float, size: float) -> void:
+	for i in range(count):
+		var a: float = TAU * float(i) / float(count) + _rng.randf() * 0.4
+		var dir: Vector3 = Vector3(cos(a), 0.0, sin(a))
+		puff(pos + dir * radius * 0.25 + Vector3(0.0, 0.1, 0.0), color, size * 0.5, size * _rng.randf_range(1.0, 1.7),
+			_rng.randf_range(0.5, 0.85), 0.15, 0.0, 0.6, dir * radius * 2.4)
+
+
+## Záblesk a jiskry u ústí (dir = směr výstřelu).
+func muzzle_flash(pos: Vector3, dir: Vector3, color: Color, size: float, sparks: int = 3) -> void:
+	puff(pos, Color(1.0, 0.95, 0.8), size * 0.4, size, 0.09, 0.0, 3.0, 0.95)
+	puff(pos + dir * size * 0.35, color, size * 0.3, size * 1.2, 0.12, 0.0, 2.2, 0.8)
+	var n: int = sparks if Gfx.quality_high else 0
+	for i in range(n):
+		var d: Vector3 = (dir + Vector3(_rng.randf_range(-0.35, 0.35), _rng.randf_range(-0.2, 0.35), _rng.randf_range(-0.35, 0.35))).normalized()
+		puff(pos, color, size * 0.18, 0.02, 0.22, 0.0, 3.0, 0.9, d * size * 7.0)
+
+
 func ground_y(x: float, z: float) -> float:
 	if map != null:
 		return map.height_at(x, z)
@@ -308,6 +385,18 @@ func tick(dt: float) -> void:
 			var s: float = float(d["s"]) * (1.0 - smoothstep(0.7, 1.0, tt))
 			dn.scale = Vector3(s, s, s)
 		i -= 1
+	# spálené skvrny
+	i = _scorches.size() - 1
+	while i >= 0:
+		var sc: Dictionary = _scorches[i]
+		sc["age"] = float(sc["age"]) + dt
+		var tk: float = float(sc["age"]) / float(sc["life"])
+		if tk >= 1.0:
+			(sc["node"] as Node).queue_free()
+			_scorches.remove_at(i)
+		else:
+			(sc["mat"] as ShaderMaterial).set_shader_parameter("alpha", float(sc["alpha"]) * (1.0 - smoothstep(0.5, 1.0, tk)))
+		i -= 1
 	# blesky
 	i = _beams.size() - 1
 	while i >= 0:
@@ -341,3 +430,6 @@ func clear_all() -> void:
 	for b in _beams:
 		(b["node"] as Node).queue_free()
 	_beams.clear()
+	for sc2 in _scorches:
+		(sc2["node"] as Node).queue_free()
+	_scorches.clear()

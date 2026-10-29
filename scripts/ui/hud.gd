@@ -90,6 +90,7 @@ var _refresh_t: float = 0.0
 var _high_quality: bool = true
 var _auto_on: bool = false
 var _paused_ui: bool = false
+var _stats_lbl: Label = null
 
 
 # ================================================================== pomocné stavební funkce
@@ -206,6 +207,7 @@ func _ready() -> void:
 	_build_end()
 	_build_pause()
 	_build_loading()
+	_build_stats()
 	set_loading(true)
 
 
@@ -698,6 +700,36 @@ func _build_help() -> void:
 	_ui["help_close"] = m["button"]
 	_help.visible = false
 	_root.add_child(_help)
+
+
+## Přehled výkonu (klávesa F3): snímky za vteřinu, volání vykreslení, objekty a počty herních prvků.
+func _build_stats() -> void:
+	_stats_lbl = _label("", 13, Color(0.75, 1.0, 0.8), true)
+	_stats_lbl.visible = false
+	_stats_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_place(_stats_lbl, Vector2(0.0, 0.0), Vector2(14, 100))
+	_ui["stats"] = _stats_lbl
+	_root.add_child(_stats_lbl)
+
+
+## Tlačítko kvality ukazuje skutečný stav (i když se kvalita nastavila automaticky při startu nebo z testu).
+func set_quality_state(high: bool) -> void:
+	_high_quality = high
+	if _quality_btn != null:
+		_quality_btn.text = "Kvalita: vysoká" if high else "Kvalita: nízká"
+
+
+func toggle_stats() -> void:
+	_stats_lbl.visible = not _stats_lbl.visible
+
+
+func stats_visible() -> bool:
+	return _stats_lbl != null and _stats_lbl.visible
+
+
+func set_stats_text(text: String) -> void:
+	if _stats_lbl != null:
+		_stats_lbl.text = text
 
 
 ## Panel aktivních schopností vlevo dole: tlačítko s ikonou, klávesou a ukazatelem nabíjení.

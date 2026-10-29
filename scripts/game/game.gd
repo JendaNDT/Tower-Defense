@@ -281,6 +281,7 @@ func _spawn_child(parent: Enemy, k: int) -> void:
 	var cdef: Dictionary = Cfg.ENEMIES[ctype]
 	var c: Enemy = Enemy.new()
 	c.uid = _uid
+	c.spawn_style = "pop"
 	_uid += 1
 	world.add_child(c)
 	var hp_abs: float = parent.max_hp * float(parent.def["split_hp"])
@@ -378,6 +379,7 @@ func build_tower(type: String, c: Vector2i) -> Tower:
 	map.set_cell_state(c, GameMap.Cell.TOWER)
 	fx.ring(Vector3(pos.x, pos.y + 0.3, pos.z), Color(1.0, 0.95, 0.7), 2.2, 0.45, 0.16, 0.2, 0.6)
 	fx.burst_puffs(pos + Vector3(0.0, 0.6, 0.0), Color(0.85, 0.8, 0.7), 8, 1.2, 0.7, 0.6)
+	fx.dust_ring(Vector3(pos.x, pos.y - 0.2, pos.z), Color(0.74, 0.66, 0.52), 10, 1.2, 0.55)
 	sfx("build", pos)
 	tower_built.emit(t)
 	return t
@@ -411,7 +413,7 @@ func sell_tower(t: Tower) -> void:
 	sfx("sell", t.position)
 	towers.erase(t)
 	tower_removed.emit(t)
-	t.queue_free()
+	t.retire_and_free()
 
 
 # ------------------------------------------------------------------ cílení
@@ -489,7 +491,7 @@ func tick(dt: float) -> void:
 	while i >= 0:
 		var d: Enemy = dying[i]
 		d.update(dt)
-		if d._death_t >= Enemy.DEATH_TIME:
+		if d._death_t >= d.death_duration():
 			d.queue_free()
 			dying.remove_at(i)
 		i -= 1

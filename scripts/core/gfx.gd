@@ -8,6 +8,9 @@ const SH_PUFF: Shader = preload("res://shaders/fx_puff.gdshader")
 const SH_RING: Shader = preload("res://shaders/fx_ring.gdshader")
 const SH_BAR: Shader = preload("res://shaders/healthbar.gdshader")
 const SH_GHOST: Shader = preload("res://shaders/ghost_ring.gdshader")
+const SH_STREAK: Shader = preload("res://shaders/streak.gdshader")
+const SH_SCORCH: Shader = preload("res://shaders/scorch.gdshader")
+const SH_BLOB: Shader = preload("res://shaders/blob_shadow.gdshader")
 
 static var _cache: Dictionary = {}
 static var quality_high: bool = true
@@ -70,6 +73,44 @@ static func mesh_node(kit: MeshKit, mat: Material, cast_shadow: bool = true) -> 
 	var mi: MeshInstance3D = kit.instance(mat)
 	if not cast_shadow:
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	return mi
+
+
+## Světelná stopa za střelou: tenký kužel s hrotem vzadu (+Z), sdílený podle druhu střely. Vrací MeshInstance3D.
+static func streak_node(kind: String) -> MeshInstance3D:
+	var key: String = "streak_" + kind
+	if not _cache.has(key):
+		var len: float = 1.5
+		var r: float = 0.07
+		var col: Color = Color(1.0, 0.92, 0.65)
+		var strength: float = 0.9
+		match kind:
+			"arrow":
+				len = 1.7
+				r = 0.035
+			"ball":
+				len = 1.3
+				r = 0.16
+				col = Color(1.0, 0.55, 0.18)
+				strength = 1.1
+			_:
+				len = 1.8
+				r = 0.09
+				col = Color(0.72, 0.5, 1.0)
+				strength = 1.2
+		var k: MeshKit = MeshKit.new(5, 0.0)
+		k.cone(r, len, 6, Color(1, 1, 1), MeshKit.xf(Vector3.ZERO, Vector3(90.0, 0.0, 0.0)), 0.0, false)
+		var m: ShaderMaterial = ShaderMaterial.new()
+		m.shader = SH_STREAK
+		m.set_shader_parameter("color", col)
+		m.set_shader_parameter("len", len)
+		m.set_shader_parameter("strength", strength)
+		_cache[key] = [k.build(), m]
+	var pair: Array = _cache[key]
+	var mi: MeshInstance3D = MeshInstance3D.new()
+	mi.mesh = pair[0]
+	mi.material_override = pair[1]
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	return mi
 
 

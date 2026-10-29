@@ -10,6 +10,8 @@ var _n: PackedVector3Array = PackedVector3Array()
 var _c: PackedColorArray = PackedColorArray()
 var jitter: float = 0.0          # náhodné zesvětlení/ztmavení ploch (0 = vypnuto)
 var force_normal: Vector3 = Vector3.ZERO   # nenulová => všechny normály nastavit na tuto hodnotu (tráva)
+var ao: float = 0.0              # síla ztmavení spodku modelu 0..1 (levná náhražka okluze: u země je tmavěji)
+var ao_height: float = 1.0       # výška (m) od nejnižšího bodu, ve které ztmavení vyprchá
 var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 
 
@@ -241,11 +243,21 @@ func build() -> ArrayMesh:
 	var mesh: ArrayMesh = ArrayMesh.new()
 	if _v.size() == 0:
 		return mesh
+	var cols: PackedColorArray = _c
+	if ao > 0.001:
+		cols = _c.duplicate()
+		var ymin: float = 1.0e9
+		for p in _v:
+			ymin = minf(ymin, p.y)
+		for i in range(_v.size()):
+			var t: float = clampf((_v[i].y - ymin) / maxf(ao_height, 0.01), 0.0, 1.0)
+			var k: float = lerpf(1.0 - ao, 1.0, t * t * (3.0 - 2.0 * t))
+			cols[i] = Color(_c[i].r * k, _c[i].g * k, _c[i].b * k, _c[i].a)
 	var arrays: Array = []
 	arrays.resize(Mesh.ARRAY_MAX)
 	arrays[Mesh.ARRAY_VERTEX] = _v
 	arrays[Mesh.ARRAY_NORMAL] = _n
-	arrays[Mesh.ARRAY_COLOR] = _c
+	arrays[Mesh.ARRAY_COLOR] = cols
 	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 	return mesh
 

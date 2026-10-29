@@ -17,6 +17,8 @@ static func build(type: String, level: int) -> TowerVisual:
 	var tv: TowerVisual = TowerVisual.new()
 	tv.name = "Visual_" + type
 	var base: MeshKit = MeshKit.new(level * 7 + 1, 0.05)
+	base.ao = 0.3
+	base.ao_height = 1.3
 	_pad(base, level, type)
 	match type:
 		"archer":
@@ -143,6 +145,8 @@ static func _archer(tv: TowerVisual, base: MeshKit, level: int) -> void:
 	turret.name = "Turret"
 	turret.position = Vector3(0.0, plat_y + 0.06, 0.0)
 	var tk: MeshKit = MeshKit.new(level + 20, 0.04)
+	tk.ao = 0.2
+	tk.ao_height = 1.0
 	match level:
 		1:
 			_archer_fig(tk, Vector3.ZERO, Color(0.30, 0.55, 0.28), Color(0.25, 0.45, 0.22), false)
