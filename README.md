@@ -9,7 +9,7 @@ Hra má **dvě prostředí** (v menu volba *Prostředí*): **Ostrov v oblacích*
 
 Hru si můžeš nastavit: **prostředí**, **režim** (příběh 12 vln, nebo nekonečný s rekordem), **obtížnost** (lehká / normální / těžká) a **mapu** (tři velké mapy s více branami, rozcestími a kopci, nebo náhodnou). K obraně patří i tři **aktivní schopnosti** (meteor, mrazivý poryv, zlatá horečka) a mezi nepřáteli se objevují **léčitelé, štítonoši a slizáci**.
 
-![Celý ostrov](screenshots/ostrov.png)
+![Celý ostrov: mapa Dvě brány s minimapou vlevo nahoře](screenshots/ostrov.png)
 
 | | |
 |---|---|
@@ -17,7 +17,8 @@ Hru si můžeš nastavit: **prostředí**, **režim** (příběh 12 vln, nebo ne
 | ![Boj](screenshots/boj.png) **Boj: mrazový pulz, výbuchy, čísla poškození** | ![Nepřátelé](screenshots/nepratele.png) **Skřet, vlk, obrněnec a kamenný obr** |
 | ![Panel věže](screenshots/panel_veze.png) **Panel věže s náhledem vylepšení** | ![Vodopád](screenshots/vodopad.png) **Řeka padá z ostrova jako vodopád do oblaků** |
 | ![Nové menu](screenshots/menu.png) **Menu: režim, obtížnost, ostrov, rekord** | ![Noví nepřátelé](screenshots/novi_nepratele.png) **Léčitel, štítonoš, slizák a slizánek** |
-| ![Podkova](screenshots/ostrov_podkova.png) **Ostrov Podkova** | ![Hadí údolí](screenshots/ostrov_hadi_udoli.png) **Ostrov Hadí údolí** |
+| ![Rozcestí](screenshots/mapa_rozcesti.png) **Mapa Rozcestí: jedna brána, cesta se rozdělí a znovu spojí** | ![Tři brány](screenshots/mapa_tri_brany.png) **Mapa Tři brány: tři vstupy, spojení a rozdělení cest** |
+| ![Kopce](screenshots/kopce_mrizka.png) **Kopce a vrcholy na mřížce stavby: zlaté kroužky = větší dosah** | ![Telefon: minimapa](screenshots/telefon_minimapa.png) **Telefon na šířku s minimapou vlevo nahoře** |
 | ![Meteor](screenshots/schopnost_meteor.png) **Meteor: dopad, výbuch, poškození v okruhu** | ![Poryv](screenshots/schopnost_poryv.png) **Mrazivý poryv zmrazí všechny nepřátele** |
 | ![Stavba](screenshots/stavba_veze.png) **Stavba: věž vyrůstá ze země, prach a měkký stín** | ![Vylepšení](screenshots/vylepseni_veze.png) **Vylepšení: nový model se „nafoukne“, starý mizí** |
 | ![Smrt](screenshots/smrt_nepratel.png) **Smrt podle typu: golem se rozpadá, dráček se řítí, slizák se rozplácne** | ![Dělo](screenshots/delo_spalenina.png) **Výstřel z děla, výbuch a spálená skvrna na zemi** |
@@ -37,7 +38,7 @@ Hra je už sestavená ve složce `docs/`. Prohlížeč ji ale nespustí dvojklik
 
 Otevře se prohlížeč s hrou (adresa `http://localhost:8765/index.html`). Ukončíš ji zavřením okna terminálu.
 
-**Záložní verze pro starší Godot.** Kdyby hra v tvém prohlížeči nešla nebo sekala, zkus build z předchozího Godotu **4.6.3** (stejná hra, stejný kód): dvojklik na `spustit_godot-4.6.bat` (Windows) / `spustit_godot-4.6.command` (macOS) / `./spustit_godot-4.6.sh` (Linux), případně `python3 spustit.py docs-4.6`. Ověřeno: pod 4.6.3 projekt projde importem i exportem a na tomto buildu prošly i kontrola mechanik (21 kontrol), test menu a nových funkcí v prohlížeči (44) a zvukový test (35), vše bez chyb v konzoli. Po grafických úpravách jsem na 4.6.3 znovu pustil kontrolu mechanik (21 / 21) a test grafiky a animací v prohlížeči (41 / 41, 0 chyb v konzoli); ostatní testy z této řady jsem po těch úpravách pustil jen na 4.7.2.
+**Záložní verze pro starší Godot.** Kdyby hra v tvém prohlížeči nešla nebo sekala, zkus build z předchozího Godotu **4.6.3** (stejná hra, stejný kód): dvojklik na `spustit_godot-4.6.bat` (Windows) / `spustit_godot-4.6.command` (macOS) / `./spustit_godot-4.6.sh` (Linux), případně `python3 spustit.py docs-4.6`. Ověřeno: pod 4.6.3 projekt projde importem i exportem a na tomto buildu prošly i kontrola mechanik (21 kontrol), test menu a nových funkcí v prohlížeči (44) a zvukový test (35), vše bez chyb v konzoli. Po grafických úpravách jsem na 4.6.3 znovu pustil kontrolu mechanik (21 / 21) a test grafiky a animací v prohlížeči (41 / 41, 0 chyb v konzoli); ostatní testy z této řady jsem po těch úpravách pustil jen na 4.7.2. Po přechodu na velké mapy jsem na 4.6.3 znovu pustil headless simulaci (4 boti × 12 vln, bez chyb) a test map v prohlížeči (52 / 52 kontrol, 0 chyb v konzoli).
 Funguje v aktuálním Chrome / Edge / Firefox. První načtení stahuje ~40 MB (engine), pak už je to rychlé.
 
 ## Ovládání
@@ -78,7 +79,7 @@ V menu (při startu i později přes tlačítko ☰) je volba **Prostředí**. Z
 | Měna | zlato | kredity |
 | Zvuk | d moll: klidná a bojová smyčka (pad, brnkání, zvonky, žestě), vítr, voda, ptáci | a moll: synthové smyčky (pad, basa, arpeggio, lead, clap), laserové a plazmové efekty, hukot stanice, tok energie, drony |
 
-![Vesmírná stanice](screenshots/scifi_svet.png)
+![Prostředí Vesmírná stanice na mapě Rozcestí](screenshots/scifi_stanice.png)
 
 ## Pravidla
 
@@ -274,19 +275,19 @@ Rozbor vygenerovaných souborů (`audio_analyze.py`): žádné NaN, žádné oř
 
 | Věž | Úroveň 1 | Úroveň 2 | Úroveň 3 | Úroveň 4 |
 |---|---|---|---|---|
-| Lučištník | 387 / 0 / 22 | 690 / 0 / 22 | 2078 / 2 / 20 | 4465 / 13 / 9 |
-| Kanón | 616 / 0 / 22 | 1191 / 1 / 21 | 2468 / 3 / 19 | 4833 / 15 / 7 |
-| Mág | 700 / 0 / 22 | 1185 / 1 / 21 | 3319 / 6 / 16 | 5780 / 21 / 1 |
-| Mráz | 505 / 0 / 22 | 1216 / 0 / 22 | 2808 / 0 / 22 | 5880 / 22 / 0 |
+| Lučištník | 243 / 0 / 22 | 489 / 0 / 22 | 1491 / 1 / 21 | 3409 / 6 / 16 |
+| Kanón | 548 / 0 / 22 | 1154 / 0 / 22 | 2572 / 2 / 20 | 4503 / 14 / 8 |
+| Mág | 520 / 0 / 22 | 885 / 1 / 21 | 2502 / 3 / 19 | 4797 / 14 / 8 |
+| Mráz | 290 / 0 / 22 | 720 / 0 / 22 | 1776 / 0 / 22 | 4638 / 16 / 6 |
 
 **Totéž v headless simulaci** (jiný, ještě těžší scénář, 24 nepřátel):
 
 | Věž | Úroveň 1 | Úroveň 2 | Úroveň 3 | Úroveň 4 |
 |---|---|---|---|---|
-| Lučištník – způsobené poškození / zabití | 426 / 0 | 763 / 1 | 2236 / 4 | 4767 / 14 |
-| Kanón | 740 / 1 | 1384 / 2 | 2944 / 6 | 5670 / 19 |
-| Mág | 1020 / 0 | 1630 / 2 | 3905 / 5 | 6710 / 22 |
-| Mráz | 535 / 0 | 1336 / 0 | 3120 / 0 | 6810 / 24 |
+| Lučištník – způsobené poškození / zabití | 291 / 0 | 594 / 0 | 1902 / 2 | 4699 / 8 |
+| Kanón | 646 / 0 | 1413 / 1 | 3106 / 4 | 5686 / 17 |
+| Mág | 700 / 0 | 1185 / 1 | 3337 / 4 | 6082 / 16 |
+| Mráz | 480 / 0 | 1320 / 0 | 3024 / 0 | 6638 / 20 |
 
 **Fyzika a animace** (36 odehraných her botem se schopnostmi na nových mapách: 3 mapy, 3 obtížnosti, 4 strategie, všech 12 vln, včetně léčitelů, štítonošů a slizáků): žádný skok polohy nepřítele mezi kroky větší než jeho rychlost (vnější strana zatáčky ≤ +30 %), svislý pohyb po zemi nejvýš 2,2 cm za krok, nepřítel nikdy blíž než 1,35 m ke stromu či skále, žádný nepřítel neuvízl (nejdelší život 135 s = boss na celé trase). Výška tras se na společných úsecích shoduje s terénem (chyba nejvýš 2 cm, i na všech 21 převrácených variantách map). Projektily: asi 98 000 zásahů a 7 % „vyšumělých“ (cíl zemřel jiným projektilem dřív, než střela dorazila; s plošným poškozením a rozpadajícími se slizáky je to víc než dřív).
 
@@ -304,13 +305,12 @@ Lehká se dá vyhrát skoro vždy, **normální** zvládne většina strategií 
 
 ### Co ověřeno nebylo
 
-- **Plynulost (FPS) na skutečné grafické kartě.** Tady běží WebGL jen programově (~1–2 snímky/s), takže rychlost vykreslování nejde posoudit. Změřené zatížení vykreslování (to jde i programově; klávesa **F3** ho ukáže přímo ve hře): prázdný ostrov 293 volání vykreslení / ~1 100 objektů / 0,55 mil. trojúhelníků ve vysoké kvalitě a 265 / ~1 090 / 0,30 mil. v nízké; scéna s 10 věžemi a 10 nepřáteli 512 / ~1 400 / 0,57 mil. (vysoká) a 409 / ~1 300 / 0,31 mil. (nízká). Proti verzi před grafickými úpravami přibylo asi 4 % volání vykreslení (491 → 512 ve vysoké, 393 → 409 v nízké kvalitě), trojúhelníků je stejně. Kdyby hra na slabším stroji sekala, přepni tlačítkem *Kvalita* na nízkou.
+- **Plynulost (FPS) na skutečné grafické kartě.** Tady běží WebGL jen programově (~1–2 snímky/s), takže rychlost vykreslování nejde posoudit. Změřené zatížení vykreslování na velkém ostrově (to jde i programově; klávesa **F3** ho ukáže přímo ve hře): prázdný ostrov 308 volání vykreslení / ~1 140 objektů / 0,96 mil. trojúhelníků ve vysoké kvalitě a 280 / ~1 110 / 0,34 mil. v nízké; scéna s 10 věžemi a 10 nepřáteli 581 / ~1 410 / 0,98 mil. (vysoká) a 474 / ~1 300 / 0,35 mil. (nízká). Velké mapy jsou proti původním asi 1,7× náročnější na trojúhelníky ve vysoké kvalitě (0,55 → 0,96 mil.), protože pokrývají víc plochy (hustá tráva a dekorace); v nízké kvalitě je to díky řidší trávě jen asi o 10 % víc (0,30 → 0,34 mil.). Stavba světa při startu trvala v prohlížeči (jednovláknový wasm v tomto prostředí) 1,2–1,6 s na všech třech mapách. Kdyby hra na slabším stroji sekala, přepni tlačítkem *Kvalita* na nízkou.
 - **Jak se nové animace a efekty tváří v pohybu.** Animace jsem ověřil číselně (velikost, otočení a poloha v přesných okamžicích) a na snímcích zastavených uprostřed pohybu, ale pohyb samotný jsem neviděl. Jestli je odraz při stavbě věže přiměřený, smrt nepřátel nevleklá a mlha, stíny a ztmavení modelů dost nebo příliš výrazné, musíš posoudit ty. Hodnoty jsou na jednom místě: trvání a odraz v `tower_visual.gd` (`BUILD_TIME`, `ease_out_back`), smrti v `enemy.gd` (`_animate_death`) a `enemy_models.gd`, mlha ve `world_builder.gd` (`fog_*`), síla stínů v `blob_shadows.gd`.
 - **Skutečný telefon.** Dotykové ovládání jsem zkoušel jen v emulaci Chromia (dotykové události a velikost telefonu na šířku 844 × 390, hustota pixelů 2 a 3). Na skutečném zařízení neznám rychlost vykreslování ani to, jak se tahy prstem opravdu „cítí“ (citlivost posunu, otáčení a přiblížení je v `camera_rig.gd`, práh klepnutí `TAP_MOVE_MAX`). Safari na iPhonu jsem nezkoušel vůbec (na iPhonu Safari celou obrazovku pravděpodobně nepodporuje, tlačítko tam asi nic neudělá), stejně jako různé tvary displejů a výřezy.
 - Safari (Mac i iPhone) a Firefox na telefonu. Zkoušel jsem jen Chromium.
 - **Jak se nové věci hrají člověku.** Vyvážení jsem měřil jen boty. Nevím, jestli je těžká obtížnost zábavně těžká, nebo zbytečně krutá, ani jak se ti budou líbit nové schopnosti a nepřátelé. Čísla jsou na jednom místě (`scripts/core/cfg.gd`: `DIFFICULTIES`, `ABILITIES`, `ENEMIES`, `WAVES`), takže jdou snadno ladit.
-- **Náhodné ostrovy.** Ověřil jsem rozložení cesty a krajiny pro 6 náhodných čísel, ale hru botem jsem na nich nehrál. Cesta je vždy jedno ze tří existujících rozložení (vybrané náhodně), náhodné je jen otočení biomů a rozmístění stromů a skal.
-- **Dvě cesty, které se sbíhají.** To jsem nedělal (hra má jeden portál a jednu trasu).
+- **Náhodné ostrovy.** Ověřil jsem rozložení tras, kopců a krajiny pro 6 náhodných čísel a všech 21 převrácených variant map, ale hru botem jsem na nich nehrál. Náhodný ostrov je vždy jedna ze tří map, náhodně převrácená nebo otočená (8 variant), s otočenými biomy a jinak rozmístěnými stromy a skalami.
 - **Jak zvuk skutečně zní.** Poslouchat neumím, takže kvalitu (jestli je hudba příjemná, jestli jsou efekty vyvážené a nepřehlušují se) musíš posoudit ty. Ověřil jsem jen to, co se dá změřit: že zvuk hraje, kdy má, že tlačítka ho vypnou, že se hudba přepíná podle boje a že výstup nepřebuzuje. Kdyby ti nějaký zvuk nevyhovoval, jsou v `scripts/audio/synth.gd` (receptury) a `audio_manager.gd` (hlasitosti `BASE_DB`, `CALM_DB`…) snadno upravitelné.
 - **Smyčky ve webové verzi.** Godot je na webu přehrává tak, že po dohrání zdroj spustí znovu. Na přechodu proto může být krátká mezera, jejíž délka závisí na plynulosti hry (zhruba jeden snímek). V testu na pomalém stroji s ~1–2 snímky/s byla mezera stovky milisekund, na normálním počítači by měla být řádově desítky milisekund. Aby se to dělo zřídka, jsou hudební smyčky dlouhé 31 s a 44 s a ambient 24 s. Na skutečném stroji jsem to neměřil.
 - Binárku Godotu 4.7.2 (a web šablony) jsem získal ze zrcadla komunitního Docker image `barichello/godot-ci`, protože oficiální stránky byly v prostředí zablokované. Oficiální kontrolní součet jsem proto neověřil; program hlásí `4.7.2.stable.official`. Výsledný web (`docs/`) ti ale nic dalšího nestahuje – obsahuje jen engine a hru.
