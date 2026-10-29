@@ -275,6 +275,22 @@ func cmd(req: Dictionary) -> Dictionary:
 					"sx": en4.visual.scale.x, "sy": en4.visual.scale.y, "vy": en4.visual.position.y,
 					"rx": en4.visual.rotation.x, "rz": en4.visual.rotation.z, "s": en4.s})
 			return {"ok": true, "list": list, "path_len": g.path.length, "base": [g.map.base_pos.x, g.map.base_pos.y, g.map.base_pos.z]}
+		"ui_rect":
+			var r3: Rect2 = main.hud.ui_rect(str(req.get("name", "")))
+			var vp3: Vector2 = main.get_viewport().get_visible_rect().size
+			return {"ok": r3.size != Vector2.ZERO, "rect": [r3.position.x / vp3.x, r3.position.y / vp3.y, r3.size.x / vp3.x, r3.size.y / vp3.y], "px": [r3.position.x, r3.position.y, r3.size.x, r3.size.y], "vp": [vp3.x, vp3.y]}
+		"over_ui":
+			return {"ok": true, "over": main.hud.point_over_ui(Vector2(float(req.get("x", 0.0)), float(req.get("y", 0.0))))}
+		"pick":
+			var pk = main.rig.pick_ground(Vector2(float(req.get("x", 0.0)), float(req.get("y", 0.0))), main.map)
+			return {"ok": pk != null, "p": [pk.x, pk.y, pk.z] if pk != null else [], "cell": [Cfg.world_to_cell(pk.x, pk.z).x, Cfg.world_to_cell(pk.x, pk.z).y] if pk != null else []}
+		"touch_state":
+			return {"ok": true, "phone": UiProfile.phone, "touch_mode": UiProfile.touch_mode, "pending": main.touch_pending,
+				"touch_cell": [main.touch_cell.x, main.touch_cell.y], "build_type": main.build_type, "aim": main.aim_ability,
+				"confirm_visible": main.hud.confirm_visible(), "selected": main.selected.uid if main.selected != null else -1,
+				"towers": g.towers.size(), "gold": g.gold, "paused": g.paused, "meteor_cd": float(g.ability_cd.get("meteor", 0.0)), "yaw": main.rig.target_yaw, "zoom": main.rig.target_zoom,
+				"pivot": [main.rig.target_pivot.x, main.rig.target_pivot.z],
+				"viewport": [main.get_viewport().get_visible_rect().size.x, main.get_viewport().get_visible_rect().size.y]}
 		"stats":
 			if main.hud.stats_visible() != bool(req.get("v", true)):
 				main.hud.toggle_stats()

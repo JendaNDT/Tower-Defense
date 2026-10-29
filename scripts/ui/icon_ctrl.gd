@@ -153,6 +153,21 @@ func _draw() -> void:
 		"menu":
 			for i in range(3):
 				draw_rect(Rect2(c + Vector2(-s * 0.32, -s * 0.26 + float(i) * s * 0.26), Vector2(s * 0.64, s * 0.12)), col)
+		"check":
+			draw_polyline(PackedVector2Array([c + Vector2(-s * 0.3, s * 0.02), c + Vector2(-s * 0.08, s * 0.26), c + Vector2(s * 0.32, -s * 0.24)]), col, maxf(s * 0.11, 2.0), true)
+		"cross":
+			draw_line(c + Vector2(-s * 0.26, -s * 0.26), c + Vector2(s * 0.26, s * 0.26), col, maxf(s * 0.1, 2.0), true)
+			draw_line(c + Vector2(-s * 0.26, s * 0.26), c + Vector2(s * 0.26, -s * 0.26), col, maxf(s * 0.1, 2.0), true)
+		"more":
+			for i in range(3):
+				draw_circle(c + Vector2(-s * 0.28 + float(i) * s * 0.28, 0.0), s * 0.075, col)
+		"fullscreen":
+			for q in range(4):
+				var sx: float = -1.0 if q % 2 == 0 else 1.0
+				var sy: float = -1.0 if q < 2 else 1.0
+				var corner: Vector2 = c + Vector2(sx * s * 0.32, sy * s * 0.32)
+				draw_line(corner, corner - Vector2(sx * s * 0.2, 0.0), col, maxf(s * 0.08, 1.5), true)
+				draw_line(corner, corner - Vector2(0.0, sy * s * 0.2), col, maxf(s * 0.08, 1.5), true)
 		"dot":
 			draw_circle(c, s * 0.4, col)
 			draw_arc(c, s * 0.4, 0.0, TAU, 20, col.darkened(0.4), maxf(s * 0.06, 1.0), true)

@@ -25,6 +25,9 @@ var _pick_cache = null
 var aim_ability: String = ""          # schopnost, která čeká na výběr místa (meteor)
 var island_def: Dictionary = {}
 var blobs: BlobShadows = null
+var touch_pending: bool = false         # dotyk: vybrané místo čeká na potvrzení tlačítkem
+var touch_cell: Vector2i = Vector2i(-1, -1)
+var touch_point: Vector3 = Vector3.ZERO
 var _stats_t: float = 0.0
 var _stats_ft: float = 0.0
 
@@ -58,6 +61,8 @@ func _ready() -> void:
 	else:
 		GameSettings.loaded = true
 	GameSettings.apply_args(args)
+	UiProfile.detect(args)
+	UiProfile.apply(get_window())
 	hud = Hud.new()
 	add_child(hud)
 	# nechat vykreslit načítací obrazovku, pak teprve stavět (generování terénu chvíli trvá)
@@ -105,6 +110,8 @@ func _build_everything() -> void:
 	add_child(rig)
 	game.camera_rig = rig
 	fx.rig = rig
+	rig.tapped.connect(_on_tap)
+	rig.ui_blocker = hud.point_over_ui
 
 	overlays = Overlays.new()
 	world.add_child(overlays)
@@ -122,6 +129,7 @@ func _build_everything() -> void:
 	hud.request_ability.connect(_on_request_ability)
 	hud.request_new_game.connect(_on_new_game)
 	hud.request_cancel.connect(_cancel_all)
+	hud.request_confirm.connect(_confirm_touch)
 	hud.request_upgrade.connect(_upgrade_selected)
 	hud.request_sell.connect(_sell_selected)
 	hud.request_cycle_target.connect(_cycle_target)
@@ -285,7 +293,7 @@ func _on_request_ability(id: String) -> void:
 		_cancel_all()
 		aim_ability = "meteor"
 		hud.set_aim(true)
-		game.toast.emit("Klikni na mapu, kam má meteor dopadnout (Esc zruší).", "info")
+		game.toast.emit("Klepni na mapu, kam má meteor dopadnout, a potvrď." if UiProfile.touch_mode else "Klikni na mapu, kam má meteor dopadnout (Esc zruší).", "info")
 		return
 	var ok: bool = false
 	if id == "blizzard":
@@ -300,6 +308,7 @@ func _cancel_aim() -> void:
 	aim_ability = ""
 	hud.set_aim(false)
 	overlays.hide_range()
+	_clear_pending()
 
 
 func _on_request_build(type: String) -> void:
@@ -309,6 +318,7 @@ func _on_request_build(type: String) -> void:
 		_cancel_all()
 		return
 	_select_tower(null)
+	_clear_pending()
 	build_type = type
 	hud.set_build_type(type)
 	overlays.show_grid(true)
@@ -318,6 +328,7 @@ func _cancel_all() -> void:
 	if aim_ability != "":
 		_cancel_aim()
 	build_type = ""
+	_clear_pending()
 	hud.set_build_type("")
 	overlays.show_grid(false)
 	overlays.hide_ghost()
@@ -412,10 +423,23 @@ func _on_quality(high: bool) -> void:
 
 
 # ------------------------------------------------------------------ vstupy
+## Zjišťuje, jestli hráč ovládá hru prstem nebo myší (podle toho se ukazuje potvrzení stavby místo náhledu pod myší).
+func _input(event: InputEvent) -> void:
+	if event is InputEventScreenTouch:
+		UiProfile.touch_mode = true
+	elif event is InputEventMouseMotion or event is InputEventMouseButton:
+		if event.device != InputEvent.DEVICE_ID_EMULATION:
+			if UiProfile.touch_mode and not UiProfile.phone:
+				UiProfile.touch_mode = false
+				_clear_pending()
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and (event as InputEventKey).pressed and not (event as InputEventKey).echo and (event as InputEventKey).keycode == KEY_F3:
 		hud.toggle_stats()
 		return
+	if event is InputEventMouseButton and (event as InputEventMouseButton).device == InputEvent.DEVICE_ID_EMULATION:
+		return                  # emulace myši z dotyku: klepnutí na mapu zpracuje kamera (signál tapped)
 	if not ready_to_play or hud.is_modal_open():
 		return
 	if event is InputEventMouseButton:
@@ -469,6 +493,64 @@ func _unhandled_input(event: InputEvent) -> void:
 				rig.reset_view()
 
 
+## Klepnutí na mapu (dotyk). Při stavbě a míření meteoru se místo nejdřív jen označí a potvrdí se tlačítkem
+## (nebo dalším klepnutím na totéž místo); jinak klepnutí vybere věž.
+func _on_tap(pos: Vector2) -> void:
+	if not ready_to_play or hud.is_modal_open():
+		return
+	UiProfile.touch_mode = true
+	var p = rig.pick_ground(pos, map)
+	if p == null:
+		return
+	if aim_ability == "meteor":
+		touch_point = Vector3(p.x, 0.0, p.z)
+		touch_pending = true
+		hud.show_confirm("Seslat meteor", true)
+		return
+	var c: Vector2i = Cfg.world_to_cell(p.x, p.z)
+	if build_type != "":
+		if not Cfg.cell_valid(c):
+			return
+		if touch_pending and c == touch_cell and _can_build_at(c):
+			_confirm_touch()
+			return
+		touch_cell = c
+		touch_pending = true
+		var cost: int = Cfg.tower_cost(build_type)
+		hud.show_confirm("Postavit  (%d)" % cost, _can_build_at(c))
+		if not map.can_build(c):
+			game.toast.emit("Sem se stavět nedá.", "warn")
+		elif game.gold < cost:
+			game.toast.emit("Nemáš dost zlata.", "warn")
+		return
+	_select_tower(game.tower_at(c) if Cfg.cell_valid(c) else null)
+
+
+func _can_build_at(c: Vector2i) -> bool:
+	return Cfg.cell_valid(c) and map.can_build(c) and game.gold >= Cfg.tower_cost(build_type)
+
+
+## Potvrzení označeného místa tlačítkem (✓ ve spodní liště).
+func _confirm_touch() -> void:
+	if not touch_pending:
+		return
+	if aim_ability == "meteor":
+		if game.cast_meteor(touch_point):
+			_cancel_aim()
+		return
+	if build_type != "" and _can_build_at(touch_cell):
+		game.build_tower(build_type, touch_cell)
+		hud.refresh_cards()
+		_clear_pending()
+
+
+func _clear_pending() -> void:
+	touch_pending = false
+	touch_cell = Vector2i(-1, -1)
+	if hud != null:
+		hud.hide_confirm()
+
+
 func _click(pos: Vector2) -> void:
 	var p = rig.pick_ground(pos, map)
 	if p == null:
@@ -498,6 +580,35 @@ func _process(_delta: float) -> void:
 	_update_hover()
 
 
+## Náhled při ovládání prstem: ukazuje se jen označené místo (ne místo pod „myší“).
+func _update_touch_preview() -> void:
+	hover_cell = Vector2i(-1, -1)
+	if aim_ability == "meteor":
+		overlays.hide_ghost()
+		if touch_pending:
+			overlays.show_range(Vector3(touch_point.x, map.height_at(touch_point.x, touch_point.z), touch_point.z), float(Cfg.ABILITIES["meteor"]["radius"]), Color(1.0, 0.45, 0.25))
+		else:
+			overlays.hide_range()
+		return
+	if build_type != "":
+		if touch_pending and Cfg.cell_valid(touch_cell):
+			var valid: bool = _can_build_at(touch_cell)
+			var wp: Vector3 = map.cell_world(touch_cell)
+			overlays.show_ghost(build_type, wp, valid)
+			overlays.show_range(wp, float(Cfg.tower_level(build_type, 1)["range"]), Color(0.45, 1.0, 0.55) if valid else Color(1.0, 0.4, 0.35))
+			hud.set_confirm_enabled(valid)
+		else:
+			overlays.hide_ghost()
+			overlays.hide_range()
+		return
+	overlays.hide_ghost()
+	if selected != null and is_instance_valid(selected):
+		overlays.show_range(selected.position, float(selected.stats()["range"]), Color(0.45, 0.8, 1.0))
+		overlays.show_selection(selected.position)
+	else:
+		overlays.hide_range()
+
+
 ## Výběr bodu na terénu pod myší; když se nezměnila myš ani kamera, použije se předchozí výsledek.
 func _pick_cached(mp: Vector2):
 	var key: String = "%.1f_%.1f_%.2f_%.2f_%.2f_%.2f" % [mp.x, mp.y, rig.yaw_deg, rig.zoom_size, rig.position.x, rig.position.z]
@@ -510,6 +621,9 @@ func _pick_cached(mp: Vector2):
 func _update_hover() -> void:
 	if hud.is_modal_open():
 		overlays.hide_ghost()
+		return
+	if UiProfile.touch_mode:
+		_update_touch_preview()
 		return
 	var vp: Viewport = get_viewport()
 	var mp: Vector2 = vp.get_mouse_position()

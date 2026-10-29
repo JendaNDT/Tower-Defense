@@ -3,7 +3,11 @@ extends Node3D
 ## Izometrická kamera (ortogonální projekce, sklon 35,264° = pravá izometrie).
 ## Ovládání: pravé tlačítko myši = otáčení, kolečko = přiblížení, prostřední tlačítko = posun,
 ## Q/E = otáčení, W/A/S/D nebo šipky = posun, +/− = zoom, F = původní pohled.
+## Dotyk: jeden prst = posun, dva prsty = přiblížení, otáčení a posun; krátké klepnutí vyšle signál `tapped`.
 
+signal tapped(pos: Vector2)
+
+const TAP_MOVE_MAX: float = 14.0       # největší posun prstu (v pixelech obsahu), aby se ještě počítalo jako klepnutí
 const PITCH_DEG: float = 35.264
 const DIST: float = 150.0
 const DEFAULT_YAW: float = 45.0
@@ -25,7 +29,9 @@ var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 var _drag_rot: bool = false
 var _drag_pan: bool = false
 var _drag_dist: float = 0.0
-var _touches: Dictionary = {}
+var ui_blocker: Callable = Callable()   # (Vector2) -> bool: bod leží na prvku rozhraní, takový dotyk kameru neovládá
+var _touch: Dictionary = {}              # index prstu -> {"pos", "start", "t0", "ui"}
+var _tap_ok: bool = false
 
 
 func _ready() -> void:
@@ -122,37 +128,83 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif _drag_pan:
 			_pan_pixels(mm.relative)
 			_drag_dist += mm.relative.length()
-	elif event is InputEventScreenTouch:
-		var st: InputEventScreenTouch = event
-		if st.pressed:
-			_touches[st.index] = st.position
-		else:
-			_touches.erase(st.index)
-	elif event is InputEventScreenDrag:
-		var sd: InputEventScreenDrag = event
-		var prev: Dictionary = _touches.duplicate()
-		_touches[sd.index] = sd.position
-		if _touches.size() == 1:
-			_pan_pixels(sd.relative)
-		elif _touches.size() == 2 and prev.size() == 2:
-			var ks: Array = _touches.keys()
-			var a_old: Vector2 = prev[ks[0]]
-			var b_old: Vector2 = prev[ks[1]]
-			var a_new: Vector2 = _touches[ks[0]]
-			var b_new: Vector2 = _touches[ks[1]]
-			var d_old: float = a_old.distance_to(b_old)
-			var d_new: float = a_new.distance_to(b_new)
-			if d_old > 1.0 and d_new > 1.0:
-				zoom_by(d_old / d_new)
-			var ang_old: float = (b_old - a_old).angle()
-			var ang_new: float = (b_new - a_new).angle()
-			target_yaw -= rad_to_deg(angle_difference(ang_old, ang_new))
 	elif event is InputEventPanGesture:
 		var pg: InputEventPanGesture = event
 		_pan_pixels(-pg.delta * 8.0)
 	elif event is InputEventMagnifyGesture:
 		var mg: InputEventMagnifyGesture = event
 		zoom_by(1.0 / maxf(mg.factor, 0.1))
+
+
+## Dotyk se zpracovává už v _input (před rozhraním): Godot jinak část dotyků pohltí jako „klik myší“ na tlačítko,
+## které bylo naposledy stisknuto, a klepnutí na mapu by se ztratilo. Dotyky na prvcích rozhraní se vyřadí přes ui_blocker.
+func _input(event: InputEvent) -> void:
+	if not input_enabled:
+		return
+	if event is InputEventScreenTouch:
+		_on_touch(event)
+	elif event is InputEventScreenDrag:
+		_on_drag(event)
+
+
+func _free_touches() -> Array:
+	## Indexy prstů, které nezačaly na prvku rozhraní.
+	var out: Array = []
+	for k in _touch.keys():
+		if not bool(_touch[k]["ui"]):
+			out.append(k)
+	out.sort()
+	return out
+
+
+func _on_touch(st: InputEventScreenTouch) -> void:
+	if st.pressed:
+		var over_ui: bool = ui_blocker.is_valid() and bool(ui_blocker.call(st.position))
+		_touch[st.index] = {"pos": st.position, "start": st.position, "t0": Time.get_ticks_msec(), "ui": over_ui}
+		_tap_ok = (not over_ui) and _free_touches().size() == 1
+		if _free_touches().size() >= 2:
+			_tap_ok = false
+		return
+	if not _touch.has(st.index):
+		return
+	var t: Dictionary = _touch[st.index]
+	_touch.erase(st.index)
+	# klepnutí = prst se nepohnul; délka dotyku se záměrně nehlídá (na pomalém zařízení se stisk a puštění zpracují
+	# s odstupem celých snímků a delší dotyk by se jinak ztratil)
+	if _tap_ok and not bool(t["ui"]) and st.position.distance_to(t["start"]) <= TAP_MOVE_MAX:
+		tapped.emit(st.position)
+	if _free_touches().is_empty():
+		_tap_ok = false
+
+
+func _on_drag(sd: InputEventScreenDrag) -> void:
+	if not _touch.has(sd.index):
+		return
+	var free: Array = _free_touches()
+	var me: Dictionary = _touch[sd.index]
+	if bool(me["ui"]):
+		me["pos"] = sd.position
+		return
+	if free.size() == 1:
+		if sd.position.distance_to(me["start"]) > TAP_MOVE_MAX:
+			_tap_ok = false
+		me["pos"] = sd.position
+		_pan_pixels(sd.relative)
+		return
+	_tap_ok = false
+	var ia: int = free[0]
+	var ib: int = free[1]
+	var a_old: Vector2 = _touch[ia]["pos"]
+	var b_old: Vector2 = _touch[ib]["pos"]
+	me["pos"] = sd.position
+	var a_new: Vector2 = _touch[ia]["pos"]
+	var b_new: Vector2 = _touch[ib]["pos"]
+	var d_old: float = a_old.distance_to(b_old)
+	var d_new: float = a_new.distance_to(b_new)
+	if d_old > 1.0 and d_new > 1.0:
+		zoom_by(d_old / d_new)
+	target_yaw += rad_to_deg(angle_difference((b_old - a_old).angle(), (b_new - a_new).angle()))
+	_pan_pixels((a_new + b_new) * 0.5 - (a_old + b_old) * 0.5)
 
 
 func _process(delta: float) -> void:
