@@ -40,36 +40,58 @@ static func run(main) -> void:
 static func _map_report(g: Game) -> Dictionary:
 	var free: int = 0
 	var counts: Dictionary = {}
-	for c in g.map.cells:
+	var elev_counts: Dictionary = {}
+	for i in range(g.map.cells.size()):
+		var c: int = g.map.cells[i]
 		counts[c] = int(counts.get(c, 0)) + 1
 		if c == GameMap.Cell.FREE:
 			free += 1
+			var ev: int = int(g.map.elev[i])
+			elev_counts[ev] = int(elev_counts.get(ev, 0)) + 1
 	var min_obs: float = 1e9
-	var p: PathData = g.path
 	for ob in g.map.obstacles:
 		var pos: Vector3 = ob["pos"]
-		var s: float = 0.0
-		while s <= p.length:
-			min_obs = minf(min_obs, p.xz_at(s).distance_to(Vector2(pos.x, pos.z)))
-			s += 0.5
+		for p in g.map.lanes:
+			var s: float = 0.0
+			while s <= (p as PathData).length:
+				min_obs = minf(min_obs, (p as PathData).xz_at(s).distance_to(Vector2(pos.x, pos.z)))
+				s += 0.5
+	var lens: Array = []
+	var br: Array = []
+	for li in range(g.map.lane_count()):
+		lens.append(snappedf((g.map.lanes[li] as PathData).length, 0.1))
+		br.append(g.map.lane_bridges[li].duplicate())
+	var sp: Array = []
+	for pt in g.map.portals:
+		var pp: Vector3 = pt["pos"]
+		sp.append([snappedf(pp.x, 0.1), snappedf(pp.z, 0.1)])
 	return {
-		"free_cells": free, "cell_counts": counts, "obstacles": g.map.obstacles.size(),
-		"path_length": snappedf(p.length, 0.1), "bridges": g.map.bridges.duplicate(),
+		"free_cells": free, "cell_counts": counts, "elev_cells": elev_counts, "obstacles": g.map.obstacles.size(),
+		"lanes": g.map.lane_count(), "lane_lengths": lens, "lane_bridges": br, "bridges_built": g.map.bridges.size(),
 		"min_obstacle_to_path": snappedf(min_obs, 0.01), "fly_alt": snappedf(g.fly_altitude, 0.1),
-		"spawn": [snappedf(g.map.spawn_pos.x, 0.1), snappedf(g.map.spawn_pos.z, 0.1)],
-		"base": [snappedf(g.map.base_pos.x, 0.1), snappedf(g.map.base_pos.z, 0.1)],
+		"portals": sp, "base": [snappedf(g.map.base_pos.x, 0.1), snappedf(g.map.base_pos.z, 0.1)],
 	}
 
 
+## Kolik bodů tras (vážených podle podílu nepřátel na trase) leží v dosahu pole; dosah zahrnuje bonus výšky pole.
 static func _coverage(g: Game, c: Vector2i, rng: float) -> float:
 	var w: Vector2 = Cfg.cell_center(c.x, c.y)
+	var r: float = rng * float(Cfg.ELEV_RANGE[g.map.elev_at(c)])
+	var wsum: float = 0.0
+	for lw in g.map.lane_weights:
+		wsum += float(lw)
 	var n: float = 0.0
-	var s: float = 0.0
-	while s <= g.path.length:
-		if g.path.xz_at(s).distance_to(w) <= rng:
-			n += 1.0
-		s += 1.0
-	return n
+	for li in range(g.map.lane_count()):
+		var p: PathData = g.map.lanes[li]
+		var share: float = float(g.map.lane_weights[li]) / wsum
+		var s: float = 0.0
+		var k: float = 0.0
+		while s <= p.length:
+			if p.xz_at(s).distance_to(w) <= r:
+				k += 1.0
+			s += 1.0
+		n += k * share
+	return n * float(g.map.lane_count())
 
 
 static func _free_cells(g: Game) -> Array:
@@ -83,18 +105,22 @@ static func _free_cells(g: Game) -> Array:
 
 
 static func _air_coverage(g: Game, c: Vector2i, rng: float) -> float:
-	## Kolik bodů přímé letové čáry (portál → Srdce ostrova) leží v dosahu pole.
+	## Kolik bodů přímých letových čar (portál → Srdce ostrova) leží v dosahu pole.
 	var w: Vector2 = Cfg.cell_center(c.x, c.y)
-	var a: Vector2 = Vector2(g.map.spawn_pos.x, g.map.spawn_pos.z)
+	var r: float = rng * float(Cfg.ELEV_RANGE[g.map.elev_at(c)])
 	var b: Vector2 = Vector2(g.map.base_pos.x, g.map.base_pos.z)
-	var n: float = 0.0
-	var len: float = a.distance_to(b)
-	var t: float = 0.0
-	while t <= len:
-		if a.lerp(b, t / len).distance_to(w) <= rng:
-			n += 1.0
-		t += 1.0
-	return n
+	var total: float = 0.0
+	for pt in g.map.portals:
+		var a: Vector2 = Vector2((pt["pos"] as Vector3).x, (pt["pos"] as Vector3).z)
+		var n: float = 0.0
+		var len: float = a.distance_to(b)
+		var t: float = 0.0
+		while t <= len:
+			if a.lerp(b, t / len).distance_to(w) <= r:
+				n += 1.0
+			t += 1.0
+		total += n
+	return total / float(g.map.portals.size())
 
 
 static func _best_cell(g: Game, rng: float, avoid: Array = [], air_w: float = 0.0) -> Vector2i:
@@ -232,7 +258,7 @@ static func _bot_abilities(g: Game) -> void:
 static func _bot_game(g: Game, policy: String, max_waves: int = 30, use_abilities: bool = false) -> Dictionary:
 	var pol: Dictionary = POLICIES[policy]
 	g.configure(g.mode_id, g.diff_id)
-	var p: PathData = g.path
+	var p: PathData = g.map.longest_lane()
 	var last_pos: Dictionary = {}
 	var age: Dictionary = {}
 	var max_jump: float = 0.0          # největší překročení povolené vodorovné rychlosti za krok
@@ -278,7 +304,7 @@ static func _bot_game(g: Game, policy: String, max_waves: int = 30, use_abilitie
 				age[id] = float(age.get(id, 0.0)) + DT
 				max_age = maxf(max_age, float(age[id]))
 				if not e.flying:
-					if not g.map.is_on_bridge(e.s):
+					if not g.map.is_on_bridge(e.lane, e.s):
 						ground_off = maxf(ground_off, absf(e.position.y - g.map.height_at(e.position.x, e.position.z)))
 					for ob in g.map.obstacles:
 						var op: Vector3 = ob["pos"]
@@ -310,8 +336,8 @@ static func _bot_game(g: Game, policy: String, max_waves: int = 30, use_abilitie
 
 
 # ------------------------------------------------------------------ C) mechaniky: nepřátelé, schopnosti, režimy, rekordy
-static func _spawn_at(g: Game, type: String, s: float, hp_mult: float = 1.0) -> Enemy:
-	g._spawn_enemy({"at": 0.0, "type": type, "wave": Game.TEST_WAVE, "hp": hp_mult})
+static func _spawn_at(g: Game, type: String, s: float, hp_mult: float = 1.0, lane: int = 0) -> Enemy:
+	g._spawn_enemy({"at": 0.0, "type": type, "wave": Game.TEST_WAVE, "hp": hp_mult, "lane": lane})
 	var e: Enemy = g.enemies[g.enemies.size() - 1]
 	e.s = s
 	e.update(0.0)
@@ -435,7 +461,7 @@ static func _mech_run(main) -> void:
 
 	# --- meteor
 	g.configure("campaign", "normal")
-	var pos0: Vector3 = g.path.pos_at(40.0)
+	var pos0: Vector3 = g.map.lanes[0].pos_at(40.0)
 	var cluster: Array = []
 	for i in range(5):
 		cluster.append(_spawn_at(g, "goblin", 40.0 + float(i) * 0.4, 10.0))
@@ -528,79 +554,162 @@ static func _mech_run(main) -> void:
 
 
 # ------------------------------------------------------------------ D) kontrola rozložení ostrovů (mapa bez hry)
+## Nejmenší vzdálenost mezi dvěma trasami mimo jejich společné úseky a okolí rozcestí/splynutí (9 m od společného bodu).
+static func _lane_separation(a: PathData, b: PathData) -> float:
+	var n: int = a.pts.size()
+	var shared: PackedByteArray = PackedByteArray()
+	shared.resize(n)
+	var dists: PackedFloat32Array = PackedFloat32Array()
+	dists.resize(n)
+	var any_shared: bool = false
+	for i in range(0, n):
+		var best: float = 1e9
+		var j: int = 0
+		while j < b.pts.size():
+			best = minf(best, a.pts[i].distance_to(b.pts[j]))
+			j += 2
+		dists[i] = best
+		if best < 2.4:
+			shared[i] = 1
+			any_shared = true
+	var guard: int = int(9.0 / PathData.STEP)
+	var res: float = 1e9
+	for i2 in range(0, n):
+		if any_shared:
+			var near_shared: bool = false
+			for k in range(maxi(i2 - guard, 0), mini(i2 + guard, n - 1) + 1, 4):
+				if shared[k] == 1:
+					near_shared = true
+					break
+			if near_shared:
+				continue
+		res = minf(res, dists[i2])
+	return res
+
+
 static func _island_stats(def: Dictionary, seed_in: int) -> Dictionary:
 	var m: GameMap = GameMap.new(seed_in, def)
+	var t0: int = Time.get_ticks_msec()
 	m.build()
-	var p: PathData = m.terrain.path
+	var build_ms: int = Time.get_ticks_msec() - t0
 	var free: int = 0
 	var near_free: int = 0
 	var counts: Dictionary = {}
+	var elev_counts: Dictionary = {}
 	for cz in range(Cfg.GRID_H):
 		for cx in range(Cfg.GRID_W):
 			var st: int = m.cell_state(Vector2i(cx, cz))
 			counts[st] = int(counts.get(st, 0)) + 1
 			if st == GameMap.Cell.FREE:
 				free += 1
+				var ev: int = m.elev_at(Vector2i(cx, cz))
+				elev_counts[ev] = int(elev_counts.get(ev, 0)) + 1
 				var w: Vector2 = Cfg.cell_center(cx, cz)
 				var best: float = 1e9
-				var sv: float = 0.0
-				while sv <= p.length:
-					best = minf(best, p.xz_at(sv).distance_to(w))
-					sv += 1.0
+				for p in m.lanes:
+					var sv: float = 0.0
+					while sv <= (p as PathData).length:
+						best = minf(best, (p as PathData).xz_at(sv).distance_to(w))
+						sv += 1.0
 				if best <= 7.0:
 					near_free += 1
-	# nejmenší vzdálenost trasy od sebe samé (body, které jsou po trase aspoň 14 m od sebe)
+	var lens: Array = []
 	var self_min: float = 1e9
-	var a: float = 0.0
-	while a <= p.length:
-		var pa: Vector2 = p.xz_at(a)
-		var b: float = a + 14.0
-		while b <= p.length:
-			self_min = minf(self_min, pa.distance_to(p.xz_at(b)))
-			b += 1.0
-		a += 1.0
 	var edge_min: float = 1e9
-	var sv2: float = 4.0
-	while sv2 <= p.length - 1.0:
-		var q: Vector2 = p.xz_at(sv2)
-		edge_min = minf(edge_min, m.terrain.edge_dist(q.x, q.y))
-		sv2 += 0.5
-	var spawn_edge: float = m.terrain.edge_dist(m.spawn_pos.x, m.spawn_pos.z)
+	var bad_path_cells: int = 0
+	var min_obs: float = 1e9
+	var max_ys_err: float = 0.0
+	var max_slope: float = 0.0
+	for li in range(m.lane_count()):
+		var p2: PathData = m.lanes[li]
+		lens.append(snappedf(p2.length, 0.1))
+		# nejmenší vzdálenost trasy od sebe samé (body, které jsou po trase aspoň 14 m od sebe)
+		var a: float = 0.0
+		while a <= p2.length:
+			var pa: Vector2 = p2.xz_at(a)
+			var b: float = a + 14.0
+			while b <= p2.length:
+				self_min = minf(self_min, pa.distance_to(p2.xz_at(b)))
+				b += 1.0
+			a += 1.0
+		var sv2: float = 4.0
+		while sv2 <= p2.length - 1.0:
+			var q: Vector2 = p2.xz_at(sv2)
+			edge_min = minf(edge_min, m.terrain.edge_dist(q.x, q.y))
+			sv2 += 0.5
+		sv2 = 0.0
+		var prev_y: float = p2.y_at(0.0)
+		while sv2 <= p2.length:
+			var q2: Vector2 = p2.xz_at(sv2)
+			if m.cell_state(Cfg.world_to_cell(q2.x, q2.y)) == GameMap.Cell.VOID:
+				bad_path_cells += 1
+			var ypath: float = p2.y_at(sv2)
+			if not m.is_on_bridge(li, sv2):
+				max_ys_err = maxf(max_ys_err, absf(ypath - m.height_at(q2.x, q2.y)))
+			max_slope = maxf(max_slope, absf(ypath - prev_y) / 1.0)
+			prev_y = ypath
+			sv2 += 1.0
+		for ob in m.obstacles:
+			var op: Vector3 = ob["pos"]
+			var s3: float = 0.0
+			while s3 <= p2.length:
+				min_obs = minf(min_obs, p2.xz_at(s3).distance_to(Vector2(op.x, op.z)))
+				s3 += 0.5
+	var lane_sep: float = 1e9
+	var sep_pairs: Array = []
+	for i in range(m.lane_count()):
+		for j in range(i + 1, m.lane_count()):
+			var sp: float = _lane_separation(m.lanes[i], m.lanes[j])
+			sep_pairs.append("%d-%d: %.1f" % [i, j, sp])
+			lane_sep = minf(lane_sep, sp)
+	var portal_edge: float = 1e9
+	for pt in m.portals:
+		var pp: Vector3 = pt["pos"]
+		portal_edge = minf(portal_edge, m.terrain.edge_dist(pp.x, pp.z))
 	var river_inside: float = 0.0
 	var rv: RiverData = m.terrain.river
 	for pt in rv.pts:
 		if m.terrain.edge_dist(pt.x, pt.y) > 0.0:
 			river_inside += RiverData.STEP
-	var bad_path_cells: int = 0
-	sv2 = 0.0
-	while sv2 <= p.length:
-		var q2: Vector2 = p.xz_at(sv2)
-		var cc: Vector2i = Cfg.world_to_cell(q2.x, q2.y)
-		var stt: int = m.cell_state(cc)
-		if stt == GameMap.Cell.VOID:
-			bad_path_cells += 1
-		sv2 += 1.0
-	var min_obs: float = 1e9
-	for ob in m.obstacles:
-		var op: Vector3 = ob["pos"]
-		var s3: float = 0.0
-		while s3 <= p.length:
-			min_obs = minf(min_obs, p.xz_at(s3).distance_to(Vector2(op.x, op.z)))
-			s3 += 0.5
+	var bridges_per_lane: Array = []
+	for li2 in range(m.lane_count()):
+		bridges_per_lane.append((m.lane_bridges[li2] as Array).size())
+	# výška na vrcholcích a poloha kopců
+	var hill_info: Array = []
+	for hl in m.terrain.hills:
+		hill_info.append({"tier": int(hl["tier"]), "r": float(hl["r"]), "y": snappedf(m.height_at(float(hl["x"]), float(hl["z"])), 0.01),
+			"edge": snappedf(m.terrain.edge_dist(float(hl["x"]), float(hl["z"])), 0.1)})
 	return {
-		"name": str(def["name"]), "seed": seed_in, "path_length": snappedf(p.length, 0.1), "bridges": m.bridges.size(),
-		"free_cells": free, "free_near_path": near_free, "self_distance_min": snappedf(self_min, 0.1),
-		"path_edge_dist_min": snappedf(edge_min, 0.1), "spawn_edge_dist": snappedf(spawn_edge, 0.1),
+		"name": str(def["name"]), "seed": seed_in, "build_ms": build_ms, "lanes": m.lane_count(), "portals": m.portals.size(),
+		"lane_lengths": lens, "bridges_built": m.bridges.size(), "bridges_per_lane": bridges_per_lane,
+		"free_cells": free, "free_near_path": near_free, "elev_cells": elev_counts, "self_distance_min": snappedf(self_min, 0.1),
+		"lane_separation_min": snappedf(lane_sep, 0.1), "lane_sep_pairs": sep_pairs,
+		"path_edge_dist_min": snappedf(edge_min, 0.1), "portal_edge_dist": snappedf(portal_edge, 0.1),
 		"river_length_inside": snappedf(river_inside, 0.1), "path_points_in_void": bad_path_cells,
 		"min_obstacle_to_path": snappedf(min_obs, 0.01), "cells": counts,
-		"spawn": [snappedf(m.spawn_pos.x, 0.1), snappedf(m.spawn_pos.z, 0.1)], "base": [snappedf(m.base_pos.x, 0.1), snappedf(m.base_pos.z, 0.1)],
+		"path_y_error_max": snappedf(max_ys_err, 0.001), "path_slope_max": snappedf(max_slope, 0.001), "hills": hill_info,
+		"base": [snappedf(m.base_pos.x, 0.1), snappedf(m.base_pos.z, 0.1)],
 	}
 
 
 static func _islands_run(main) -> void:
 	var rep: Array = []
+	var only: int = int(main.args["only"]) if main.args.has("only") else -1
 	for i in range(Islands.LIST.size()):
+		if only >= 0 and i != only:
+			continue
 		rep.append(_island_stats(Islands.LIST[i], int(Islands.LIST[i]["seed"])))
+	if only >= 0:
+		print("ISLANDS_JSON " + JSON.stringify(rep))
+		main.get_tree().quit(0)
+		return
+	# všechny převrácené/otočené varianty (náhodný ostrov je používá)
+	for i2 in range(Islands.LIST.size()):
+		for mode in range(1, 8):
+			var d2: Dictionary = Islands.transformed(Islands.LIST[i2], mode)
+			var st2: Dictionary = _island_stats(d2, int(d2["seed"]))
+			st2["layout_name"] = "%s [varianta %d]" % [str(d2["name"]), mode]
+			rep.append(st2)
 	for sd in [1001, 1002, 1003, 1004, 1005, 1006]:
 		var d: Dictionary = Islands.resolve(Islands.RANDOM_ID, sd)
 		var st: Dictionary = _island_stats(d, sd)

@@ -26,7 +26,7 @@ func _init() -> void:
 		"mode_campaign": "Přežij všech %d vln a ubraň reaktor stanice.",
 		"base_fell": "Reaktor stanice byl zničen.",
 		"base_hit": "Nepřítel zasáhl reaktor! −%d životů",
-		"help_intro": "Braň reaktor stanice před vlnami nepřátel, kteří přicházejí z hvězdné brány po cestě přes celou plošinu.",
+		"help_intro": "Braň reaktor stanice před vlnami nepřátel, kteří přicházejí z hvězdných bran po cestách přes celou plošinu. Některé mapy mají víc bran a rozcestí.",
 		"help_units": "Plazmomet nezasáhne vzdušné cíle, pancíř snižuje poškození laseru – proti němu pomůže Teslova věž.",
 		"help_enemies": "Opraváře znič jako prvního, štítové droidy prorazí silné rány, nanorój se po zničení rozdělí.",
 		"help_abilities_touch": "Schopnosti vlevo dole: Orbitální úder (klepni na místo dopadu a potvrď), Kryo vlna a Kreditový šok. Po použití se nabíjejí.",
@@ -127,6 +127,9 @@ func _init() -> void:
 		"meteor_body": Color(0.30, 0.38, 0.55), "meteor_fire": Color(1.0, 0.75, 0.30), "meteor_ring": Color(1.0, 0.45, 0.30),
 		"meteor_flash": Color(1.0, 0.95, 0.75), "meteor_puff": Color(0.45, 0.9, 1.0), "meteor_aim": Color(1.0, 0.55, 0.35),
 		"select_ring": Color(0.40, 0.95, 1.0),
+		"mm_forest": Color(0.08, 0.30, 0.30), "mm_meadow": Color(0.12, 0.46, 0.38), "mm_desert": Color(0.62, 0.30, 0.18), "mm_snow": Color(0.70, 0.86, 1.0),
+		"mm_path": Color(0.34, 0.40, 0.52), "mm_water": Color(0.10, 0.80, 1.0), "mm_hill": Color(0.40, 1.0, 1.0),
+		"mm_bg": Color(0.03, 0.05, 0.12, 0.78), "mm_edge": Color(0.30, 0.90, 1.0, 0.95), "mm_portal": Color(0.30, 0.95, 1.0),
 	}
 
 

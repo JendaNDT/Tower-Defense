@@ -120,23 +120,27 @@ static func build(parent: Node3D, map: GameMap, high_quality: bool = true) -> Di
 	out["waterfall"] = wf
 
 	# --- dekorace
-	parent.add_child(Decor.build(map, 1.0 if high_quality else 0.55))
+	parent.add_child(Decor.build(map, 1.0 if high_quality else 0.55, null, 1.0 if high_quality else 0.3))
 	_spring_rocks(parent, map)
 
 	# --- stavby
-	var portal: Node3D = Structures.build_portal(map)
-	parent.add_child(portal)
+	var portals: Array = []
+	for pi in range(map.portals.size()):
+		var portal: Node3D = Structures.build_portal(map, pi)
+		parent.add_child(portal)
+		portals.append(portal)
 	var heart: Node3D = Structures.build_base(map)
 	parent.add_child(heart)
 	parent.add_child(Structures.build_bridge(map))
-	out["portal"] = portal
+	out["portal"] = portals[0]
+	out["portals"] = portals
 	out["heart"] = heart
 
 	# --- živé prvky
 	var amb: Ambient = Ambient.new()
 	amb.name = "Ambient"
 	amb.heart = heart
-	amb.portal = portal
+	amb.portals = portals
 	amb.waterfall = wf
 	parent.add_child(amb)
 	amb.setup(map, high_quality)

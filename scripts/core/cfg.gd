@@ -5,9 +5,13 @@ extends RefCounted
 
 # ---------------------------------------------------------------- mřížka
 const CELL: float = 2.0
-const GRID_W: int = 24
-const GRID_H: int = 24
-const GRID_MIN: Vector2 = Vector2(-24.0, -24.0)   # světový roh buňky (0,0) v rovině XZ
+const GRID_W: int = 32
+const GRID_H: int = 32
+const GRID_MIN: Vector2 = Vector2(-32.0, -32.0)   # světový roh buňky (0,0) v rovině XZ
+
+# Výšková stupně pole: 0 = rovina, 1 = kopec, 2 = vrchol. Věž na vyvýšeném poli dohlédne dál (násobek dosahu).
+const ELEV_RANGE: Array = [1.0, 1.15, 1.3]
+const ELEV_NAMES: Array = ["rovina", "kopec", "vrchol"]
 
 const SELL_RATIO: float = 0.7
 const MAX_LEVEL: int = 4

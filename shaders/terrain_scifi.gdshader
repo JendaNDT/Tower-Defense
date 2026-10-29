@@ -81,6 +81,14 @@ void fragment() {
 	float bed = 1.0 - smoothstep(-0.6, 0.0, river_sd);
 	col = mix(col, lin(vec3(0.03, 0.05, 0.10)), bed * 0.9);
 
+	// ---------- plošiny kopců (field_tex.b: 0.5 kopec, 1.0 vrchol): ocelová plošina se světelným lemem
+	float plateau = smoothstep(0.40, 0.48, f.b);
+	float summit = smoothstep(0.78, 0.96, f.b);
+	float hill_rim = (1.0 - smoothstep(0.0, 0.03, abs(f.b - 0.44))) + (1.0 - smoothstep(0.0, 0.04, abs(f.b - 0.87)));
+	vec3 deck = mix(lin(vec3(0.24, 0.28, 0.36)), lin(vec3(0.34, 0.39, 0.49)), n_hi);
+	col = mix(col, deck, plateau * 0.45 + summit * 0.2);
+	emit += glow_a * hill_rim * 0.75 * (0.7 + 0.3 * sin(TIME * 2.0 + (xz.x - xz.y) * 0.3));
+
 	// ---------- skála na svazích: tmavý čedič se žilkami
 	float slope = 1.0 - clamp(w_nrm.y, 0.0, 1.0);
 	float strata = 0.5 + 0.5 * sin(w_pos.y * 2.4 + n_lo * 6.0);

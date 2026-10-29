@@ -6,9 +6,10 @@ extends Node3D
 const WIND: Vector2 = Vector2(0.94, 0.34)
 
 var heart: Node3D = null
-var portal: Node3D = null
+var portals: Array = []
 var waterfall: Dictionary = {}     # {lip: Vector3, flow: Vector2, half_w: float} – nastaví stavitel světa před setup()
 
+var _centers: Array = []           # středy biomů (les, louka, poušť, sníh) – tam se vyrábí příslušné částice
 var _time: float = 0.0
 var _puffs: Array = []
 var _birds: Array = []
@@ -21,6 +22,7 @@ var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 # ------------------------------------------------------------------ stavba
 func setup(map: GameMap, high_quality: bool) -> void:
 	_rng.seed = 987
+	_centers = map.terrain.biome_centers
 	_build_cloud_layers()
 	_build_puffs()
 	_build_floaters()
@@ -80,10 +82,10 @@ func _build_puffs() -> void:
 	var perp: Vector2 = Vector2(-WIND.y, WIND.x)
 	for i in range(22):
 		var high: bool = i < 10
-		var lane: float = _rng.randf_range(44.0, 95.0) * (1.0 if _rng.randf() < 0.5 else -1.0)
+		var lane: float = _rng.randf_range(54.0, 110.0) * (1.0 if _rng.randf() < 0.5 else -1.0)
 		var y: float = _rng.randf_range(-10.0, 9.0) if high else _rng.randf_range(-34.0, -14.0)
 		if not high:
-			lane = _rng.randf_range(-90.0, 90.0)
+			lane = _rng.randf_range(-110.0, 110.0)
 		var mi: MeshInstance3D = MeshInstance3D.new()
 		mi.mesh = meshes[i % 4]
 		mi.material_override = mat
@@ -112,7 +114,7 @@ func _build_floaters() -> void:
 			k.append(_mini_tree(500 + i), MeshKit.xf(Vector3(r * 0.2, r * 0.46, 0.0), Vector3.ZERO, Vector3(0.6, 0.6, 0.6)))
 		var mi: MeshInstance3D = Gfx.mesh_node(k, Gfx.model_mat(0.95))
 		var ang: float = _rng.randf() * TAU
-		var rad: float = _rng.randf_range(40.0, 64.0)
+		var rad: float = _rng.randf_range(52.0, 80.0)
 		var y: float = _rng.randf_range(-22.0, 3.0)
 		mi.position = Vector3(cos(ang) * rad, y, sin(ang) * rad)
 		add_child(mi)
@@ -145,12 +147,12 @@ func _build_birds() -> void:
 		add_child(root)
 		_birds.append({
 			"root": root, "wl": wl, "wr": wr,
-			"r": _rng.randf_range(20.0, 40.0),
+			"r": _rng.randf_range(24.0, 50.0),
 			"w": _rng.randf_range(0.10, 0.19) * (1.0 if i % 2 == 0 else -1.0),
 			"a": _rng.randf() * TAU,
 			"h": _rng.randf_range(6.0, 13.0),
 			"ph": _rng.randf() * TAU,
-			"cx": _rng.randf_range(-5.0, 5.0), "cz": _rng.randf_range(-5.0, 5.0),
+			"cx": _rng.randf_range(-8.0, 8.0), "cz": _rng.randf_range(-8.0, 8.0),
 		})
 
 
@@ -175,7 +177,7 @@ func _build_butterflies() -> void:
 		add_child(root)
 		_butterflies.append({
 			"root": root, "wl": wl, "wr": wr,
-			"c": Vector3(-17.0 + _rng.randf_range(-6.0, 6.0), 0.0, 17.0 + _rng.randf_range(-6.0, 6.0)),
+			"c": Vector3((_centers[1] as Vector2).x + _rng.randf_range(-8.0, 8.0), 0.0, (_centers[1] as Vector2).y + _rng.randf_range(-8.0, 8.0)),
 			"ph": _rng.randf() * TAU,
 			"sp": _rng.randf_range(0.25, 0.5),
 		})
@@ -233,13 +235,16 @@ func _particles(pos: Vector3, extents: Vector3, amount: int, life: float, size: 
 func _build_particles(map: GameMap, high: bool) -> void:
 	var f: float = 1.0 if high else 0.5
 	# sníh v zasněžené části
-	_particles(Vector3(-17.0, 9.0, -17.0), Vector3(13.0, 0.3, 13.0), int(650.0 * f), 9.0, 0.13, Color(1, 1, 1, 0.95), 0.3,
+	var sn: Vector2 = _centers[3]
+	var fo: Vector2 = _centers[0]
+	var de: Vector2 = _centers[2]
+	_particles(Vector3(sn.x, 9.0, sn.y), Vector3(17.0, 0.3, 17.0), int(900.0 * f), 9.0, 0.13, Color(1, 1, 1, 0.95), 0.3,
 		Vector3(0.5, -2.2, 0.25), Vector3(0, -1, 0), 20.0, 0.0, 0.3, 2.2)
 	# pylové jiskřičky v lese
-	_particles(Vector3(17.0, 2.2, -17.0), Vector3(12.0, 1.6, 12.0), int(90.0 * f), 8.0, 0.09, Color(1.0, 0.95, 0.55, 1.0), 3.0,
+	_particles(Vector3(fo.x, 2.2, fo.y), Vector3(16.0, 1.6, 16.0), int(130.0 * f), 8.0, 0.09, Color(1.0, 0.95, 0.55, 1.0), 3.0,
 		Vector3(0.05, 0.04, 0.02), Vector3(0, 1, 0), 180.0, 0.1, 0.35, 0.3, 0.3)
 	# prach v poušti
-	_particles(Vector3(17.0, 1.0, 17.0), Vector3(13.0, 1.0, 13.0), int(110.0 * f), 6.0, 0.55, Color(0.92, 0.80, 0.55, 0.16), 0.0,
+	_particles(Vector3(de.x, 1.0, de.y), Vector3(17.0, 1.0, 17.0), int(150.0 * f), 6.0, 0.55, Color(0.92, 0.80, 0.55, 0.16), 0.0,
 		Vector3.ZERO, Vector3(1, 0.05, 0.35), 12.0, 1.8, 3.0, 0.0, 0.3)
 	# mlha a sprška vodopádu
 	var wf: Dictionary = waterfall
@@ -323,7 +328,7 @@ func _process(delta: float) -> void:
 		var lt: OmniLight3D = heart.get_node_or_null("Light")
 		if lt != null:
 			lt.light_energy = 1.4 + sin(t * 2.2) * 0.25 + _heart_flash * 3.0
-	if portal != null:
-		var pl: OmniLight3D = portal.get_node_or_null("Light")
+	for pi in range(portals.size()):
+		var pl: OmniLight3D = (portals[pi] as Node3D).get_node_or_null("Light")
 		if pl != null:
-			pl.light_energy = 1.6 + sin(t * 3.1) * 0.35 + sin(t * 7.3) * 0.15
+			pl.light_energy = 1.6 + sin(t * 3.1 + float(pi) * 1.7) * 0.35 + sin(t * 7.3 + float(pi)) * 0.15

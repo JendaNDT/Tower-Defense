@@ -10,12 +10,12 @@ const MAGENTA: Color = Color(1.00, 0.25, 0.80)
 
 
 ## Hvězdná brána: kovový prstenec se svítícími segmenty a vířící energetický disk. Potomci: "Disc", "Light".
-static func build_portal(map: GameMap) -> Node3D:
+static func build_portal(map: GameMap, index: int = 0) -> Node3D:
 	var root: Node3D = Node3D.new()
-	root.name = "Portal"
-	var p: PathData = map.terrain.path
-	var pos: Vector3 = p.pos_at(0.0)
-	var dir2: Vector2 = p.dir_at(0.0)
+	root.name = "Portal" if index == 0 else "Portal%d" % (index + 1)
+	var pt: Dictionary = map.portals[index]
+	var pos: Vector3 = pt["pos"]
+	var dir2: Vector2 = pt["dir"]
 	root.position = pos
 	root.rotation.y = atan2(dir2.x, dir2.y)      # +Z uzlu míří po směru trasy
 
@@ -136,13 +136,12 @@ static func build_bridge(map: GameMap) -> Node3D:
 		return root
 	var k: MeshKit = MeshKit.new(15, 0.05)
 	for br in map.bridges:
-		_add_bridge(k, map, float(br[0]), float(br[1]))
+		_add_bridge(k, map.lanes[int(br["lane"])], float(br["s0"]), float(br["s1"]))
 	root.add_child(Gfx.mesh_node(k, Gfx.model_mat(0.45, 0.12)))
 	return root
 
 
-static func _add_bridge(k: MeshKit, map: GameMap, s0: float, s1: float) -> void:
-	var p: PathData = map.terrain.path
+static func _add_bridge(k: MeshKit, p: PathData, s0: float, s1: float) -> void:
 	var s: float = s0
 	var i: int = 0
 	while s <= s1:

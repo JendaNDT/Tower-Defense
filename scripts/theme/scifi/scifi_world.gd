@@ -116,22 +116,26 @@ static func build(parent: Node3D, map: GameMap, high_quality: bool = true) -> Di
 	out["waterfall"] = wf
 
 	var props: SciFiProps = SciFiProps.new()
-	parent.add_child(Decor.build(map, 1.0 if high_quality else 0.55, props))
+	parent.add_child(Decor.build(map, 1.0 if high_quality else 0.55, props, 1.0 if high_quality else 0.3))
 	_spring_rocks(parent, map, props)
 	_thrusters(parent, map)
 
-	var portal: Node3D = SciFiStructures.build_portal(map)
-	parent.add_child(portal)
+	var portals: Array = []
+	for pi in range(map.portals.size()):
+		var portal: Node3D = SciFiStructures.build_portal(map, pi)
+		parent.add_child(portal)
+		portals.append(portal)
 	var heart: Node3D = SciFiStructures.build_base(map)
 	parent.add_child(heart)
 	parent.add_child(SciFiStructures.build_bridge(map))
-	out["portal"] = portal
+	out["portal"] = portals[0]
+	out["portals"] = portals
 	out["heart"] = heart
 
 	var amb: SciFiAmbient = SciFiAmbient.new()
 	amb.name = "Ambient"
 	amb.heart = heart
-	amb.portal = portal
+	amb.portals = portals
 	amb.waterfall = wf
 	parent.add_child(amb)
 	amb.setup(map, high_quality)
@@ -174,7 +178,7 @@ static func _spring_rocks(parent: Node3D, map: GameMap, props: SciFiProps) -> vo
 ## Trysky pod asteroidem: svítící kužely, které drží stanici ve vzduchu.
 static func _thrusters(parent: Node3D, map: GameMap) -> void:
 	var k: MeshKit = MeshKit.new(88, 0.04)
-	var spots: Array = [Vector2(-10.0, -8.0), Vector2(11.0, -6.0), Vector2(-4.0, 12.0), Vector2(14.0, 11.0), Vector2(-14.0, 6.0)]
+	var spots: Array = [Vector2(-13.0, -10.0), Vector2(14.0, -8.0), Vector2(-5.0, 16.0), Vector2(18.0, 14.0), Vector2(-18.0, 8.0), Vector2(2.0, -18.0)]
 	for sp in spots:
 		var s: Vector2 = sp
 		var base_y: float = -9.0

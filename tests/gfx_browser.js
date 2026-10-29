@@ -184,8 +184,8 @@ function check(name, ok, detail) { checks.push({ name, ok: !!ok, detail }); cons
   // ------------------------------------------------------------ 10) kruhy na vodě při přechodu mostu
   await cmd({ op: 'kill' }); await cmd({ op: 'step', t: 1.5 });
   const br = gi.bridges[0];
-  const sb = (br[0] + br[1]) / 2;
-  const Lb = await cmd({ op: 'lineup', types: ['goblin'], s0: sb, ds: 1 });
+  const sb = (br.s0 + br.s1) / 2;
+  const Lb = await cmd({ op: 'lineup', types: ['goblin'], s0: sb, ds: 1, lane: br.lane });
   await cmd({ op: 'step', t: 0.1 });
   await cam(Lb.pos[0], 9);
   let ringsMax = 0;

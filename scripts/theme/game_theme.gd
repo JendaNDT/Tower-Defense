@@ -38,6 +38,10 @@ const DEFAULT_PALETTE: Dictionary = {
 	"meteor_flash": Color(1.0, 0.9, 0.5), "meteor_puff": Color(1.0, 0.55, 0.15), "meteor_aim": Color(1.0, 0.45, 0.25),
 	# ovládání
 	"select_ring": Color(1.0, 0.85, 0.3),
+	# minimapa: barvy krajiny, cest, vody, kopců a rámečku
+	"mm_forest": Color(0.20, 0.45, 0.20), "mm_meadow": Color(0.48, 0.72, 0.28), "mm_desert": Color(0.90, 0.76, 0.48), "mm_snow": Color(0.90, 0.94, 0.98),
+	"mm_path": Color(0.50, 0.37, 0.25), "mm_water": Color(0.30, 0.62, 0.95), "mm_hill": Color(0.98, 0.84, 0.40),
+	"mm_bg": Color(0.05, 0.09, 0.17, 0.72), "mm_edge": Color(0.78, 0.88, 1.0, 0.95), "mm_portal": Color(0.75, 0.50, 1.0),
 }
 
 ## Výchozí texty rozhraní (motiv „Ostrov v oblacích“). Motiv přepisuje v `strings`.
@@ -55,7 +59,7 @@ const DEFAULT_STRINGS: Dictionary = {
 	"mode_campaign": "Přežij všech %d vln a zachraň ostrov.",
 	"base_fell": "Srdce ostrova padlo.",
 	"base_hit": "Nepřítel dorazil k Srdci ostrova! −%d životů",
-	"help_intro": "Braň Srdce ostrova před vlnami nepřátel, kteří přicházejí z portálu po cestě přes celý ostrov.",
+	"help_intro": "Braň Srdce ostrova před vlnami nepřátel, kteří přicházejí z portálů po cestách přes celý ostrov. Některé mapy mají víc bran a rozcestí.",
 	"help_units": "Kanón nezasáhne vzdušné cíle, brnění snižuje poškození šípů – proti němu pomůže mág.",
 	"help_enemies": "Léčitele zabij první, štítonoše prorazí silné rány, slizák se po smrti rozpadne.",
 	"help_abilities_touch": "Schopnosti vlevo dole: Meteor (klepni na místo dopadu a potvrď), Mrazivý poryv a Zlatá horečka. Po použití se nabíjejí.",

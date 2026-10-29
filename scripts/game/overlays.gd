@@ -57,6 +57,7 @@ func setup(map_ref: GameMap, theme_ref: GameTheme) -> void:
 func rebuild_grid() -> void:
 	var verts: PackedVector3Array = PackedVector3Array()
 	var uvs: PackedVector2Array = PackedVector2Array()
+	var cols: PackedColorArray = PackedColorArray()
 	var idx: PackedInt32Array = PackedInt32Array()
 	var sub: int = 3
 	var inset: float = 0.05
@@ -66,6 +67,8 @@ func rebuild_grid() -> void:
 				continue
 			var c: Vector2 = Cfg.cell_center(cx, cz)
 			var base: int = verts.size()
+			var tier: int = map.elev_at(Vector2i(cx, cz))
+			var tcol: Color = Color(1.0, 1.0, 1.0, float(tier) * 0.5)       # alfa = výškový stupeň (0, 0.5, 1) pro shader mřížky
 			var half: float = Cfg.CELL * 0.5 - inset
 			for iz in range(sub + 1):
 				for ix in range(sub + 1):
@@ -75,6 +78,7 @@ func rebuild_grid() -> void:
 					var z: float = c.y - half + v * half * 2.0
 					verts.append(Vector3(x, map.height_at(x, z) + 0.07, z))
 					uvs.append(Vector2(u, v))
+					cols.append(tcol)
 			for iz2 in range(sub):
 				for ix2 in range(sub):
 					var a: int = base + iz2 * (sub + 1) + ix2
@@ -90,6 +94,7 @@ func rebuild_grid() -> void:
 	arrays.resize(Mesh.ARRAY_MAX)
 	arrays[Mesh.ARRAY_VERTEX] = verts
 	arrays[Mesh.ARRAY_TEX_UV] = uvs
+	arrays[Mesh.ARRAY_COLOR] = cols
 	arrays[Mesh.ARRAY_INDEX] = idx
 	var mesh: ArrayMesh = ArrayMesh.new()
 	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)

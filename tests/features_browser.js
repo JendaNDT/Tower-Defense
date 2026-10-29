@@ -38,7 +38,7 @@ function check(name, ok, detail) { checks.push({ name, ok: !!ok, detail }); cons
   await page.goto('http://localhost:8128/index.html?test=1&q=low&nosound=1' + TD_THEME_Q);
   await ready();
   let h = await hud();
-  check('při startu je otevřené menu s výchozími volbami (Příběh, Normální, Klikatá stezka)', h.intro_visible && h.menu.mode === 'campaign' && h.menu.diff === 'normal' && h.menu.island === 0 && h.menu.island_name === 'Klikatá stezka', h.menu);
+  check('při startu je otevřené menu s výchozími volbami (Příběh, Normální, Dvě brány)', h.intro_visible && h.menu.mode === 'campaign' && h.menu.diff === 'normal' && h.menu.island === 0 && h.menu.island_name === 'Dvě brány', h.menu);
   check('menu při startu nenabízí návrat do rozehrané hry a tlačítko je „Začít hru“', !h.menu.back_visible && h.menu.start_text === 'Začít hru');
   check('rekord pro čerstvou instalaci: zatím žádný', h.menu.record.includes('zatím žádný'), h.menu.record);
   await shot('01_menu');
@@ -48,13 +48,13 @@ function check(name, ok, detail) { checks.push({ name, ok: !!ok, detail }); cons
   await clickUi('menu_diff_hard');
   await clickUi('menu_island_next'); await clickUi('menu_island_next');
   h = await hud();
-  check('kliknutí mění volby v menu (Nekonečný, Těžká, Hadí údolí)', h.menu.mode === 'endless' && h.menu.diff === 'hard' && h.menu.island === 2 && h.menu.island_name === 'Hadí údolí', h.menu);
+  check('kliknutí mění volby v menu (Nekonečný, Těžká, Tři brány)', h.menu.mode === 'endless' && h.menu.diff === 'hard' && h.menu.island === 2 && h.menu.island_name === 'Tři brány', h.menu);
   await clickUi('menu_island_next');
   h = await hud();
   check('čtvrtá volba ostrova je „Náhodný ostrov“', h.menu.island === 3 && h.menu.island_name === 'Náhodný ostrov', h.menu.island_name);
   await clickUi('menu_island_next');
   h = await hud();
-  check('výběr ostrova se točí dokola (zpět na Klikatou stezku)', h.menu.island === 0);
+  check('výběr ostrova se točí dokola (zpět na Dvě brány)', h.menu.island === 0);
   await clickUi('menu_island_prev'); await clickUi('menu_island_prev');
   h = await hud();
   check('šipka zpět', h.menu.island === 2, h.menu.island_name);
@@ -62,15 +62,15 @@ function check(name, ok, detail) { checks.push({ name, ok: !!ok, detail }); cons
 
   // ---------------------------------------------------------------- 3) start: jiný ostrov = nové načtení světa a hra rovnou běží
   await clickUi('menu_start');
-  await waitFor(async () => { const s = await settings(); const q = await st(); return s.island_name === 'Hadí údolí' && !q.modal; }, 240000, 'načtení nového ostrova');
+  await waitFor(async () => { const s = await settings(); const q = await st(); return s.island_name === 'Tři brány' && !q.modal; }, 240000, 'načtení nového ostrova');
   await sleep(1500);
   let s = await settings();
   h = await hud();
   let q = await st();
-  check('po startu je zvolený ostrov Hadí údolí, nekonečný režim, těžká obtížnost', s.island_name === 'Hadí údolí' && s.game_mode === 'endless' && s.game_diff === 'hard' && s.total_waves === 0, { island: s.island_name, mode: s.game_mode, diff: s.game_diff });
+  check('po startu je zvolený ostrov Tři brány, nekonečný režim, těžká obtížnost', s.island_name === 'Tři brány' && s.game_mode === 'endless' && s.game_diff === 'hard' && s.total_waves === 0, { island: s.island_name, mode: s.game_mode, diff: s.game_diff });
   check('těžká obtížnost: start 220 zlata a 15 životů', q.gold === 220 && q.lives === 15, { gold: q.gold, lives: q.lives });
   check('hra běží hned (bez další úvodní obrazovky)', !q.modal && !q.paused, { modal: q.modal, paused: q.paused });
-  check('záhlaví ukazuje ostrov, obtížnost a režim', h.info === 'Hadí údolí · Těžká · Nekonečný', h.info);
+  check('záhlaví ukazuje ostrov, obtížnost a režim', h.info === 'Tři brány · Těžká · Nekonečný', h.info);
   check('v nekonečném režimu je ukazatel vln bez limitu', h.wave_lbl === 'Vlna 0' && h.wave_title === 'Další: vlna 1', { lbl: h.wave_lbl, title: h.wave_title });
   await shot('03_hadi_udoli');
 
@@ -79,11 +79,11 @@ function check(name, ok, detail) { checks.push({ name, ok: !!ok, detail }); cons
   await page.reload();
   await ready();
   h = await hud();
-  check('volby se po obnovení stránky pamatují (Nekonečný, Těžká, Hadí údolí)', h.menu.mode === 'endless' && h.menu.diff === 'hard' && h.menu.island === 2, h.menu);
+  check('volby se po obnovení stránky pamatují (Nekonečný, Těžká, Tři brány)', h.menu.mode === 'endless' && h.menu.diff === 'hard' && h.menu.island === 2, h.menu);
   await clickUi('menu_start');           // stejný ostrov => restart pravidel na stejné mapě
   await waitFor(async () => !(await st()).modal, 120000, 'začátek hry po obnovení');
   s = await settings();
-  check('stejný ostrov se nenačítá znovu, hra jen začne', s.island_name === 'Hadí údolí' && s.game_mode === 'endless');
+  check('stejný ostrov se nenačítá znovu, hra jen začne', s.island_name === 'Tři brány' && s.game_mode === 'endless');
 
   // ---------------------------------------------------------------- 5) schopnosti
   await cmd({ op: 'max_dt', v: 0.5 });
@@ -208,7 +208,7 @@ function check(name, ok, detail) { checks.push({ name, ok: !!ok, detail }); cons
 
   // ---------------------------------------------------------------- 10) náhodný ostrov
   await clickUi('end_menu_btn');
-  await clickUi('menu_island_next');       // z Hadího údolí na Náhodný
+  await clickUi('menu_island_next');       // z Tří bran na Náhodný
   h = await hud();
   check('náhodný ostrov je v menu', h.menu.island === 3, h.menu.island_name);
   await clickUi('menu_start');

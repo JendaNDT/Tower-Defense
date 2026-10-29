@@ -15,6 +15,7 @@ signal request_pause(on: bool)
 signal request_auto(on: bool)
 signal request_restart()
 signal request_cam(action: String)
+signal request_focus(world_xz: Vector2)
 signal request_quality(high: bool)
 signal request_begin()
 signal request_sound(sound: String)
@@ -100,6 +101,7 @@ var _paused_ui: bool = false
 var _stats_lbl: Label = null
 var _c: bool = false                         # kompaktní rozložení (telefon)
 var _wave_panel: PanelContainer = null
+var _minimap: Minimap = null
 var _more_btn: Button = null
 var _more_panel: PanelContainer = null
 var _confirm_bar: PanelContainer = null
@@ -260,6 +262,24 @@ func bind(g: Game, island_def: Dictionary = {}) -> void:
 	_on_wave(game.waves_started, game.total_waves)
 	refresh_cards()
 	refresh_info()
+	_build_minimap()
+
+
+## Minimapa pod panelem životů a zlata (vlevo); na telefonu menší.
+func _build_minimap() -> void:
+	if _minimap != null or game == null or game.map == null:
+		return
+	_minimap = Minimap.new()
+	_minimap.setup(game, _k(196, 118))
+	_minimap.jump_requested.connect(func(p): request_focus.emit(p))
+	_root.add_child(_minimap)
+	_place(_minimap, Vector2(0, 0), Vector2(_k(12, 8), _k(98, 70)))
+	_ui["minimap"] = _minimap
+
+
+func toggle_minimap() -> void:
+	if _minimap != null:
+		_minimap.toggle()
 
 
 func _build_top_left() -> void:
@@ -903,6 +923,8 @@ func _build_help() -> void:
 		body += "• Věž postavíš klepnutím na kartu dole a pak na zvýrazněné pole vedle cesty. Pole se označí a stavbu potvrdíš tlačítkem Postavit (křížek stavbu zruší).\n"
 		body += "• Klepnutím na postavenou věž otevřeš její panel: vylepšení, prodej a cíl. Každá úroveň mění vzhled i sílu.\n"
 		body += "• Vlnu spustíš tlačítkem vpravo dole. " + Themes.t("help_units") + "\n"
+		body += "• Minimapa vlevo ukazuje celý ostrov: klepnutím nebo tažením po ní přesuneš kameru, knoflíkem v rohu ji sbalíš.\n"
+		body += "• Zlatá pole na kopcích jsou lepší místa: věž tam dohlédne o 15 % dál, na vrcholu o 30 %.\n"
 		body += "• " + Themes.t("help_enemies") + "\n"
 		body += "• " + Themes.t("help_abilities_touch") + "\n\n"
 		body += "Kamera: jeden prst posouvá, dva prsty přibližují a otáčejí. Zvuk, kvalita, celá obrazovka a nová hra jsou pod tlačítkem „…“ nahoře."
@@ -910,6 +932,8 @@ func _build_help() -> void:
 		body += "• Věže stavíš na zvýrazněná pole vedle cesty – klikni na kartu dole (klávesy 1–4) a pak na pole.\n"
 		body += "• Klikni na postavenou věž a vylepši ji. Každá úroveň mění vzhled i sílu (dosah, poškození, rychlost, speciální schopnost).\n"
 		body += "• Vlnu spustíš tlačítkem vpravo dole nebo mezerníkem.\n"
+		body += "• Minimapa vlevo ukazuje celý ostrov: klikni nebo táhni po ní a kamera se přesune (N ji sbalí).\n"
+		body += "• Zlatá pole na kopcích jsou lepší místa: věž tam dohlédne o 15 % dál, na vrcholu (dva kroužky) o 30 %.\n"
 		body += "• " + Themes.t("help_units") + "\n"
 		body += "• " + Themes.t("help_enemies") + "\n"
 		body += "• " + Themes.t("help_abilities") + "\n\n"
@@ -1318,6 +1342,23 @@ func _refresh_wave_panel() -> void:
 		w.add_child(IconCtrl.make("warn", _k(16, 13), Color(1.0, 0.72, 0.3)))
 		w.add_child(_label("Létající – %s je nezasáhne" % Themes.tower_name("cannon").to_lower(), int(_k(13, 11)), Color(1.0, 0.72, 0.3)))
 		_wave_rows.add_child(w)
+	# víc bran / rozcestí: připomenutí, že nepřátelé přicházejí z více stran
+	var gates: int = game.map.portals.size()
+	var forks: int = 0
+	for pt in game.map.portals:
+		if (pt["lanes"] as Array).size() > 1:
+			forks += 1
+	if gates > 1 or forks > 0:
+		var gl: HBoxContainer = HBoxContainer.new()
+		gl.add_theme_constant_override("separation", 6)
+		gl.add_child(IconCtrl.make("dot", _k(16, 13), Color(0.75, 0.55, 1.0)))
+		var gtxt: String = "Vchody: %d" % gates
+		if forks > 0:
+			gtxt += ", rozcestí"
+		elif game.map.lane_count() > gates:
+			gtxt += ", cesty se větví"
+		gl.add_child(_label(gtxt, int(_k(13, 11)), Color(0.78, 0.66, 1.0)))
+		_wave_rows.add_child(gl)
 	_wave_btn.disabled = not game.can_start_wave()
 	_wave_btn.text = _wave_btn_text(game.can_start_wave())
 
@@ -1330,33 +1371,35 @@ func show_tower(t: Tower) -> void:
 	refresh_tower_panel()
 
 
-func _rows_for(type: String, level: int) -> Array:
-	## Řádky statistik: [název, text, číselná hodnota (pro porovnání)]
-	var st: Dictionary = Cfg.tower_level(type, level)
+func _rows_for(type: String, level: int, elev: int = 0) -> Array:
+	## Řádky statistik: [název, text, číselná hodnota (pro porovnání)]; dosah zahrnuje bonus výšky pole (0 rovina, 1 kopec, 2 vrchol)
+	var st: Dictionary = Cfg.tower_level(type, level).duplicate()
+	st["range"] = float(st["range"]) * float(Cfg.ELEV_RANGE[elev])
+	var rng_note: String = "" if elev == 0 else " (%s +%d %%)" % [Cfg.ELEV_NAMES[elev], int(round((float(Cfg.ELEV_RANGE[elev]) - 1.0) * 100.0))]
 	var rows: Array = []
 	var cd: float = float(st["cooldown"])
 	match type:
 		"archer":
 			rows.append(["Poškození", "%d × %d" % [int(st["damage"]), int(st["shots"])], float(st["damage"]) * float(st["shots"])])
-			rows.append(["Dosah", Cfg.fmt(float(st["range"])) + " m", float(st["range"])])
+			rows.append(["Dosah", Cfg.fmt(float(st["range"])) + " m" + rng_note, float(st["range"])])
 			rows.append(["Rychlost", Cfg.fmt(1.0 / cd, 2) + " /s", 1.0 / cd])
 			rows.append(["Kritický zásah", "%d %%" % int(round(float(st["crit"]) * 100.0)), float(st["crit"])])
 			rows.append(["Probití brnění", "%d %%" % int(round(float(st["pierce"]) * 100.0)), float(st["pierce"])])
 		"cannon":
 			rows.append(["Poškození", str(int(st["damage"])), float(st["damage"])])
 			rows.append(["Výbuch", Cfg.fmt(float(st["splash"])) + " m", float(st["splash"])])
-			rows.append(["Dosah", Cfg.fmt(float(st["range"])) + " m", float(st["range"])])
+			rows.append(["Dosah", Cfg.fmt(float(st["range"])) + " m" + rng_note, float(st["range"])])
 			rows.append(["Rychlost", Cfg.fmt(1.0 / cd, 2) + " /s", 1.0 / cd])
 			rows.append(["Hoření", ("%d /s" % int(st["burn"])) if float(st["burn"]) > 0.0 else "–", float(st["burn"])])
 			rows.append(["Omráčení", (Cfg.fmt(float(st["stun"])) + " s") if float(st["stun"]) > 0.0 else "–", float(st["stun"])])
 		"mage":
 			rows.append(["Poškození", str(int(st["damage"])), float(st["damage"])])
-			rows.append(["Dosah", Cfg.fmt(float(st["range"])) + " m", float(st["range"])])
+			rows.append(["Dosah", Cfg.fmt(float(st["range"])) + " m" + rng_note, float(st["range"])])
 			rows.append(["Rychlost", Cfg.fmt(1.0 / cd, 2) + " /s", 1.0 / cd])
 			rows.append(["Řetězení", ("%d cílů" % int(st["chain"])) if int(st["chain"]) > 0 else "–", float(st["chain"])])
 		_:
 			rows.append(["Poškození / pulz", str(int(st["damage"])), float(st["damage"])])
-			rows.append(["Dosah", Cfg.fmt(float(st["range"])) + " m", float(st["range"])])
+			rows.append(["Dosah", Cfg.fmt(float(st["range"])) + " m" + rng_note, float(st["range"])])
 			rows.append(["Pulz každých", Cfg.fmt(cd) + " s", 1.0 / cd])
 			rows.append(["Zpomalení", "%d %%" % int(round(float(st["slow"]) * 100.0)), float(st["slow"])])
 			rows.append(["Zmrazení", ("%s s / každý %d." % [Cfg.fmt(float(st["freeze_time"])), int(st["freeze_every"])]) if int(st["freeze_every"]) > 0 else "–", float(st["freeze_time"])])
@@ -1381,8 +1424,8 @@ func refresh_tower_panel() -> void:
 	var grid: GridContainer = _tp["grid"]
 	for c in grid.get_children():
 		c.queue_free()
-	var cur: Array = _rows_for(t.type, t.level)
-	var nxt: Array = _rows_for(t.type, t.level + 1) if t.can_upgrade() else []
+	var cur: Array = _rows_for(t.type, t.level, t.elev)
+	var nxt: Array = _rows_for(t.type, t.level + 1, t.elev) if t.can_upgrade() else []
 	for i2 in range(cur.size()):
 		grid.add_child(_label(str(cur[i2][0]), int(_k(14, 12)), C_DIM))
 		grid.add_child(_label(str(cur[i2][1]), int(_k(15, 13)), C_TEXT))

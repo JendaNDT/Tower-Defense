@@ -3,10 +3,11 @@ extends RefCounted
 ## Výškové pole ostrova (mřížka HALF*2 / STEP) + pomocná pole vzdáleností k cestě a řece.
 ## Z této jediné datové struktury se dělá mesh terénu, textury pro shader i dotazy na výšku (věže, nepřátelé).
 
-const HALF: float = 36.0
+const HALF: float = 48.0
 const STEP: float = 0.5
-const N: int = 145
-const BASE_R: float = 29.0
+const N: int = 193
+const BASE_R: float = 38.7
+const HILL_H: Array = [0.0, 1.4, 0.9]       # výška kopce podle stupně (m); vrchol (2) se přičítá ke kopci (1), na kterém stojí
 const PATH_HALF: float = 0.95
 const FIELD_RANGE: float = 16.0   # kódování vzdálenosti do textury: (sd + 4) / 16
 
@@ -16,7 +17,8 @@ var path_i: PackedInt32Array = PackedInt32Array()
 var river_d: PackedFloat32Array = PackedFloat32Array()
 var river_i: PackedInt32Array = PackedInt32Array()
 
-var path: PathData
+var paths: Array = []             # PathData jednotlivých tras (od portálu k Srdci)
+var hills: Array = []             # {x, z, r, tier} ve světových souřadnicích
 var river: RiverData
 var seed_value: int = 7
 
@@ -27,7 +29,7 @@ var _n_outline: FastNoiseLite
 var _n_warp: FastNoiseLite
 var _n_dune: FastNoiseLite
 
-const BIOME_CENTERS: Array = [Vector2(17.0, -17.0), Vector2(-17.0, 17.0), Vector2(17.0, 17.0), Vector2(-17.0, -17.0)]
+const BIOME_CENTERS: Array = [Vector2(22.0, -22.0), Vector2(-22.0, 22.0), Vector2(22.0, 22.0), Vector2(-22.0, -22.0)]
 
 var biome_centers: Array = BIOME_CENTERS      # les, louka, poušť, sníh (podle rozložení ostrova)
 
@@ -120,6 +122,59 @@ func base_height(x: float, z: float) -> float:
 	h += bw.b * 0.45 * _n_dune.get_noise_2d(x, z)
 	h += bw.a * 0.25 * _n_hill2.get_noise_2d(x + 30.0, z)
 	return h
+
+
+# ------------------------------------------------------------------ kopce
+## Váha profilu kopce v bodě: 1 na plošině, plynule k 0 na patě (okraj mírně zvlněný šumem).
+func hill_profile(hl: Dictionary, x: float, z: float) -> float:
+	var d: float = Vector2(x - float(hl["x"]), z - float(hl["z"])).length()
+	d += 0.5 * _n_hill2.get_noise_2d(x * 1.7, z * 1.7)
+	var r: float = float(hl["r"])
+	return 1.0 - smoothstep(r * 0.45, r, d)
+
+
+func hill_height(x: float, z: float) -> float:
+	var m1: float = 0.0
+	var m2: float = 0.0
+	for hl in hills:
+		var dx: float = x - float(hl["x"])
+		var dz: float = z - float(hl["z"])
+		var r: float = float(hl["r"]) + 1.5
+		if dx * dx + dz * dz > r * r:
+			continue
+		var tier: int = int(hl["tier"])
+		var h: float = float(HILL_H[tier]) * hill_profile(hl, x, z)
+		if tier >= 2:
+			m2 = maxf(m2, h)
+		else:
+			m1 = maxf(m1, h)
+	return m1 + m2
+
+
+## Výškový stupeň místa: 0 rovina, 1 kopec, 2 vrchol (jen na plošině, kde se dá postavit věž).
+func tier_at(x: float, z: float) -> int:
+	var t: int = 0
+	for hl in hills:
+		if hill_profile(hl, x, z) >= 0.85:
+			t = maxi(t, int(hl["tier"]))
+	return t
+
+
+## Největší váha kopce (0..1) a největší váha vrcholu – pro obarvení terénu (field_tex.b = max(kopec / 2, vrchol)).
+func hill_weights(x: float, z: float) -> Vector2:
+	var w1: float = 0.0
+	var w2: float = 0.0
+	for hl in hills:
+		var dx: float = x - float(hl["x"])
+		var dz: float = z - float(hl["z"])
+		var r: float = float(hl["r"]) + 1.5
+		if dx * dx + dz * dz > r * r:
+			continue
+		var w: float = hill_profile(hl, x, z)
+		w1 = maxf(w1, w)
+		if int(hl["tier"]) >= 2:
+			w2 = maxf(w2, w)
+	return Vector2(w1, w2)
 
 
 # ------------------------------------------------------------------ vzorkování mřížky
@@ -220,7 +275,23 @@ static func _smooth(arr: PackedFloat32Array, win: int) -> PackedFloat32Array:
 	return out
 
 
-func generate(path_poly: Array, river_control: Array) -> void:
+## Vzorek výšky vyhlazený v kruhu (poloměr ~3 m): závisí jen na poloze, takže se trasy sdílející úsek shodnou na výšce.
+func _blur_h(h: PackedFloat32Array, x: float, z: float) -> float:
+	var sum: float = sample_grid(h, x, z)
+	var cnt: float = 1.0
+	for ring in range(2):
+		var rr: float = 1.6 * float(ring + 1)
+		var nn: int = 6 if ring == 0 else 10
+		for k in range(nn):
+			var a: float = TAU * float(k) / float(nn)
+			sum += sample_grid(h, x + cos(a) * rr, z + sin(a) * rr)
+			cnt += 1.0
+	return sum / cnt
+
+
+## path_polys: pro každou trasu lomená čára ve světových souřadnicích; hill_defs: {x, z, r, tier}.
+func generate(path_polys: Array, river_control: Array, hill_defs: Array = []) -> void:
+	hills = hill_defs.duplicate()
 	var total: int = N * N
 	# 1) základní výška
 	var h0: PackedFloat32Array = PackedFloat32Array()
@@ -254,15 +325,18 @@ func generate(path_poly: Array, river_control: Array) -> void:
 			var w: float = 1.0 - smoothstep(hw + 1.5, hw + 7.0, dr)
 			h1[k] = lerpf(h0[k], river.rh[ri], w)
 
-	# 3) cesta: výška podél trasy (vyhlazená), plochý pás kolem ní
-	path = PathData.from_polyline(path_poly)
-	var np: int = path.pts.size()
-	var rawp: PackedFloat32Array = PackedFloat32Array()
-	rawp.resize(np)
-	for i in range(np):
-		rawp[i] = sample_grid(h1, path.pts[i].x, path.pts[i].y)
-	path.ys = _smooth(rawp, 12)
-	var ps: Array = _stamp(path.pts, 5.0)
+	# 3) cesty: výška podél tras (vyhlazená), plochý pás kolem nich; společné úseky tras mají stejnou výšku
+	paths.clear()
+	var all_pts: PackedVector2Array = PackedVector2Array()
+	var all_ys: PackedFloat32Array = PackedFloat32Array()
+	for poly in path_polys:
+		var pd: PathData = PathData.from_polyline(poly)
+		for i in range(pd.pts.size()):
+			pd.ys[i] = _blur_h(h1, pd.pts[i].x, pd.pts[i].y)
+			all_pts.append(pd.pts[i])
+			all_ys.append(pd.ys[i])
+		paths.append(pd)
+	var ps: Array = _stamp(all_pts, 5.0)
 	path_d = ps[0]
 	path_i = ps[1]
 	var h2: PackedFloat32Array = h1.duplicate()
@@ -271,7 +345,7 @@ func generate(path_poly: Array, river_control: Array) -> void:
 		var pi: int = path_i[k]
 		if dp < PATH_HALF + 3.5 and pi >= 0:
 			var w2: float = 1.0 - smoothstep(PATH_HALF + 0.35, PATH_HALF + 3.4, dp)
-			h2[k] = lerpf(h1[k], path.ys[pi], w2)
+			h2[k] = lerpf(h1[k], all_ys[pi], w2)
 
 	# 4) koryto řeky
 	hm = h2.duplicate()
@@ -292,6 +366,21 @@ func generate(path_poly: Array, river_control: Array) -> void:
 			hnew = lerpf(wl - 0.16, h2[k], smoothstep(hw2, hw2 + 1.9, dr2))
 		hm[k] = minf(h2[k], hnew) if dr2 > hw2 else hnew
 
+	# 5) kopce se přičtou až nakonec a u cest a řeky plynule slábnou (silnice nikdy neřeže strmý zářez, koryto zůstane čisté)
+	if not hills.is_empty():
+		for gz in range(N):
+			for gx in range(N):
+				var k5: int = gz * N + gx
+				var hx: float = float(gx) * STEP - HALF
+				var hz: float = float(gz) * STEP - HALF
+				var hh: float = hill_height(hx, hz)
+				if hh <= 0.0:
+					continue
+				var fade: float = smoothstep(PATH_HALF + 0.2, PATH_HALF + 5.0, path_d[k5])
+				if river_i[k5] >= 0:
+					fade *= smoothstep(river.half_w[river_i[k5]] + 0.4, river.half_w[river_i[k5]] + 5.0, river_d[k5])
+				hm[k5] += hh * fade
+
 
 # ------------------------------------------------------------------ textury pro shader
 func make_field_image() -> Image:
@@ -303,7 +392,8 @@ func make_field_image() -> Image:
 			var rsd: float = 99.0
 			if river_i[k] >= 0:
 				rsd = river_d[k] - river.half_w[river_i[k]]
-			img.set_pixel(gx, gz, Color(clampf((psd + 4.0) / FIELD_RANGE, 0.0, 1.0), clampf((rsd + 4.0) / FIELD_RANGE, 0.0, 1.0), 0.0, 1.0))
+			var hwt: Vector2 = Vector2.ZERO if hills.is_empty() else hill_weights(float(gx) * STEP - HALF, float(gz) * STEP - HALF)
+			img.set_pixel(gx, gz, Color(clampf((psd + 4.0) / FIELD_RANGE, 0.0, 1.0), clampf((rsd + 4.0) / FIELD_RANGE, 0.0, 1.0), maxf(hwt.x * 0.5, hwt.y), 1.0))
 	return img
 
 

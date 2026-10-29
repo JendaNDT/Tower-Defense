@@ -2,10 +2,10 @@ class_name WorldMeshes
 extends RefCounted
 ## Generování sítí ostrova (polární mřížka: horní plocha → útes → skalnatý spodek), řeky a vodopádu.
 
-const NTH: int = 200      # úhlové dělení
-const NR: int = 62        # prstence horní plochy
+const NTH: int = 240      # úhlové dělení
+const NR: int = 76        # prstence horní plochy
 const NB: int = 18        # prstence útesu/spodku
-const BELLY_DEPTH: float = 26.0
+const BELLY_DEPTH: float = 28.0
 
 
 # ------------------------------------------------------------------ pomocné

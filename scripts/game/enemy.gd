@@ -25,6 +25,8 @@ var max_shield: float = 0.0
 var _shield_idle: float = 0.0      # čas od posledního zásahu do štítu
 var _heal_t: float = 0.0
 
+var lane: int = 0                  # číslo trasy (odkud přišel a kudy jde)
+var path: PathData = null          # jeho trasa
 var s: float = 0.0                 # uražená vzdálenost po trase
 var path_len: float = 1.0
 var lateral: float = 0.0
@@ -59,8 +61,10 @@ var _death_fx_done: bool = false
 var _ripple_t: float = 0.0
 
 
-func setup(game_ref, type_id: String, wave_idx: int, hp_mult: float, lateral_offset: float, start_s: float = 0.0) -> void:
+func setup(game_ref, type_id: String, wave_idx: int, hp_mult: float, lateral_offset: float, start_s: float = 0.0, lane_idx: int = 0) -> void:
 	game = game_ref
+	lane = lane_idx
+	path = game.map.lanes[lane_idx]
 	type = type_id
 	def = Cfg.ENEMIES[type_id]
 	wave_index = wave_idx
@@ -85,14 +89,14 @@ func setup(game_ref, type_id: String, wave_idx: int, hp_mult: float, lateral_off
 	add_child(visual)
 	visual.stepped.connect(_on_step)
 	if flying:
-		var sp: Vector3 = game.map.spawn_pos
+		var sp: Vector3 = game.map.lane_spawn(lane)
 		var bp: Vector3 = game.map.base_pos
 		fly_from = Vector2(sp.x, sp.z)
 		fly_to = Vector2(bp.x, bp.z)
 		path_len = fly_from.distance_to(fly_to)
 		fly_alt = game.fly_altitude
 	else:
-		path_len = game.path.length
+		path_len = path.length
 	s = start_s
 	position = _compute_pos(start_s)
 	var d0: Vector2 = _dir_at(start_s)
@@ -184,10 +188,15 @@ func progress() -> float:
 	return s / maxf(path_len, 0.01)
 
 
+## Kolik metrů mu zbývá k Srdci (porovnatelné mezi trasami různé délky; menší = blíž cíli).
+func remaining() -> float:
+	return path_len - s
+
+
 func _dir_at(sv: float) -> Vector2:
 	if flying:
 		return (fly_to - fly_from).normalized()
-	return game.path.dir_at(sv)
+	return path.dir_at(sv)
 
 
 func _compute_pos(sv: float) -> Vector3:
@@ -200,8 +209,8 @@ func _compute_pos(sv: float) -> Vector3:
 		if left < 6.0:
 			y = lerpf(fly_alt, game.map.base_pos.y + 1.8, smoothstep(0.0, 1.0, 1.0 - clampf(left / 6.0, 0.0, 1.0)))
 		return Vector3(p2.x, y, p2.y)
-	var base: Vector3 = game.path.pos_at(sv)
-	var d: Vector2 = game.path.dir_at(sv)
+	var base: Vector3 = path.pos_at(sv)
+	var d: Vector2 = path.dir_at(sv)
 	return base + Vector3(-d.y, 0.0, d.x) * lateral
 
 
@@ -392,7 +401,7 @@ func update(dt: float) -> void:
 		if _heal_t <= 0.0:
 			_heal_t += float(def["heal_every"])
 			_do_heal()
-	if not flying and game.map.is_on_bridge(s):
+	if not flying and game.map.is_on_bridge(lane, s):
 		_ripple_t -= dt
 		if _ripple_t <= 0.0:
 			_ripple_t = 0.6

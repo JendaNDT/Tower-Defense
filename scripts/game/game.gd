@@ -23,7 +23,6 @@ const TEST_WAVE: int = -1            # vyhrazený index pro testovací nepřáte
 var max_frame_dt: float = 0.1       # horní mez délky snímku (na pomalých strojích se hra raději zpomalí)
 
 var map: GameMap = null
-var path: PathData = null
 var theme: GameTheme = null
 var fx: Fx = null
 var world: Node3D = null
@@ -68,6 +67,7 @@ var gold_boost_t: float = 0.0       # zbývající čas zlaté horečky (s)
 var abilities_used: Dictionary = {}
 var seen_types: Dictionary = {}     # typy nepřátel, které už hráč viděl (upozornění při prvním výskytu)
 
+var _lane_credit: Array = []        # vyvážené střídání tras při spawnu (viz _pick_lane)
 var _spawn_queue: Array = []
 var _wave_spawn_left: Dictionary = {}
 var _wave_alive: Dictionary = {}
@@ -80,19 +80,20 @@ var _auto_timer: float = 0.0
 
 func setup(map_ref: GameMap, theme_ref: GameTheme, world_node: Node3D, fx_node: Fx) -> void:
 	map = map_ref
-	path = map.terrain.path
 	theme = theme_ref
 	world = world_node
 	fx = fx_node
 	fx.map = map
 	_rng.seed = 31337
-	# výška letu: nad nejvyšší překážkou na přímce portál → Srdce
-	var a: Vector3 = map.spawn_pos
+	# výška letu: nad nejvyšší překážkou na přímkách portál → Srdce
 	var b: Vector3 = map.base_pos
-	var hmax: float = maxf(a.y, b.y)
-	for i in range(0, 41):
-		var p: Vector3 = a.lerp(b, float(i) / 40.0)
-		hmax = maxf(hmax, map.height_at(p.x, p.z))
+	var hmax: float = b.y
+	for pt in map.portals:
+		var a: Vector3 = pt["pos"]
+		hmax = maxf(hmax, a.y)
+		for i in range(0, 41):
+			var p: Vector3 = a.lerp(b, float(i) / 40.0)
+			hmax = maxf(hmax, map.height_at(p.x, p.z))
 	fly_altitude = hmax + 6.6
 	configure(mode_id, diff_id)
 
@@ -131,6 +132,9 @@ func reset() -> void:
 		if map.cells[i] == GameMap.Cell.TOWER:
 			map.cells[i] = GameMap.Cell.FREE
 	_spawn_queue.clear()
+	_lane_credit = []
+	for _i in range(map.lane_count()):
+		_lane_credit.append(0.0)
 	_wave_spawn_left.clear()
 	_wave_alive.clear()
 	_wave_done.clear()
@@ -228,7 +232,24 @@ func wave_preview(idx: int) -> Array:
 	return out
 
 
+## Vybere trasu pro dalšího nepřítele: vážené střídání (v dlouhodobém průměru podle vah, bez shluků na jedné trase).
+func _pick_lane() -> int:
+	var n: int = map.lane_count()
+	if n <= 1:
+		return 0
+	var total: float = 0.0
+	var best: int = 0
+	for i in range(n):
+		_lane_credit[i] = float(_lane_credit[i]) + float(map.lane_weights[i])
+		total += float(map.lane_weights[i])
+		if float(_lane_credit[i]) > float(_lane_credit[best]):
+			best = i
+	_lane_credit[best] = float(_lane_credit[best]) - total
+	return best
+
+
 func _spawn_enemy(entry: Dictionary) -> void:
+	var lane: int = int(entry["lane"]) if entry.has("lane") else _pick_lane()
 	var e: Enemy = Enemy.new()
 	e.uid = _uid
 	_uid += 1
@@ -236,13 +257,13 @@ func _spawn_enemy(entry: Dictionary) -> void:
 	if entry["type"] == "boss":
 		lat = 0.0
 	world.add_child(e)
-	e.setup(self, str(entry["type"]), int(entry["wave"]), float(entry["hp"]), lat)
+	e.setup(self, str(entry["type"]), int(entry["wave"]), float(entry["hp"]), lat, 0.0, lane)
 	enemies.append(e)
 	var wi: int = int(entry["wave"])
 	_wave_spawn_left[wi] = int(_wave_spawn_left.get(wi, 0)) - 1
 	_wave_alive[wi] = int(_wave_alive.get(wi, 0)) + 1
 	# záblesk portálu
-	var sp: Vector3 = map.spawn_pos
+	var sp: Vector3 = map.lane_spawn(lane)
 	fx.burst_puffs(sp + Vector3(0.0, 1.0, 0.0), Themes.pal("spawn_puff"), 4, 0.8, 0.5, 0.5, 2.0)
 	sfx("spawn", sp)
 
@@ -286,7 +307,7 @@ func _spawn_child(parent: Enemy, k: int) -> void:
 	world.add_child(c)
 	var hp_abs: float = parent.max_hp * float(parent.def["split_hp"])
 	var lat: float = clampf(parent.lateral + (-0.28 if k % 2 == 0 else 0.28), -0.4, 0.4)
-	c.setup(self, ctype, parent.wave_index, hp_abs / float(cdef["hp"]), lat, parent.s)
+	c.setup(self, ctype, parent.wave_index, hp_abs / float(cdef["hp"]), lat, parent.s, parent.lane)
 	enemies.append(c)
 	_wave_alive[parent.wave_index] = int(_wave_alive.get(parent.wave_index, 0)) + 1
 	fx.burst_puffs(c.position + Vector3(0.0, 0.5, 0.0), Themes.enemy_color(ctype), 4, 0.7, 0.4, 0.5, 0.6)
@@ -431,9 +452,9 @@ func targets_in_range(tower: Tower, rng: float, mode: String) -> Array:
 	if out.size() > 1:
 		match mode:
 			"first":
-				out.sort_custom(func(a, b): return a.progress() > b.progress())
+				out.sort_custom(func(a, b): return a.remaining() < b.remaining())
 			"last":
-				out.sort_custom(func(a, b): return a.progress() < b.progress())
+				out.sort_custom(func(a, b): return a.remaining() > b.remaining())
 			"strong":
 				out.sort_custom(func(a, b): return a.hp > b.hp)
 			_:
@@ -573,8 +594,8 @@ func cast_blizzard() -> bool:
 		en.apply_slow(float(ab["slow"]), float(ab["slow_time"]) + float(ab["freeze"]))
 		fx.burst_puffs(en.position + Vector3(0.0, en.visual.aim_height, 0.0), Themes.pal("blizzard_puff"), 5, 0.8, 0.5, 0.6, 1.2)
 	var c: Vector3 = Vector3(0.0, map.height_at(0.0, 0.0) + 0.4, 0.0)
-	fx.ring(c, Themes.pal("blizzard_ring"), 48.0, 1.1, 0.07, 0.12, 1.0)
-	fx.ring(c, Color(1.0, 1.0, 1.0), 40.0, 0.9, 0.04, 0.0, 1.4)
+	fx.ring(c, Themes.pal("blizzard_ring"), 64.0, 1.1, 0.07, 0.12, 1.0)
+	fx.ring(c, Color(1.0, 1.0, 1.0), 54.0, 0.9, 0.04, 0.0, 1.4)
 	camera_shake(0.12)
 	_use_ability("blizzard")
 	sfx("blizzard")
@@ -604,7 +625,7 @@ func snapshot() -> Dictionary:
 	var es: Array = []
 	for e in enemies:
 		es.append({"id": e.uid, "type": e.type, "hp": snappedf(e.hp, 0.1), "max_hp": snappedf(e.max_hp, 0.1), "shield": snappedf(e.shield, 0.1),
-			"frozen": e.frozen_t > 0.0, "s": snappedf(e.s, 0.01),
+			"frozen": e.frozen_t > 0.0, "s": snappedf(e.s, 0.01), "lane": e.lane,
 			"x": snappedf(e.position.x, 0.01), "z": snappedf(e.position.z, 0.01), "y": snappedf(e.position.y, 0.01)})
 	return {
 		"gold": gold, "lives": lives, "wave": waves_started, "total_waves": total_waves, "mode": mode_id, "difficulty": diff_id,

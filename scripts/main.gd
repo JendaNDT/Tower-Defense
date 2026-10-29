@@ -140,6 +140,7 @@ func _build_everything() -> void:
 	hud.request_auto.connect(func(on): game.auto_wave = on)
 	hud.request_restart.connect(_restart)
 	hud.request_cam.connect(_on_cam)
+	hud.request_focus.connect(func(p): rig.focus_xz(p))
 	hud.request_quality.connect(_on_quality)
 	hud.request_begin.connect(_on_begin)
 	hud.request_sound.connect(func(n): _play_ui(n))
@@ -157,8 +158,8 @@ func _build_everything() -> void:
 		bridge = TestBridge.new()
 		bridge.setup(self)
 
-	print("[Ostrov] svět postaven za %d ms, volných polí: %d, překážek: %d, délka cesty: %.1f m" % [
-		Time.get_ticks_msec() - t0, _count_free(), map.obstacles.size(), map.terrain.path.length])
+	print("[Ostrov] svět postaven za %d ms, volných polí: %d, překážek: %d, tras: %d, portálů: %d, nejdelší trasa: %.1f m" % [
+		Time.get_ticks_msec() - t0, _count_free(), map.obstacles.size(), map.lane_count(), map.portals.size(), map.longest_lane().length])
 
 	hud.set_loading(false)
 	ready_to_play = true
@@ -492,6 +493,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				hud.show_help(true)
 			KEY_M:
 				_toggle_all_audio()
+			KEY_N:
+				hud.toggle_minimap()
 			KEY_HOME:
 				rig.reset_view()
 
@@ -598,7 +601,7 @@ func _update_touch_preview() -> void:
 			var valid: bool = _can_build_at(touch_cell)
 			var wp: Vector3 = map.cell_world(touch_cell)
 			overlays.show_ghost(build_type, wp, valid)
-			overlays.show_range(wp, float(Cfg.tower_level(build_type, 1)["range"]), Color(0.45, 1.0, 0.55) if valid else Color(1.0, 0.4, 0.35))
+			overlays.show_range(wp, float(Cfg.tower_level(build_type, 1)["range"]) * float(Cfg.ELEV_RANGE[map.elev_at(touch_cell)]), Color(0.45, 1.0, 0.55) if valid else Color(1.0, 0.4, 0.35))
 			hud.set_confirm_enabled(valid)
 		else:
 			overlays.hide_ghost()
@@ -647,7 +650,7 @@ func _update_hover() -> void:
 			var valid: bool = map.can_build(hover_cell) and game.gold >= Cfg.tower_cost(build_type)
 			var wp: Vector3 = map.cell_world(hover_cell)
 			overlays.show_ghost(build_type, wp, valid)
-			var rng: float = float(Cfg.tower_level(build_type, 1)["range"])
+			var rng: float = float(Cfg.tower_level(build_type, 1)["range"]) * float(Cfg.ELEV_RANGE[map.elev_at(hover_cell)])
 			overlays.show_range(wp, rng, Color(0.45, 1.0, 0.55) if valid else Color(1.0, 0.4, 0.35))
 		else:
 			overlays.hide_ghost()

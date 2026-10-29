@@ -3,6 +3,9 @@ extends RefCounted
 ## Rozmístění stromů, skal, trávy, květin a rákosu po ostrově (MultiMesh => pár draw callů, vítr ve shaderu).
 
 const SOLID_KEYS: Array = ["rock", "rock2", "rock_snow", "rock_desert"]
+const SPREAD: float = 46.0        # polovina oblasti, kam se losují volné stromy a skály
+const GRASS_SPREAD: float = 43.0
+const AREA_K: float = 1.8         # kolikrát větší je ostrov než původní (úměrně roste počet kusů dekorace)
 
 
 static func _xf(pos: Vector3, yaw: float, scl: float, tilt: float = 0.0) -> Transform3D:
@@ -48,7 +51,11 @@ static func _radius(key: String) -> float:
 	return 0.8
 
 
-static func build(map: GameMap, density: float = 1.0, props: PropSet = null) -> Node3D:
+## density = množství stromů a skal, grass_density = množství trávy a květin (záporné = stejně jako density).
+## Tráva je zdaleka nejdražší část (desítky tisíc stébel), proto se v nízké kvalitě ořezává nejvíc.
+static func build(map: GameMap, density: float = 1.0, props: PropSet = null, grass_density: float = -1.0) -> Node3D:
+	if grass_density < 0.0:
+		grass_density = density
 	if props == null:
 		props = SkyProps.new()
 	var root: Node3D = Node3D.new()
@@ -69,10 +76,10 @@ static func build(map: GameMap, density: float = 1.0, props: PropSet = null) -> 
 
 	# --- 2) volné stromy a skály mimo hrací pole
 	var occupied: Dictionary = {}
-	var tries: int = int(3200.0 * density)
+	var tries: int = int(3200.0 * AREA_K * density)
 	for i in range(tries):
-		var x: float = rng.randf_range(-34.0, 34.0)
-		var z: float = rng.randf_range(-34.0, 34.0)
+		var x: float = rng.randf_range(-SPREAD, SPREAD)
+		var z: float = rng.randf_range(-SPREAD, SPREAD)
 		if not map.decor_ok(x, z):
 			continue
 		var bw: Color = t.biome_weights(x, z)
@@ -127,10 +134,10 @@ static func build(map: GameMap, density: float = 1.0, props: PropSet = null) -> 
 		_add(buckets, key2, _xf(Vector3(x, t.height_at(x, z) - 0.05, z), rng.randf() * TAU, s))
 
 	# --- 3) tráva a květiny
-	var grass_tries: int = int(26000.0 * density)
+	var grass_tries: int = int(26000.0 * AREA_K * grass_density)
 	for i in range(grass_tries):
-		var x2: float = rng.randf_range(-32.0, 32.0)
-		var z2: float = rng.randf_range(-32.0, 32.0)
+		var x2: float = rng.randf_range(-GRASS_SPREAD, GRASS_SPREAD)
+		var z2: float = rng.randf_range(-GRASS_SPREAD, GRASS_SPREAD)
 		if t.edge_dist(x2, z2) < 0.35:
 			continue
 		if t.path_dist_at(x2, z2) < 1.15:
@@ -171,21 +178,25 @@ static func build(map: GameMap, density: float = 1.0, props: PropSet = null) -> 
 					_add(buckets, "reed", _xf(Vector3(rx, t.height_at(rx, rz) - 0.05, rz), rng.randf() * TAU, rng.randf_range(0.8, 1.25)))
 		i2 += 2
 
-	# --- 5) kamínky podél cesty
-	var p: PathData = t.path
-	var s_path: float = 1.0
-	while s_path < p.length - 1.0:
-		var pos2: Vector3 = p.pos_at(s_path)
-		var dir2: Vector2 = p.dir_at(s_path)
-		var nrm2: Vector2 = Vector2(-dir2.y, dir2.x)
-		var sd: float = 1.0 if rng.randf() < 0.5 else -1.0
-		var off2: float = rng.randf_range(1.05, 1.5) * sd
-		var px: float = pos2.x + nrm2.x * off2
-		var pz: float = pos2.z + nrm2.y * off2
-		if t.river_sd_at(px, pz) > 0.8 and not map.is_on_bridge(s_path):
-			var kk: String = "rock_snow" if t.dominant_biome(px, pz) == 3 else ("rock_desert" if t.dominant_biome(px, pz) == 2 else "rock2")
-			_add(buckets, "pebble:" + kk, _xf(Vector3(px, t.height_at(px, pz) - 0.04, pz), rng.randf() * TAU, rng.randf_range(0.16, 0.3)))
-		s_path += rng.randf_range(0.9, 2.2)
+	# --- 5) kamínky podél cest (společné úseky tras se nezdvojují)
+	var pebble_seen: Dictionary = {}
+	for lane_i in range(map.lane_count()):
+		var p: PathData = map.lanes[lane_i]
+		var s_path: float = 1.0
+		while s_path < p.length - 1.0:
+			var pos2: Vector3 = p.pos_at(s_path)
+			var dir2: Vector2 = p.dir_at(s_path)
+			var nrm2: Vector2 = Vector2(-dir2.y, dir2.x)
+			var sd: float = 1.0 if rng.randf() < 0.5 else -1.0
+			var off2: float = rng.randf_range(1.05, 1.5) * sd
+			var px: float = pos2.x + nrm2.x * off2
+			var pz: float = pos2.z + nrm2.y * off2
+			var pk: Vector2i = Vector2i(roundi(px), roundi(pz))
+			if not pebble_seen.has(pk) and t.river_sd_at(px, pz) > 0.8 and not map.is_on_bridge(lane_i, s_path):
+				pebble_seen[pk] = true
+				var kk: String = "rock_snow" if t.dominant_biome(px, pz) == 3 else ("rock_desert" if t.dominant_biome(px, pz) == 2 else "rock2")
+				_add(buckets, "pebble:" + kk, _xf(Vector3(px, t.height_at(px, pz) - 0.04, pz), rng.randf() * TAU, rng.randf_range(0.16, 0.3)))
+			s_path += rng.randf_range(0.9, 2.2)
 
 	# --- MultiMesh uzly
 	for key3 in buckets.keys():

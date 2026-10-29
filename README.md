@@ -7,7 +7,7 @@ Veškerá grafika (terén, stromy, voda, věže, nepřátelé, efekty, rozhraní
 
 Hra má **dvě prostředí** (v menu volba *Prostředí*): **Ostrov v oblacích** (původní) a **Vesmírná stanice** (sci-fi). Prostředí mění svět, věže, nepřátele, efekty, texty i zvuk a hudbu; **pravidla, čísla a vyvážení jsou ve všech stejné**.
 
-Hru si můžeš nastavit: **prostředí**, **režim** (příběh 12 vln, nebo nekonečný s rekordem), **obtížnost** (lehká / normální / těžká) a **ostrov** (tři rozložení cesty a krajiny, nebo náhodný). K obraně patří i tři **aktivní schopnosti** (meteor, mrazivý poryv, zlatá horečka) a mezi nepřáteli se objevují **léčitelé, štítonoši a slizáci**.
+Hru si můžeš nastavit: **prostředí**, **režim** (příběh 12 vln, nebo nekonečný s rekordem), **obtížnost** (lehká / normální / těžká) a **mapu** (tři velké mapy s více branami, rozcestími a kopci, nebo náhodnou). K obraně patří i tři **aktivní schopnosti** (meteor, mrazivý poryv, zlatá horečka) a mezi nepřáteli se objevují **léčitelé, štítonoši a slizáci**.
 
 ![Celý ostrov](screenshots/ostrov.png)
 
@@ -50,7 +50,8 @@ Funguje v aktuálním Chrome / Edge / Firefox. První načtení stahuje ~40 MB (
 | Vylepšit / prodat / cíl | tlačítka v panelu nebo **U** / **X** / **T** |
 | Spustit vlnu | tlačítko vpravo dole nebo **mezerník** (tlačítko „auto“ nahoře spouští vlny samo) |
 | Aktivní schopnosti | panel vlevo dole, nebo klávesy **5** (Meteor – pak klikni na mapu, **Esc** zruší), **6** (Mrazivý poryv), **7** (Zlatá horečka) |
-| Nová hra, změna režimu / obtížnosti / ostrova | tlačítko **☰** nahoře (nebo „Změnit nastavení“ na konci hry); volby se pamatují |
+| Nová hra, změna režimu / obtížnosti / mapy | tlačítko **☰** nahoře (nebo „Změnit nastavení“ na konci hry); volby se pamatují |
+| **Minimapa** | vlevo pod panelem životů a zlata: **klik nebo tažení** přesune kameru, knoflík v rohu ji sbalí, klávesa **N** ji skryje a ukáže. Otáčí se spolu s kamerou, vidíš na ní cesty, řeku, kopce, portály, věže, nepřátele a výřez kamery |
 | Otáčení kamery | **pravé tlačítko myši + tažení**, **Q / E**, tlačítka nahoře |
 | Zoom | **kolečko myši**, **+ / −**, tlačítka nahoře |
 | Posun kamery | **W A S D** / šipky, nebo prostřední tlačítko myši + tažení |
@@ -81,9 +82,9 @@ V menu (při startu i později přes tlačítko ☰) je volba **Prostředí**. Z
 
 ## Pravidla
 
-Z **portálu** na jednom konci ostrova vycházejí vlny nepřátel a jdou po cestě (přes sníh, louku, most přes řeku, poušť a les) k **Srdci ostrova**. Když nepřítel dojde na konec, ztratíš životy (boss 5). Za každého zabitého dostaneš zlato, za zvládnutou vlnu bonus. V příběhu je vln **12**, v nekonečném režimu bez konce.
+Z **portálů** (bran) na okrajích ostrova vycházejí vlny nepřátel a jdou po cestách (přes sníh, louku, mosty přes řeku, poušť a les) k **Srdci ostrova**. Mapy mají **víc bran** (každá brána má vlastní portál), **rozcestí** (cesta se rozdělí na dvě větve) a **spojení** (cesty se slijí do jedné); nepřátelé se na trasy dělí střídavě podle vah, takže ani jedna nezůstane bez nepřátel. Létající jdou přímo z portálu své trasy k Srdci. Když nepřítel dojde na konec, ztratíš životy (boss 5). Za každého zabitého dostaneš zlato, za zvládnutou vlnu bonus. V příběhu je vln **12**, v nekonečném režimu bez konce. Nepřátele věže cílí podle toho, kolik metrů jim zbývá k Srdci (ne podle podílu trasy), takže se „první“ vybere správně i při různě dlouhých trasách.
 
-### Režimy, obtížnosti a ostrovy
+### Režimy, obtížnosti a mapy
 
 Na začátku (a později přes tlačítko ☰) si vybereš:
 
@@ -98,14 +99,20 @@ Na začátku (a později přes tlačítko ☰) si vybereš:
 | **Normální** | 240 | 20 | 100 % | 100 % | 100 % |
 | **Těžká** | 220 | 15 | 125 % | 95 % | 105 % |
 
-| Ostrov | Cesta | Poznámka |
+| Mapa | Brány a cesty | Poznámka |
 |---|---|---|
-| **Klikatá stezka** | 137 m, jeden most | původní ostrov: ze sněhu přes louku a poušť do lesa |
-| **Podkova** | 109 m, jeden most | cesta obkrouží ostrov, uprostřed je velký prostor pro věže; kratší cesta, proto mají nepřátelé o 12 % méně zdraví |
-| **Hadí údolí** | 123 m, jeden most | tři dlouhé vlnovky za sebou, řeka teče napříč |
-| **Náhodný ostrov** | podle losu | náhodně jedno z rozložení, náhodně otočené biomy a nový seed (číslo ostrova se ukáže v záhlaví) |
+| **Dvě brány** | 2 brány (západ a sever), 2 cesty po ~117 m, které se uprostřed spojí; 2 mosty | kopec s vrcholem mezi oběma cestami, další kopce u konce cesty; základní mapa k seznámení |
+| **Rozcestí** | 1 brána, cesta se hned rozdělí na 2 větve (131 m), ty obkrouží skalní vrch a spojí se; společný konec 3× překročí řeku (3 mosty) | věže na vrchu uprostřed okruhu dosáhnou na obě větve |
+| **Tři brány** | 3 brány a 5 tras (89–96 m): dvě brány se spojí, společná cesta se rozdělí a znovu spojí, třetí cesta se připojí těsně před Srdcem; 3 mosty | nejtěžší: nepřátelé mají o 10 % víc zdraví, ale kopce uprostřed pokryjí většinu cest |
+| **Náhodný ostrov** | podle losu | náhodně jedna z map, náhodně převrácená nebo otočená (8 variant), náhodně otočené biomy a nový seed (číslo ostrova se ukáže v záhlaví) |
 
-Volby a rekordy se ukládají v prohlížeči (úložiště webu). Změna ostrova znovu postaví svět (pár sekund), změna režimu nebo obtížnosti jen začne novou hru na stejné mapě.
+Všechny mapy mají **o 78 % větší plochu** než dřívější (mřížka 32 × 32 polí místo 24 × 24, ostrov ~77 m místo ~58 m) a nahrazují původní tři (Klikatou stezku, Podkovu a Hadí údolí).
+
+Volby a rekordy se ukládají v prohlížeči (úložiště webu). Změna mapy znovu postaví svět (pár sekund), změna režimu nebo obtížnosti jen začne novou hru na stejné mapě.
+
+### Kopce
+
+Na každé mapě je pět kopců. Při stavbě (mřížka polí) mají jejich pole **zlatý nádech**: jeden kroužek = **kopec**, dva kroužky = **vrchol**. Věž postavená na kopci má o **15 %** větší dosah, na vrcholu o **30 %** (platí pro všechny věže a úrovně; v panelu věže stojí např. „Dosah 9,1 m (vrchol +30 %)“ a kruh dosahu při stavbě už bonus zahrnuje). Pole na kopcích se staví stejně jako ostatní, jen jich je málo (asi 33 na kopcích a 5 na vrcholech na mapu), takže je dobré si je rozmyslet. Cesty ani řeku kopec nikdy neřeže: u nich plynule slábne. Okraje kopců zdobí skalní výchozy.
 
 ### Aktivní schopnosti (panel vlevo dole)
 
@@ -143,6 +150,9 @@ Zdraví nepřátel s vlnami roste (vlna 12 má ×5,4). Přehled další vlny je 
 
 ## Svět a technika
 
+- **Síť cest:** mapa se skládá z úseků cest; každá **trasa** je řetěz úseků od portálu k Srdci. Rozcestí vzniká, když dvě trasy sdílejí začátek, spojení, když sdílejí konec. Každá trasa má vlastní vyhlazenou křivku, vlastní seznam mostů a výšky, které se na společných úsecích shodují; nepřátelé chodí po své trase podle uražené vzdálenosti. Pole kolem cest i vzdálenost k cestě se počítají ze všech tras najednou.
+- **Kopce** jsou součást výškového pole terénu (plošina se zvlněným okrajem, vrchol se přičítá ke kopci). Přičítají se až po vyrovnání cest a koryta řeky a u nich plynule slábnou, takže silnice nikdy neřeže strmý zářez. Výškový stupeň pole (0 / 1 / 2) se spočítá z plošiny a používá ho dosah věže, mřížka i minimapa.
+- **Minimapa** je kruh, který se otáčí s kamerou (nahoře je směr pohledu): obrázek terénu se vyrobí jednou z dat mapy, věže, nepřátelé, portály a výřez kamery se kreslí znovu ~12× za vteřinu.
 - **Létající ostrov** s biomy (sníh, les, poušť, louka – plynule přecházejí), řekou, která vyvěrá z jezírka, protéká pod dřevěným mostem a na okraji ostrova **padá jako vodopád** do oblaků. Spodek ostrova je skalní krápník.
 - **Živý svět:** pohyblivé mraky v několika vrstvách, vítr hýbe stromy a trávou (ve vertex shaderu), tekoucí a pěnící voda, padající sníh, pylové jiskřičky v lese, prach v poušti, ptáci, motýli, plovoucí skály, mlha a sprška vodopádu, stíny od slunce.
 - **Izometrická kamera:** ortogonální projekce, přesný izometrický sklon 35,264°, otáčení, zoom i posun.
@@ -180,12 +190,12 @@ Zdraví nepřátel s vlnami roste (vlna 12 má ×5,4). Přehled další vlny je 
 
 ```
 project.godot, export_presets.cfg   nastavení Godotu a exportu pro web
-scripts/core/       cfg.gd (všechna čísla: věže, nepřátelé, vlny, obtížnosti, schopnosti), islands.gd (rozložení ostrovů),
+scripts/core/       cfg.gd (všechna čísla: věže, nepřátelé, vlny, obtížnosti, schopnosti), islands.gd (mapy: úseky cest, trasy, kopce, řeka),
                     game_settings.gd (volby a rekordy), mesh_kit.gd (stavba modelů z primitiv), gfx.gd
-scripts/world/      terén, trasa, řeka, mřížka polí, generování sítí ostrova
+scripts/world/      terén (výšky, kopce, vzdálenosti k cestám a řece), trasy, řeka, mřížka polí a mosty, generování sítí ostrova
 scripts/game/       hra (vlny, zlato, životy, schopnosti), věž, nepřítel, projektil, meteor, efekty, kamera, překryvy
-scripts/theme/      rozhraní motivu + motiv „Ostrov v oblacích“ (svět, modely věží a nepřátel, ambient)
-scripts/ui/         rozhraní (česky), ikony kreslené v kódu
+scripts/theme/      rozhraní motivu, rejstřík motivů a oba motivy (`sky_island/` Ostrov v oblacích, `scifi/` Vesmírná stanice: svět, modely věží a nepřátel, ambient)
+scripts/ui/         rozhraní (česky), ikony kreslené v kódu, minimapa
 scripts/audio/      syntezátor zvuků a hudby (synth.gd), správce zvuku (audio_manager.gd)
 scripts/tools/      testovací nástroje (headless simulátor, API pro testy v prohlížeči, export zvuků do WAV)
 shaders/            terén, voda, vodopád, listí s větrem, mraky, portál, efekty
@@ -196,7 +206,28 @@ tests/              skripty pro automatické testy (Node + Playwright)
 
 ### Jak přidat další téma (sci-fi, fantasy…)
 
-Pravidla a čísla (`cfg.gd`) jsou oddělená od vzhledu. Nový motiv = nová třída, která dědí z `GameTheme` (`scripts/theme/game_theme.gd`) a přepíše čtyři věci: `build_world` (svět), `make_tower_visual`, `make_enemy_visual`, `make_projectile_visual`. Vzor je `scripts/theme/sky_island/theme_sky_island.gd`; motiv se vybírá v `scripts/main.gd` (řádek s `ThemeSkyIsland.new()`).
+Pravidla a čísla (`cfg.gd`) jsou oddělená od vzhledu. Nový motiv = nová třída, která dědí z `GameTheme` (`scripts/theme/game_theme.gd`) a přepíše čtyři věci: `build_world` (svět), `make_tower_visual`, `make_enemy_visual`, `make_projectile_visual`. Vzor je `scripts/theme/sky_island/theme_sky_island.gd`; motiv se registruje v `scripts/theme/themes.gd`. Svět motivu si bere tvar mapy (trasy, portály, mosty, kopce) z `GameMap`, takže stačí postavit terén, stavby u portálů a mostů a dekorace; barvy minimapy jsou v `palette` pod klíči `mm_*`.
+
+### Jak přidat další mapu
+
+Mapy jsou v `scripts/core/islands.gd` v seznamu `LIST`. Každá je slovník:
+
+```gdscript
+{
+	"name": "Dvě brány", "desc": "…", "seed": 7, "hp": 1.0,          # hp = násobek zdraví nepřátel na této mapě
+	"segs": {"a": [Vector2i(0, 5), Vector2i(8, 5), …],             # úseky: lomené čáry v buňkách (mřížka 32 × 32)
+	         "b": […], "tail": [Vector2i(15, 22), …]},
+	"lanes": [{"segs": ["a", "tail"], "w": 1.0},                   # trasa = řetěz úseků, w = váha (kolik nepřátel půjde touto trasou)
+	          {"segs": ["b", "tail"], "w": 1.0}],
+	"base": Vector2i(26, 28),                                      # buňka Srdce (poslední úsek končí vedle ní)
+	"river": […],                                                  # řídicí body řeky (metry); řeka vždy končí vodopádem
+	"hills": [{"c": Vector2i(15, 13), "r": 6.6, "tier": 1},        # kopce: střed, poloměr paty, stupeň 1 = kopec
+	          {"c": Vector2i(15, 13), "r": 4.0, "tier": 2}],       # stupeň 2 = vrchol (stojí na kopci, přičte se k němu)
+	"biomes": […],                                                 # středy biomů (les, louka, poušť, sníh)
+}
+```
+
+Rozcestí uděláš tak, že dvě trasy mají stejný první úsek a pak se liší; spojení tak, že mají stejný poslední úsek. Pravidla pro návrh, která hlídá `godot --headless --path . -- --simtest --islands`: trasy od sebe aspoň 6 m (mimo rozcestí a spojení), most potřebuje rovný úsek aspoň ~5 m před zatáčkou, kopec má být od cest aspoň ~6 m a mimo řeku.
 
 ### Jak hru znovu sestavit
 

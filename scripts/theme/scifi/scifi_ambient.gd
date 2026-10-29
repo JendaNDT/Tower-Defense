@@ -93,10 +93,10 @@ func _build_puffs() -> void:
 	var perp: Vector2 = Vector2(-WIND.y, WIND.x)
 	for i in range(22):
 		var high: bool = i < 10
-		var lane: float = _rng.randf_range(44.0, 95.0) * (1.0 if _rng.randf() < 0.5 else -1.0)
+		var lane: float = _rng.randf_range(54.0, 110.0) * (1.0 if _rng.randf() < 0.5 else -1.0)
 		var y: float = _rng.randf_range(-10.0, 9.0) if high else _rng.randf_range(-34.0, -14.0)
 		if not high:
-			lane = _rng.randf_range(-90.0, 90.0)
+			lane = _rng.randf_range(-110.0, 110.0)
 		var mi: MeshInstance3D = MeshInstance3D.new()
 		mi.mesh = meshes[i % 8]
 		mi.material_override = mat
@@ -134,7 +134,7 @@ func _build_floaters() -> void:
 				k.sphere(r * 0.38, Color(0.55, 0.85, 1.0), MeshKit.xf(Vector3(0.0, r * 0.34, 0.0), Vector3.ZERO, Vector3(1.0, 0.7, 1.0)), 0.6, 8, 4, true)
 		var mi: MeshInstance3D = Gfx.mesh_node(k, Gfx.model_mat(0.7, 0.12))
 		var ang: float = _rng.randf() * TAU
-		var rad: float = _rng.randf_range(40.0, 64.0)
+		var rad: float = _rng.randf_range(52.0, 80.0)
 		var y: float = _rng.randf_range(-22.0, 3.0)
 		mi.position = Vector3(cos(ang) * rad, y, sin(ang) * rad)
 		add_child(mi)
@@ -159,12 +159,12 @@ func _build_birds() -> void:
 		add_child(root)
 		_birds.append({
 			"root": root, "wl": wl, "wr": wr,
-			"r": _rng.randf_range(20.0, 40.0),
+			"r": _rng.randf_range(24.0, 50.0),
 			"w": _rng.randf_range(0.10, 0.19) * (1.0 if i % 2 == 0 else -1.0),
 			"a": _rng.randf() * TAU,
 			"h": _rng.randf_range(6.0, 13.0),
 			"ph": _rng.randf() * TAU,
-			"cx": _rng.randf_range(-5.0, 5.0), "cz": _rng.randf_range(-5.0, 5.0),
+			"cx": _rng.randf_range(-8.0, 8.0), "cz": _rng.randf_range(-8.0, 8.0),
 		})
 
 
@@ -191,7 +191,7 @@ func _build_butterflies() -> void:
 		add_child(root)
 		_butterflies.append({
 			"root": root, "wl": wl, "wr": wr,
-			"c": Vector3(-17.0 + _rng.randf_range(-6.0, 6.0), 0.0, 17.0 + _rng.randf_range(-6.0, 6.0)),
+			"c": Vector3((_centers[1] as Vector2).x + _rng.randf_range(-8.0, 8.0), 0.0, (_centers[1] as Vector2).y + _rng.randf_range(-8.0, 8.0)),
 			"ph": _rng.randf() * TAU,
 			"sp": _rng.randf_range(0.25, 0.5),
 		})
@@ -211,15 +211,15 @@ func _build_particles(map: GameMap, high: bool) -> void:
 	var desert: Vector2 = bc[2]
 	var snow: Vector2 = bc[3]
 	# ledové jiskry v kryo oblasti
-	_particles(Vector3(snow.x, 9.0, snow.y), Vector3(13.0, 0.3, 13.0), int(480.0 * f), 9.0, 0.12, Color(0.75, 0.95, 1.0, 0.95), 1.0,
+	_particles(Vector3(snow.x, 9.0, snow.y), Vector3(17.0, 0.3, 17.0), int(680.0 * f), 9.0, 0.12, Color(0.75, 0.95, 1.0, 0.95), 1.0,
 		Vector3(0.4, -1.8, 0.2), Vector3(0, -1, 0), 20.0, 0.0, 0.3, 2.2)
 	# spóry v bio-džungli (dvě barvy)
-	_particles(Vector3(forest.x, 2.2, forest.y), Vector3(12.0, 1.6, 12.0), int(70.0 * f), 8.0, 0.10, Color(0.2, 0.95, 1.0, 1.0), 3.5,
+	_particles(Vector3(forest.x, 2.2, forest.y), Vector3(16.0, 1.6, 16.0), int(100.0 * f), 8.0, 0.10, Color(0.2, 0.95, 1.0, 1.0), 3.5,
 		Vector3(0.05, 0.05, 0.02), Vector3(0, 1, 0), 180.0, 0.1, 0.35, 0.3, 0.3)
-	_particles(Vector3(forest.x, 1.6, forest.y), Vector3(12.0, 1.2, 12.0), int(45.0 * f), 8.0, 0.09, Color(1.0, 0.3, 0.85, 1.0), 3.5,
+	_particles(Vector3(forest.x, 1.6, forest.y), Vector3(16.0, 1.2, 16.0), int(65.0 * f), 8.0, 0.09, Color(1.0, 0.3, 0.85, 1.0), 3.5,
 		Vector3(-0.04, 0.05, 0.03), Vector3(0, 1, 0), 180.0, 0.1, 0.3, 0.3, 0.3)
 	# rudý prach v pustině
-	_particles(Vector3(desert.x, 1.0, desert.y), Vector3(13.0, 1.0, 13.0), int(100.0 * f), 6.0, 0.55, Color(0.95, 0.42, 0.22, 0.15), 0.0,
+	_particles(Vector3(desert.x, 1.0, desert.y), Vector3(17.0, 1.0, 17.0), int(140.0 * f), 6.0, 0.55, Color(0.95, 0.42, 0.22, 0.15), 0.0,
 		Vector3.ZERO, Vector3(1, 0.05, 0.35), 12.0, 1.8, 3.0, 0.0, 0.3)
 	# energetická mlha a jiskry u vodopádu
 	var wf: Dictionary = waterfall

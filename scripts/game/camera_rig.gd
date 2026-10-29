@@ -11,10 +11,10 @@ const TAP_MOVE_MAX: float = 14.0       # největší posun prstu (v pixelech obs
 const PITCH_DEG: float = 35.264
 const DIST: float = 150.0
 const DEFAULT_YAW: float = 45.0
-const DEFAULT_SIZE: float = 44.0
+const DEFAULT_SIZE: float = 56.0
 const MIN_SIZE: float = 16.0
-const MAX_SIZE: float = 72.0
-const PAN_LIMIT: float = 24.0
+const MAX_SIZE: float = 96.0
+const PAN_LIMIT: float = 32.0
 
 var camera: Camera3D = null
 var yaw_deg: float = DEFAULT_YAW
@@ -63,6 +63,12 @@ func reset_view() -> void:
 	target_yaw = DEFAULT_YAW
 	target_zoom = DEFAULT_SIZE
 	target_pivot = Vector3.ZERO
+
+
+## Přesune pohled na bod světa (x, z), např. z minimapy.
+func focus_xz(p: Vector2) -> void:
+	target_pivot = Vector3(p.x, 0.0, p.y)
+	_clamp_pivot()
 
 
 func rotate_by(deg: float) -> void:

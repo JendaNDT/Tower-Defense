@@ -16,10 +16,13 @@ var uid: int = 0
 var cooldown: float = 0.3
 var target_mode: String = "first"
 var visual: TowerVisual = null
+var elev: int = 0                 # výškový stupeň pole (0 rovina, 1 kopec, 2 vrchol): násobí dosah
 var damage_dealt: float = 0.0
 var kills: int = 0
 var shots_fired: int = 0
 
+var _stats_cache: Dictionary = {}
+var _stats_level: int = 0
 var _pending: Array = []          # mrazové pulzy čekající na dosažení nepřítele vlnou
 var _pulse_count: int = 0
 var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
@@ -33,11 +36,17 @@ func setup(game_ref, type_id: String, c: Vector2i, world_pos: Vector3, id: int) 
 	position = world_pos
 	name = "Tower_%s_%d" % [type_id, id]
 	_rng.seed = 1000 + id
+	elev = game.map.elev_at(c)
 	_build_visual("build")
 
 
+## Statistiky podle úrovně; dosah je zvětšený podle výšky pole (kopec +15 %, vrchol +30 %).
 func stats() -> Dictionary:
-	return Cfg.tower_level(type, level)
+	if _stats_level != level or _stats_cache.is_empty():
+		_stats_level = level
+		_stats_cache = Cfg.tower_level(type, level).duplicate()
+		_stats_cache["range"] = float(_stats_cache["range"]) * float(Cfg.ELEV_RANGE[elev])
+	return _stats_cache
 
 
 func spec() -> Dictionary:

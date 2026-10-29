@@ -152,7 +152,7 @@ func cmd(req: Dictionary) -> Dictionary:
 		"cells":
 			# volná pole u cesty seřazená podle polohy podél trasy (pro volbu míst ve stavebních testech)
 			var out: Array = []
-			var path: PathData = g.path
+			var path: PathData = g.map.lanes[clampi(int(req.get("lane", 0)), 0, g.map.lane_count() - 1)]
 			for cz in range(Cfg.GRID_H):
 				for cx in range(Cfg.GRID_W):
 					var c: Vector2i = Vector2i(cx, cz)
@@ -170,9 +170,83 @@ func cmd(req: Dictionary) -> Dictionary:
 							best_s = s
 						s += 1.0
 					if best_d <= 3.2:
-						out.append({"cx": cx, "cz": cz, "s": best_s, "d": snappedf(best_d, 0.01)})
+						out.append({"cx": cx, "cz": cz, "s": best_s, "d": snappedf(best_d, 0.01), "elev": g.map.elev_at(c)})
 			out.sort_custom(func(a, b): return float(a["s"]) < float(b["s"]))
 			return {"ok": true, "cells": out}
+		"node_visible":
+			# ladění: zapne/vypne uzel podle jména (hledá se v celém stromě)
+			var nd: Node = main.find_child(str(req.get("name", "")), true, false)
+			if nd == null:
+				return {"ok": false}
+			if req.has("prop"):
+				nd.set_indexed(NodePath(str(req["prop"])), req["value"])
+				return {"ok": true, "class": nd.get_class(), "now": str(nd.get_indexed(NodePath(str(req["prop"]))))}
+			nd.set("visible", bool(req.get("v", true)))
+			return {"ok": true, "class": nd.get_class()}
+		"flat_nodes":
+			var fl: Array = []
+			_collect_visual(main.world, fl, 0)
+			var out_n: Array = []
+			for nd2 in fl:
+				out_n.append(str(main.world.get_path_to(nd2)) + " : " + nd2.get_class())
+			return {"ok": true, "list": out_n}
+		"hide_idx":
+			var fl2: Array = []
+			_collect_visual(main.world, fl2, 0)
+			var hide: Array = req.get("hide", [])
+			for k in range(fl2.size()):
+				fl2[k].set("visible", not (k in hide))
+			return {"ok": true, "n": fl2.size()}
+		"island_mat":
+			# ladění: jiný materiál na ostrov (plain = šedý osvětlený, normals = barvy normál, unshaded = bílý bez osvětlení)
+			var isl: MeshInstance3D = main.world.get_node("Island")
+			var mode: String = str(req.get("mode", "plain"))
+			if mode == "plain":
+				var sm: StandardMaterial3D = StandardMaterial3D.new()
+				sm.albedo_color = Color(0.7, 0.7, 0.7)
+				isl.material_override = sm
+			elif mode == "unshaded":
+				var sm2: StandardMaterial3D = StandardMaterial3D.new()
+				sm2.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+				sm2.albedo_color = Color(0.7, 0.7, 0.7)
+				isl.material_override = sm2
+			else:
+				var sh: Shader = Shader.new()
+				sh.code = "shader_type spatial; render_mode unshaded; void fragment(){ ALBEDO = NORMAL * 0.5 + 0.5; }"
+				var shm: ShaderMaterial = ShaderMaterial.new()
+				shm.shader = sh
+				isl.material_override = shm
+			return {"ok": true}
+		"height_at":
+			return {"ok": true, "y": g.map.height_at(float(req["x"]), float(req["z"])), "elev": g.map.elev_at(Cfg.world_to_cell(float(req["x"]), float(req["z"])))}
+		"tree":
+			var names: Array = []
+			for ch in main.world.get_children():
+				names.append([ch.name, ch.get_class(), ch.get_child_count()])
+			return {"ok": true, "children": names}
+		"map_info":
+			var lns: Array = []
+			for li in range(g.map.lane_count()):
+				var lp: PathData = g.map.lanes[li]
+				lns.append({"len": lp.length, "weight": g.map.lane_weights[li], "portal": g.map.lane_portal[li], "bridges": g.map.lane_bridges[li]})
+			var prt: Array = []
+			for pt in g.map.portals:
+				var pp: Vector3 = pt["pos"]
+				prt.append([pp.x, pp.y, pp.z])
+			var hls: Array = []
+			for hl in g.map.terrain.hills:
+				hls.append({"x": hl["x"], "z": hl["z"], "r": hl["r"], "tier": hl["tier"], "y": g.map.height_at(float(hl["x"]), float(hl["z"]))})
+			var ec: Array = [0, 0, 0]
+			for ci in range(g.map.cells.size()):
+				if g.map.cells[ci] == GameMap.Cell.FREE:
+					ec[int(g.map.elev[ci])] += 1
+			var hcells: Array = []
+			for hz in range(Cfg.GRID_H):
+				for hx in range(Cfg.GRID_W):
+					if g.map.can_build(Vector2i(hx, hz)) and g.map.elev_at(Vector2i(hx, hz)) > 0:
+						hcells.append({"cx": hx, "cz": hz, "elev": g.map.elev_at(Vector2i(hx, hz))})
+			return {"ok": true, "lanes": lns, "portals": prt, "hills": hls, "elev_free": ec, "hill_cells": hcells, "bridges": g.map.bridges.size(),
+				"base": [g.map.base_pos.x, g.map.base_pos.y, g.map.base_pos.z]}
 		"ui":
 			var r: Rect2 = main.hud.ui_rect(str(req.get("name", "")))
 			var vp2: Vector2 = main.get_viewport().get_visible_rect().size
@@ -185,7 +259,10 @@ func cmd(req: Dictionary) -> Dictionary:
 			var n: int = int(req.get("n", 5))
 			var iv: float = float(req.get("interval", 1.0))
 			for i in range(n):
-				g._spawn_queue.append({"at": g.time + float(req.get("delay", 0.0)) + float(i) * iv, "type": typ, "wave": Game.TEST_WAVE, "hp": float(req.get("hp", 1.0))})
+				var qe: Dictionary = {"at": g.time + float(req.get("delay", 0.0)) + float(i) * iv, "type": typ, "wave": Game.TEST_WAVE, "hp": float(req.get("hp", 1.0))}
+				if req.has("lane"):
+					qe["lane"] = int(req["lane"])
+				g._spawn_queue.append(qe)
 			g._spawn_queue.sort_custom(func(a, b): return float(a["at"]) < float(b["at"]))
 			return {"ok": true, "queued": n}
 		"lineup":
@@ -195,7 +272,7 @@ func cmd(req: Dictionary) -> Dictionary:
 			var ds: float = float(req.get("ds", 3.2))
 			var out2: Array = []
 			for i in range(types.size()):
-				g._spawn_enemy({"at": 0.0, "type": str(types[i]), "wave": Game.TEST_WAVE, "hp": 1.0})
+				g._spawn_enemy({"at": 0.0, "type": str(types[i]), "wave": Game.TEST_WAVE, "hp": 1.0, "lane": int(req.get("lane", 0))})
 				var en = g.enemies[g.enemies.size() - 1]
 				en.s = s0 + float(i) * ds
 				en.update(0.0)
@@ -284,10 +361,10 @@ func cmd(req: Dictionary) -> Dictionary:
 			var list: Array = []
 			for en4 in g.enemies + g.dying:
 				list.append({"type": en4.type, "dying": en4.dying, "reached": en4.reached, "dur": en4.death_duration(),
-					"t": en4._death_t, "age": en4._age, "pos": [en4.position.x, en4.position.y, en4.position.z],
+					"t": en4._death_t, "age": en4._age, "lane": en4.lane, "pos": [en4.position.x, en4.position.y, en4.position.z],
 					"sx": en4.visual.scale.x, "sy": en4.visual.scale.y, "vy": en4.visual.position.y,
 					"rx": en4.visual.rotation.x, "rz": en4.visual.rotation.z, "s": en4.s})
-			return {"ok": true, "list": list, "path_len": g.path.length, "base": [g.map.base_pos.x, g.map.base_pos.y, g.map.base_pos.z]}
+			return {"ok": true, "list": list, "path_len": g.map.longest_lane().length, "base": [g.map.base_pos.x, g.map.base_pos.y, g.map.base_pos.z]}
 		"ui_rect":
 			var r3: Rect2 = main.hud.ui_rect(str(req.get("name", "")))
 			var vp3: Vector2 = main.get_viewport().get_visible_rect().size
@@ -340,7 +417,13 @@ func cmd(req: Dictionary) -> Dictionary:
 					if lc is Label:
 						txt += (lc as Label).text
 				rows.append(txt)
-			return {"ok": true, "toast": main.hud._toast_lbl.text, "gold_lbl": main.hud._gold_lbl.text,
+			var trows: Array = []
+			if main.hud._tp.has("grid"):
+				for lc2 in (main.hud._tp["grid"] as GridContainer).get_children():
+					if lc2 is Label and not (lc2 as Label).is_queued_for_deletion():
+						trows.append((lc2 as Label).text)
+			return {"ok": true, "tower_rows": trows, "minimap_collapsed": main.hud._minimap != null and main.hud._minimap.collapsed,
+				"toast": main.hud._toast_lbl.text, "gold_lbl": main.hud._gold_lbl.text,
 				"lives_lbl": main.hud._lives_lbl.text, "wave_lbl": main.hud._wave_lbl.text, "info": main.hud._info_lbl.text,
 				"wave_title": main.hud._wave_title.text, "wave_rows": rows, "end_title": main.hud._end_title.text,
 				"end_body": main.hud._end_body.text, "intro_visible": main.hud._intro.visible, "help_visible": main.hud._help.visible,
@@ -407,3 +490,11 @@ func _is_disabled(nm: String) -> bool:
 		"upgrade_btn":
 			return (main.hud._tp["upgrade"] as Button).disabled
 	return false
+
+
+## Ladění: všechny vykreslované uzly pod `n` (MeshInstance3D, MultiMeshInstance3D, světla) v pevném pořadí.
+func _collect_visual(n: Node, out: Array, depth: int) -> void:
+	for ch in n.get_children():
+		if ch is VisualInstance3D or ch is Light3D:
+			out.append(ch)
+		_collect_visual(ch, out, depth + 1)
