@@ -47,7 +47,7 @@ function check(name, ok, info) { results.push({ name, ok: !!ok, info }); console
 
   // --- stavba: nepovolené pole (cesta) a nedostatek zlata
   await page.keyboard.press('1');
-  const pathCell = { cx: 0, cz: 3 };   // začátek trasy
+  const pathCell = { cx: 15, cz: 24 };   // společný úsek tras (mapa Dvě brány), uprostřed obrazovky mimo minimapu
   let r = await cmd({ op: 'cell_screen', cx: pathCell.cx, cz: pathCell.cz });
   await clickNorm(r.p); await sleep(400);
   let h = await cmd({ op: 'hud' });
@@ -55,7 +55,7 @@ function check(name, ok, info) { results.push({ name, ok: !!ok, info }); console
   await page.keyboard.press('Escape');
   await cmd({ op: 'gold', v: -230 }); // zbude 10 zlata
   const cells = (await cmd({ op: 'cells' })).cells;
-  const c0 = cells[5];
+  const c0 = cells.find(c => c.s > 95 && c.d < 2.6) || cells[5];   // pole u konce trasy, kam nezasahuje minimapa
   await page.keyboard.press('2');
   r = await cmd({ op: 'cell_screen', cx: c0.cx, cz: c0.cz }); await clickNorm(r.p); await sleep(400);
   h = await cmd({ op: 'hud' }); s = await st();

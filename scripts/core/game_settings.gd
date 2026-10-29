@@ -12,6 +12,7 @@ static var theme: String = "sky_island"        # prostředí hry (viz Themes.LIS
 static var random_seed: int = 0                # seed právě zvoleného náhodného ostrova
 static var autostart: bool = false             # po znovunačtení scény rovnou začít hrát (bez úvodní obrazovky)
 static var loaded: bool = false
+const REC_SECTION: String = "rekordy_mapy2"     # rekordy ze starých map (sekce "rekordy") se po výměně map nepoužívají
 static var records: Dictionary = {}            # klíč -> {"waves": int, "won": bool, "lives": int}
 
 
@@ -34,9 +35,9 @@ static func load_all() -> void:
 	var th: String = str(cf.get_value("hra", "prostredi", Themes.DEFAULT_ID))
 	theme = th if Themes.is_valid(th) else Themes.DEFAULT_ID
 	records = {}
-	if cf.has_section("rekordy"):
-		for k in cf.get_section_keys("rekordy"):
-			var v = cf.get_value("rekordy", k)
+	if cf.has_section(REC_SECTION):
+		for k in cf.get_section_keys(REC_SECTION):
+			var v = cf.get_value(REC_SECTION, k)
 			if typeof(v) == TYPE_DICTIONARY:
 				records[k] = v
 
@@ -48,7 +49,7 @@ static func save_all() -> void:
 	cf.set_value("hra", "ostrov", island)
 	cf.set_value("hra", "prostredi", theme)
 	for k in records.keys():
-		cf.set_value("rekordy", k, records[k])
+		cf.set_value(REC_SECTION, k, records[k])
 	cf.save(path)
 
 

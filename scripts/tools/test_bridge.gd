@@ -170,6 +170,12 @@ func cmd(req: Dictionary) -> Dictionary:
 							best_s = s
 						s += 1.0
 					if best_d <= 3.2:
+						# pole zakrytá prvkem rozhraní (minimapa, panely) se nenabízí: test by na ně nemohl kliknout
+						var scr: Array = _screen(g.map.cell_world(c))
+						var vps: Vector2 = main.get_viewport().get_visible_rect().size
+						var px: Vector2 = Vector2(float(scr[0]) * vps.x, float(scr[1]) * vps.y)
+						if px.x >= 0.0 and px.y >= 0.0 and px.x <= vps.x and px.y <= vps.y and main.hud.point_over_ui(px):
+							continue
 						out.append({"cx": cx, "cz": cz, "s": best_s, "d": snappedf(best_d, 0.01), "elev": g.map.elev_at(c)})
 			out.sort_custom(func(a, b): return float(a["s"]) < float(b["s"]))
 			return {"ok": true, "cells": out}
