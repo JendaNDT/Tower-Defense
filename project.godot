@@ -6,6 +6,8 @@ config_version=5
 [application]
 
 config/name="Ostrov v oblacích – Obrana"
+config/use_custom_user_dir=true
+config/custom_user_dir_name="OstrovVOblacich"
 run/main_scene="res://scenes/main.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 run/max_fps=0
