@@ -100,7 +100,7 @@ function log(...a) { const s = a.join(' '); console.log(s); report.steps.push(s)
   const mid = cells.filter(c => c.d < 2.6);
   const spots = [];
   const take = (lo, hi) => { const c = mid.find(c => c.s >= lo && c.s <= hi && !spots.some(u => u.cx === c.cx && u.cz === c.cz)); if (c) spots.push(c); return c; };
-  const a1 = take(14, 30), a2 = take(30, 46), c1 = take(46, 66);
+  const a1 = take(86, 97), a2 = take(97, 107), c1 = take(105, 116);     // společný konec tras (mapa Dvě brány): věže pokryjí nepřátele ze všech bran
   await buildReal('1', 'archer', a1);
   await shot('03_po_stavbe_lucistnika');
   await buildReal('1', 'archer', a2);

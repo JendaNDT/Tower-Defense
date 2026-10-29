@@ -149,7 +149,7 @@ static func _run_until_clear(g: Game, max_time: float) -> void:
 
 static func _queue(g: Game, typ: String, n: int, interval: float, delay: float, hp: float) -> void:
 	for i in range(n):
-		g._spawn_queue.append({"at": g.time + delay + float(i) * interval, "type": typ, "wave": Game.TEST_WAVE, "hp": hp})
+		g._spawn_queue.append({"at": g.time + delay + float(i) * interval, "type": typ, "wave": Game.TEST_WAVE, "hp": hp, "lane": 0})
 	g._spawn_queue.sort_custom(func(a, b): return float(a["at"]) < float(b["at"]))
 
 

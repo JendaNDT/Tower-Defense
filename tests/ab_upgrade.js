@@ -41,10 +41,10 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     const info0 = await cmd({ op: 'tower_info', id });
     const s0 = await st();
     // stejná skupina nepřátel pro každé kolo (zdraví ×5)
-    await cmd({ op: 'spawn', type: 'goblin', n: 10, interval: 1.0, hp: 5 });
-    await cmd({ op: 'spawn', type: 'golem', n: 3, interval: 2.0, delay: 12, hp: 4 });
-    await cmd({ op: 'spawn', type: 'wolf', n: 6, interval: 0.8, delay: 24, hp: 5 });
-    await cmd({ op: 'spawn', type: 'drake', n: 3, interval: 1.2, delay: 34, hp: 5 });
+    await cmd({ op: 'spawn', type: 'goblin', n: 10, interval: 1.0, lane: 0, hp: 5 });
+    await cmd({ op: 'spawn', type: 'golem', n: 3, interval: 2.0, lane: 0, delay: 12, hp: 4 });
+    await cmd({ op: 'spawn', type: 'wolf', n: 6, interval: 0.8, lane: 0, delay: 24, hp: 5 });
+    await cmd({ op: 'spawn', type: 'drake', n: 3, interval: 1.2, lane: 0, delay: 34, hp: 5 });
     for (let i = 0; i < 40; i++) { await cmd({ op: 'step', t: 5 }); const q = await st(); if (q.spawn_left === 0 && q.enemies.length === 0) break; }
     const info1 = await cmd({ op: 'tower_info', id });
     const s1 = await st();
