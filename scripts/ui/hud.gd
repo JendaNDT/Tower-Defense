@@ -682,7 +682,7 @@ func _modal(title: String, body: String, button_text: String, title_color: Color
 	var t: Label = _label(title, int(_k(38, 28)), title_color, true)
 	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(t)
-	var b: Label = _label(body, int(_k(17, 14)), C_TEXT)
+	var b: Label = _label(body, int(_k(17, 13)), C_TEXT)
 	b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	b.custom_minimum_size = Vector2(_k(540, 636), 0)
 	v.add_child(b)
@@ -1064,16 +1064,15 @@ func _update_rotate() -> void:
 		return
 	var vs: Vector2 = get_viewport().get_visible_rect().size
 	var portrait: bool = vs.y > vs.x
-	if portrait == _rotate_ov.visible:
-		return
-	_rotate_ov.visible = portrait
-	if portrait:
-		_rot_paused = game != null and not game.paused and not _loading.visible and not _intro.visible and not _end.visible
-		if _rot_paused:
-			request_pause.emit(true)
-	elif _rot_paused:
-		_rot_paused = false
-		request_pause.emit(false)
+	if _rotate_ov.visible != portrait:
+		_rotate_ov.visible = portrait
+		if not portrait and _rot_paused:
+			_rot_paused = false
+			request_pause.emit(false)
+	# hra, která běží (nebo se rozběhne po načtení) pod výzvou, se pozastaví; po otočení se zase pustí
+	if portrait and not _rot_paused and game != null and not game.paused and not _loading.visible and not _intro.visible and not _end.visible:
+		_rot_paused = true
+		request_pause.emit(true)
 
 
 func set_loading(on: bool) -> void:
