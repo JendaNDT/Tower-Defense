@@ -258,6 +258,7 @@ func cmd(req: Dictionary) -> Dictionary:
 					g.fx.muzzle_flash(fp, Vector3(0.0, 0.2, 1.0).normalized(), Color(1.0, 0.7, 0.3), 0.9, 5)
 			return {"ok": true}
 		"gfx_info":
+			main.blobs.refresh()                # stíny se jinak přepočítají až při dalším vykresleném snímku (v testu pomalém)
 			return {"ok": true, "quality": Gfx.quality_high, "blobs": main.blobs.count(), "scorches": g.fx.scorch_count(), "rings": g.fx._rings.size(),
 				"bridges": g.map.bridges,
 				"fog": _fog_on(),

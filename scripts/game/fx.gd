@@ -83,6 +83,7 @@ func ring(pos: Vector3, color: Color, radius_end: float, life: float, thickness:
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		var m: ShaderMaterial = ShaderMaterial.new()
 		m.shader = Gfx.SH_RING
+		m.render_priority = 1                # kreslit až po průhledné vodě (jinak by kruh na hladině prosvítal jen slabě)
 		mi.material_override = m
 		add_child(mi)
 		e = {"node": mi, "mat": m}

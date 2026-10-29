@@ -403,7 +403,7 @@ func update(dt: float) -> void:
 				var rz: float = position.z + dirb.x * 1.9 * side
 				var wy: float = game.map.terrain.water_y_at(rx, rz)
 				if wy > -50.0:
-					game.fx.ring(Vector3(rx, wy + 0.03, rz), Color(0.9, 0.97, 1.0), 1.1 + radius, 1.0, 0.12, 0.0, 0.45)
+					game.fx.ring(Vector3(rx, wy + 0.03, rz), Color(0.95, 0.99, 1.0), 1.2 + radius, 1.0, 0.2, 0.0, 0.6)
 	cur_speed = current_speed()
 	s += cur_speed * dt
 	position = _compute_pos(s)
